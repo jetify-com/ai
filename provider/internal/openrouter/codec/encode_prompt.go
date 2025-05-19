@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
 )
 
 // EncodePrompt converts an AI SDK prompt into OpenRouter's chat message format

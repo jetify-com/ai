@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
-	"go.jetify.com/ai/provider/openrouter/internal/codec"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
+	"go.jetify.com/ai/provider/internal/openrouter/codec"
 )
 
 // OpenRouterChatLanguageModel implements the chat-based language model for OpenRouter.

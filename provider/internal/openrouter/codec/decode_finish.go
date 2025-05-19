@@ -2,7 +2,7 @@ package codec
 
 import (
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
 )
 
 // DecodeFinishReason converts an OpenRouter finish reason to an AI SDK FinishReason type.

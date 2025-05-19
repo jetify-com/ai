@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
 )
 
 func TestDecodeLogProbs(t *testing.T) {

@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/aitesting"
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
-	"go.jetify.com/ai/provider/openrouter/internal/codec"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
+	"go.jetify.com/ai/provider/internal/openrouter/codec"
 	"go.jetify.com/pkg/httpmock"
 )
 

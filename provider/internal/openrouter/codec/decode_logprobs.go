@@ -2,7 +2,7 @@ package codec
 
 import (
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/openrouter/internal/client"
+	"go.jetify.com/ai/provider/internal/openrouter/client"
 )
 
 // DecodeLogProbs converts OpenRouter's chat logprobs format to the SDK's LogProb format
