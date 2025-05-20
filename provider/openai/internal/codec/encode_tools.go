@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/packages/param"
 	"github.com/openai/openai-go/responses"
 	"github.com/openai/openai-go/shared"
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -127,7 +128,7 @@ func encodeFunctionTool(tool api.FunctionTool) (*responses.ToolUnionParam, []api
 	// Add description if provided
 	if tool.Description != "" {
 		if functionToolParam := result.OfFunction; functionToolParam != nil {
-			functionToolParam.Description = openai.Opt(tool.Description)
+			functionToolParam.Description = openai.String(tool.Description)
 		}
 	}
 
@@ -197,29 +198,29 @@ func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam
 		userLocation := responses.WebSearchToolUserLocationParam{}
 
 		if webSearchTool.UserLocation.City != "" {
-			userLocation.City = openai.Opt(webSearchTool.UserLocation.City)
+			userLocation.City = openai.String(webSearchTool.UserLocation.City)
 		}
 
 		if webSearchTool.UserLocation.Country != "" {
-			userLocation.Country = openai.Opt(webSearchTool.UserLocation.Country)
+			userLocation.Country = openai.String(webSearchTool.UserLocation.Country)
 		}
 
 		if webSearchTool.UserLocation.Region != "" {
-			userLocation.Region = openai.Opt(webSearchTool.UserLocation.Region)
+			userLocation.Region = openai.String(webSearchTool.UserLocation.Region)
 		}
 
 		if webSearchTool.UserLocation.Timezone != "" {
-			userLocation.Timezone = openai.Opt(webSearchTool.UserLocation.Timezone)
+			userLocation.Timezone = openai.String(webSearchTool.UserLocation.Timezone)
 		}
 
 		// Only set the UserLocation if at least one field was set
-		if userLocation.City.IsPresent() || userLocation.Country.IsPresent() ||
-			userLocation.Region.IsPresent() || userLocation.Timezone.IsPresent() {
+		if !param.IsOmitted(userLocation.City) || !param.IsOmitted(userLocation.Country) ||
+			!param.IsOmitted(userLocation.Region) || !param.IsOmitted(userLocation.Timezone) {
 			webSearchParam.UserLocation = userLocation
 		}
 	}
 
-	return responses.ToolUnionParam{OfWebSearch: &webSearchParam}, nil
+	return responses.ToolUnionParam{OfWebSearchPreview: &webSearchParam}, nil
 }
 
 // encodeComputerUseTool creates a computer use tool parameter
@@ -249,8 +250,8 @@ func encodeComputerUseTool(tool api.ProviderDefinedTool) (responses.ToolUnionPar
 	}
 
 	return responses.ToolParamOfComputerUsePreview(
-		computerUseTool.DisplayHeight,
-		computerUseTool.DisplayWidth,
+		int64(computerUseTool.DisplayHeight),
+		int64(computerUseTool.DisplayWidth),
 		responses.ComputerToolEnvironment(computerUseTool.Environment),
 	), nil
 }
@@ -342,7 +343,7 @@ func encodeObjectToolMode(mode api.ObjectToolMode, opts api.CallOptions) (OpenAI
 	// Add description if provided
 	if mode.Tool.Description != "" {
 		if functionToolParam := tool.OfFunction; functionToolParam != nil {
-			functionToolParam.Description = openai.Opt(mode.Tool.Description)
+			functionToolParam.Description = openai.String(mode.Tool.Description)
 		}
 	}
 

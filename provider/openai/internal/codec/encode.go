@@ -35,8 +35,8 @@ func Encode(modelID string, prompt []api.Message, opts api.CallOptions) (respons
 		}
 
 		// Apply tool choice if set
-		if tools.ToolChoice.OfFunctionTool != nil ||
-			tools.ToolChoice.OfToolChoiceMode.IsPresent() ||
+		if !param.IsOmitted(tools.ToolChoice.OfToolChoiceMode) ||
+			tools.ToolChoice.OfFunctionTool != nil ||
 			tools.ToolChoice.OfHostedTool != nil {
 			params.ToolChoice = tools.ToolChoice
 		}

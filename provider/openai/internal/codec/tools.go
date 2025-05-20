@@ -91,9 +91,9 @@ type WebSearchUserLocation struct {
 // The properties DisplayHeight, DisplayWidth, Environment, Type are required.
 type ComputerUseTool struct {
 	// The height of the computer display.
-	DisplayHeight float64 `json:"display_height,omitempty"`
+	DisplayHeight int `json:"display_height,omitempty"`
 	// The width of the computer display.
-	DisplayWidth float64 `json:"display_width,omitempty"`
+	DisplayWidth int `json:"display_width,omitempty"`
 	// The type of computer environment to control.
 	//
 	// Any of "mac", "windows", "ubuntu", "browser".

@@ -361,7 +361,7 @@ func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseIn
 
 	screenshot := responses.ResponseComputerToolCallOutputScreenshotParam{
 		Type:     "computer_screenshot",
-		ImageURL: openai.Opt(dataURL),
+		ImageURL: openai.String(dataURL),
 	}
 
 	// Extract safety checks from provider metadata if available
@@ -370,8 +370,8 @@ func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseIn
 		for _, check := range metadata.ComputerSafetyChecks {
 			acknowledgedSafetyChecks = append(acknowledgedSafetyChecks, responses.ResponseInputItemComputerCallOutputAcknowledgedSafetyCheckParam{
 				ID:      check.ID,
-				Code:    check.Code,
-				Message: check.Message,
+				Code:    openai.String(check.Code),
+				Message: openai.String(check.Message),
 			})
 		}
 	}
