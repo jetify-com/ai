@@ -11,10 +11,11 @@
 
 ## Introduction
 
-**AI SDK for Go** is a unified interface for interacting with multiple AI providers including OpenAI, Anthropic, and more.
+Jetify's **AI SDK for Go** is a unified interface for interacting with multiple AI providers including OpenAI, Anthropic, and more.
 Inspired by [Vercel's AI SDK](https://github.com/vercel/ai) for TypeScript, we bring a similar developer experience to the Go ecosystem.
 
-This Go SDK is developed and maitained by [Jetify](https://www.jetify.com).
+It is maintained and developed by [Jetify](https://www.jetify.com) and used by our AI agents to integrate
+with different LLM providers in production.
 
 ### The Problem
 
