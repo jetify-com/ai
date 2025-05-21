@@ -116,7 +116,7 @@ func applyCallOptions(params *responses.ResponseNewParams, opts api.CallOptions,
 	}
 
 	// Apply provider options from metadata
-	reasoningEffort := applyProviderMetadata(params, opts)
+	applyProviderMetadata(params, opts)
 
 	// Apply model-specific settings
 	if modelConfig.RequiredAutoTruncation {
@@ -124,7 +124,7 @@ func applyCallOptions(params *responses.ResponseNewParams, opts api.CallOptions,
 	}
 
 	// Apply reasoning settings and handle unsupported options for reasoning models
-	reasoningWarnings := applyReasoningSettings(params, opts, modelConfig, reasoningEffort)
+	reasoningWarnings := applyReasoningSettings(params, opts, modelConfig)
 	warnings = append(warnings, reasoningWarnings...)
 
 	return warnings, nil
@@ -166,10 +166,7 @@ func applyJSONResponseFormat(params *responses.ResponseNewParams, opts api.CallO
 }
 
 // applyProviderMetadata applies metadata-specific options to the parameters
-// and returns the reasoning effort if specified
-func applyProviderMetadata(params *responses.ResponseNewParams, opts api.CallOptions) string {
-	var reasoningEffort string
-
+func applyProviderMetadata(params *responses.ResponseNewParams, opts api.CallOptions) {
 	if opts.ProviderMetadata != nil {
 		metadata := GetMetadata(opts)
 		if metadata != nil {
@@ -188,25 +185,28 @@ func applyProviderMetadata(params *responses.ResponseNewParams, opts api.CallOpt
 			if metadata.Instructions != "" {
 				params.Instructions = openai.String(metadata.Instructions)
 			}
-			// Extract reasoningEffort if available
-			reasoningEffort = metadata.ReasoningEffort
 		}
 	}
-
-	return reasoningEffort
 }
 
 // applyReasoningSettings applies settings specific to reasoning models
 // and handles unsupported options
 func applyReasoningSettings(params *responses.ResponseNewParams, opts api.CallOptions,
-	modelConfig modelConfig, reasoningEffort string,
+	modelConfig modelConfig,
 ) []api.CallWarning {
 	var warnings []api.CallWarning
 
 	// Apply reasoning settings for reasoning models
-	if modelConfig.IsReasoningModel && reasoningEffort != "" {
-		params.Reasoning = shared.ReasoningParam{
-			Effort: shared.ReasoningEffort(reasoningEffort),
+	if modelConfig.IsReasoningModel {
+		metadata := GetMetadata(opts)
+		if metadata != nil && (metadata.ReasoningEffort != "" || metadata.ReasoningSummary != "") {
+			params.Reasoning = shared.ReasoningParam{}
+			if metadata.ReasoningEffort != "" {
+				params.Reasoning.Effort = shared.ReasoningEffort(metadata.ReasoningEffort)
+			}
+			if metadata.ReasoningSummary != "" {
+				params.Reasoning.Summary = shared.ReasoningSummary(metadata.ReasoningSummary)
+			}
 		}
 	}
 

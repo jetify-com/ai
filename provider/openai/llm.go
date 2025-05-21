@@ -98,5 +98,17 @@ func (m *LanguageModel) Generate(
 func (m *LanguageModel) Stream(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
 ) (api.StreamResponse, error) {
-	return api.StreamResponse{}, api.NewUnsupportedFunctionalityError("streaming generation", "")
+	params, warnings, err := codec.Encode(m.modelID, prompt, opts)
+	if err != nil {
+		return api.StreamResponse{}, err
+	}
+
+	stream := m.client.Responses.NewStreaming(ctx, params)
+	response, err := codec.DecodeStream(stream)
+	if err != nil {
+		return api.StreamResponse{}, err
+	}
+
+	response.Warnings = append(response.Warnings, warnings...)
+	return response, nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/openai/openai-go/responses"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.jetify.com/ai/aitesting"
 	"go.jetify.com/ai/api"
 )
 
@@ -81,6 +82,7 @@ func TestDecodeResponse(t *testing.T) {
 				Sources: []api.Source{
 					{
 						SourceType: "url",
+						ID:         "source-0",
 						URL:        "https://example.com",
 						Title:      "Example Site",
 					},
@@ -193,57 +195,8 @@ func TestDecodeResponse(t *testing.T) {
 				testCase.want.LogProbs = api.LogProbs{}
 			}
 
-			// Compare text
-			assert.Equal(t, testCase.want.Text, got.Text)
-
-			// Compare usage
-			assert.Equal(t, testCase.want.Usage, got.Usage)
-
-			// Compare finish reason
-			assert.Equal(t, testCase.want.FinishReason, got.FinishReason)
-
-			// Compare sources
-			assert.Equal(t, len(testCase.want.Sources), len(got.Sources))
-			for i, wantSource := range testCase.want.Sources {
-				assert.Equal(t, wantSource.SourceType, got.Sources[i].SourceType)
-				assert.Equal(t, wantSource.URL, got.Sources[i].URL)
-				assert.Equal(t, wantSource.Title, got.Sources[i].Title)
-			}
-
-			// Compare tool calls
-			assert.Equal(t, len(testCase.want.ToolCalls), len(got.ToolCalls))
-			for i, wantCall := range testCase.want.ToolCalls {
-				assert.Equal(t, wantCall.ToolCallID, got.ToolCalls[i].ToolCallID)
-				assert.Equal(t, wantCall.ToolName, got.ToolCalls[i].ToolName)
-				assert.JSONEq(t, string(wantCall.Args), string(got.ToolCalls[i].Args))
-			}
-
-			// Compare reasoning
-			assert.Equal(t, len(testCase.want.Reasoning), len(got.Reasoning))
-			for i, wantReasoning := range testCase.want.Reasoning {
-				assert.Equal(t, wantReasoning, got.Reasoning[i])
-			}
-
-			// Compare warnings
-			assert.Equal(t, testCase.want.Warnings, got.Warnings)
-
-			// Compare log probs
-			assert.Equal(t, testCase.want.LogProbs, got.LogProbs)
-
-			// Compare provider metadata if present
-			if testCase.want.ProviderMetadata != nil {
-				wantMetaAny, ok := testCase.want.ProviderMetadata.Get("openai")
-				require.True(t, ok, "want metadata should exist")
-				wantMeta, ok := wantMetaAny.(*Metadata)
-				require.True(t, ok, "want metadata should be of type *Metadata")
-
-				gotMetaAny, ok := got.ProviderMetadata.Get("openai")
-				require.True(t, ok, "got metadata should exist")
-				gotMeta, ok := gotMetaAny.(*Metadata)
-				require.True(t, ok, "got metadata should be of type *Metadata")
-
-				assert.Equal(t, wantMeta, gotMeta, "provider metadata should match")
-			}
+			// Use ResponseContains to verify the response
+			aitesting.ResponseContains(t, testCase.want, got)
 		})
 	}
 }
@@ -898,7 +851,7 @@ func TestDecodeFinishReason(t *testing.T) {
 		{
 			name:     "nil response",
 			response: `null`,
-			want:     api.FinishReasonUnknown,
+			want:     api.FinishReasonStop,
 		},
 	}
 
@@ -924,7 +877,13 @@ func TestDecodeFinishReason(t *testing.T) {
 				hasToolCalls = got.HasTools
 			}
 
-			got := decodeFinishReason(msg, hasToolCalls)
+			// Get the incomplete reason from the response
+			var incompleteReason string
+			if msg != nil && msg.IncompleteDetails.Reason != "" {
+				incompleteReason = msg.IncompleteDetails.Reason
+			}
+
+			got := decodeFinishReason(incompleteReason, hasToolCalls)
 			assert.Equal(t, testCase.want, got)
 		})
 	}

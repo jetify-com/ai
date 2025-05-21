@@ -49,7 +49,7 @@ func DecodeResponse(msg *responses.Response) (api.Response, error) {
 		LogProbs: api.LogProbs{},
 	}
 
-	resp.FinishReason = decodeFinishReason(msg, content.HasTools)
+	resp.FinishReason = decodeFinishReason(msg.IncompleteDetails.Reason, content.HasTools)
 
 	return resp, nil
 }
@@ -247,13 +247,9 @@ func decodeUsage(usage responses.ResponseUsage) api.Usage {
 }
 
 // decodeFinishReason converts an OpenAI response status to an AI SDK FinishReason type.
-func decodeFinishReason(msg *responses.Response, hasToolCalls bool) api.FinishReason {
-	if msg == nil {
-		return api.FinishReasonUnknown
-	}
-
+func decodeFinishReason(incompleteReason string, hasToolCalls bool) api.FinishReason {
 	// Determine finish reason based on incomplete details reason
-	switch msg.IncompleteDetails.Reason {
+	switch incompleteReason {
 	case "max_output_tokens":
 		return api.FinishReasonLength
 	case "content_filter":
