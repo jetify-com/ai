@@ -2,7 +2,6 @@ package anthropic
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"go.jetify.com/ai/api"
@@ -45,10 +44,6 @@ func NewLanguageModel(modelID string, opts ...ModelOption) *LanguageModel {
 	return model
 }
 
-func (m *LanguageModel) SpecificationVersion() string {
-	return "v1"
-}
-
 func (m *LanguageModel) ProviderName() string {
 	return ProviderName
 }
@@ -57,21 +52,16 @@ func (m *LanguageModel) ModelID() string {
 	return m.modelID
 }
 
-func (m *LanguageModel) DefaultObjectGenerationMode() api.ObjectGenerationMode {
-	return api.ObjectGenerationModeTool // Anthropic models support tool mode by default
-}
-
-func (m *LanguageModel) SupportsImageURLs() bool {
-	return true // Claude 3 models support image URLs
-}
-
-func (m *LanguageModel) SupportsStructuredOutputs() bool {
-	return true // Claude models support structured JSON outputs
-}
-
-func (m *LanguageModel) SupportsURL(u *url.URL) bool {
-	// TODO: Double check if we should only return true for a subset of URLs
-	return true // Anthropic models support URLs
+func (m *LanguageModel) SupportedUrls() []api.SupportedURL {
+	// TODO: Make configurable via the constructor.
+	return []api.SupportedURL{
+		{
+			MediaType: "image/*",
+			URLPatterns: []string{
+				"^https?://.*",
+			},
+		},
+	}
 }
 
 func (m *LanguageModel) Generate(

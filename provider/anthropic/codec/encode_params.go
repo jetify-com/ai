@@ -38,8 +38,8 @@ func encodeCallOptions(opts api.CallOptions) (anthropic.BetaMessageNewParams, []
 	}
 
 	// Set basic parameters
-	if opts.MaxTokens > 0 {
-		params.MaxTokens = anthropic.F(int64(opts.MaxTokens))
+	if opts.MaxOutputTokens > 0 {
+		params.MaxTokens = anthropic.F(int64(opts.MaxOutputTokens))
 	}
 	if opts.Temperature != nil {
 		params.Temperature = anthropic.F(*opts.Temperature)

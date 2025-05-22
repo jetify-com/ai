@@ -145,8 +145,8 @@ func TestEncodePrompt(t *testing.T) {
 					Content: []api.ContentBlock{
 						&api.TextBlock{Text: "Here's a PDF"},
 						&api.FileBlock{
-							URL:      "http://example.com/doc.pdf",
-							MimeType: "application/pdf",
+							URL:       "http://example.com/doc.pdf",
+							MediaType: "application/pdf",
 						},
 					},
 				},
@@ -174,8 +174,8 @@ func TestEncodePrompt(t *testing.T) {
 					Content: []api.ContentBlock{
 						&api.TextBlock{Text: "Here's a text file"},
 						&api.FileBlock{
-							URL:      "http://example.com/file.txt",
-							MimeType: "text/plain",
+							URL:       "http://example.com/file.txt",
+							MediaType: "text/plain",
 						},
 					},
 				},
@@ -416,8 +416,8 @@ func TestEncodeUserContentPart(t *testing.T) {
 		{
 			name: "image block with data",
 			block: &api.ImageBlock{
-				Data:     []byte("fake-image-data"),
-				MimeType: "image/jpeg",
+				Data:      []byte("fake-image-data"),
+				MediaType: "image/jpeg",
 			},
 			want: NewImageBlockBase64("image/jpeg", "ZmFrZS1pbWFnZS1kYXRh"),
 		},
@@ -455,8 +455,8 @@ func TestEncodeUserContentPart(t *testing.T) {
 		{
 			name: "file block with binary data and mime type",
 			block: &api.FileBlock{
-				Data:     []byte{0, 1, 2, 3},
-				MimeType: "audio/wav",
+				Data:      []byte{0, 1, 2, 3},
+				MediaType: "audio/wav",
 			},
 			wantErr: true,
 		},
@@ -709,8 +709,8 @@ func TestEncodeToolMessage(t *testing.T) {
 								Text: "Generated image:",
 							},
 							&api.ImageBlock{
-								Data:     []byte("base64data"),
-								MimeType: "image/png",
+								Data:      []byte("base64data"),
+								MediaType: "image/png",
 							},
 						},
 					},
@@ -1075,8 +1075,8 @@ func TestEncodeFilePart(t *testing.T) {
 		{
 			name: "PDF file with data",
 			block: &api.FileBlock{
-				Data:     []byte("PDF data"),
-				MimeType: "application/pdf",
+				Data:      []byte("PDF data"),
+				MediaType: "application/pdf",
 			},
 			want: anthropic.BetaBase64PDFBlockParam{
 				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
@@ -1103,8 +1103,8 @@ func TestEncodeFilePart(t *testing.T) {
 		{
 			name: "file with binary data and mime type",
 			block: &api.FileBlock{
-				Data:     []byte{0, 1, 2, 3},
-				MimeType: "audio/wav",
+				Data:      []byte{0, 1, 2, 3},
+				MediaType: "audio/wav",
 			},
 			wantErr: true,
 		},
@@ -1263,8 +1263,8 @@ func TestEncodeImagePart(t *testing.T) {
 		{
 			name: "image with data and mime type",
 			block: &api.ImageBlock{
-				Data:     []byte{0, 1, 2, 3},
-				MimeType: "image/png",
+				Data:      []byte{0, 1, 2, 3},
+				MediaType: "image/png",
 			},
 			want: anthropic.NewImageBlockBase64("image/png", "AAECAw=="),
 		},

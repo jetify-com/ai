@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.jetify.com/ai/aitesting"
 	"go.jetify.com/ai/api"
-	"go.jetify.com/pkg/pointer"
 )
 
 func TestResponseBuilder(t *testing.T) {
@@ -136,8 +135,8 @@ func TestResponseBuilder(t *testing.T) {
 					},
 				},
 				&api.FileEvent{
-					MimeType: "text/plain",
-					Data:     []byte("test data"),
+					MediaType: "text/plain",
+					Data:      []byte("test data"),
 				},
 			},
 			expected: api.Response{
@@ -150,8 +149,8 @@ func TestResponseBuilder(t *testing.T) {
 				},
 				Files: []api.FileBlock{
 					{
-						MimeType: "text/plain",
-						Data:     []byte("test data"),
+						MediaType: "text/plain",
+						Data:      []byte("test data"),
 					},
 				},
 			},
@@ -161,27 +160,29 @@ func TestResponseBuilder(t *testing.T) {
 			events: []api.StreamEvent{
 				&api.ResponseMetadataEvent{
 					ID:        "resp_123",
-					Timestamp: pointer.Ptr(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+					Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					ModelID:   "model_123",
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReason("stop"),
-					Usage: &api.Usage{
-						PromptTokens:     10,
-						CompletionTokens: 20,
+					Usage: api.Usage{
+						InputTokens:  10,
+						OutputTokens: 20,
+						TotalTokens:  30,
 					},
 				},
 			},
 			expected: api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "resp_123",
-					Timestamp: pointer.Ptr(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+					Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					ModelID:   "model_123",
 				},
 				FinishReason: api.FinishReason("stop"),
 				Usage: api.Usage{
-					PromptTokens:     10,
-					CompletionTokens: 20,
+					InputTokens:  10,
+					OutputTokens: 20,
+					TotalTokens:  30,
 				},
 			},
 		},
@@ -193,39 +194,6 @@ func TestResponseBuilder(t *testing.T) {
 				},
 			},
 			expected: api.Response{},
-		},
-		{
-			name: "add metadata",
-			events: []api.StreamEvent{
-				&api.TextDeltaEvent{TextDelta: "Hello"},
-			},
-			expected: api.Response{
-				Text: "Hello",
-				Warnings: []api.CallWarning{
-					{
-						Message: "test warning",
-					},
-				},
-				RawCall: api.RawCall{
-					RawPrompt: "test prompt",
-					RawSettings: map[string]interface{}{
-						"test": "setting",
-					},
-				},
-			},
-			metadata: &api.StreamResponse{
-				Warnings: []api.CallWarning{
-					{
-						Message: "test warning",
-					},
-				},
-				RawCall: api.RawCall{
-					RawPrompt: "test prompt",
-					RawSettings: map[string]interface{}{
-						"test": "setting",
-					},
-				},
-			},
 		},
 		{
 			name: "create tool call through deltas",

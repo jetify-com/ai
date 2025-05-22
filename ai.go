@@ -1,4 +1,4 @@
-package aisdk
+package ai
 
 import (
 	"context"
@@ -30,13 +30,9 @@ import (
 // The last argument can optionally be a series of [api.CallOption] arguments:
 //
 //	GenerateText(ctx, "Hello, world!", WithMaxTokens(100))
-func GenerateText(ctx context.Context, args ...any) (api.Response, error) {
-	llmArgs, err := toLLMArgs(args...)
-	if err != nil {
-		return api.Response{}, err
-	}
-
-	return generate(ctx, llmArgs.Prompt, llmArgs.Config)
+func GenerateText(ctx context.Context, prompt []api.Message, opts ...GenerateOption) (api.Response, error) {
+	config := buildGenerateConfig(opts)
+	return generate(ctx, prompt, config)
 }
 
 func generate(ctx context.Context, prompt []api.Message, config GenerateTextConfig) (api.Response, error) {
@@ -58,10 +54,10 @@ func WithModel(model api.LanguageModel) GenerateOption {
 	}
 }
 
-// WithMaxTokens specifies the maximum number of tokens to generate
-func WithMaxTokens(maxTokens int) GenerateOption {
+// WithMaxOutputTokens specifies the maximum number of tokens to generate
+func WithMaxOutputTokens(maxTokens int) GenerateOption {
 	return func(o *GenerateTextConfig) {
-		o.CallOptions.MaxTokens = maxTokens
+		o.CallOptions.MaxOutputTokens = maxTokens
 	}
 }
 

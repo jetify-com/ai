@@ -120,7 +120,7 @@ func encodeImageBlock(block *api.ImageBlock) *client.ImagePart {
 	// If no URL is provided but we have raw image data,
 	// convert it to a data URL (e.g., "data:image/jpeg;base64,/9j/4AAQ...")
 	if url == "" && block.Data != nil {
-		mimeType := block.MimeType
+		mimeType := block.MediaType
 		if mimeType == "" {
 			mimeType = "image/jpeg" // Default to JPEG if no mime type specified
 		}
@@ -138,7 +138,7 @@ func encodeImageBlock(block *api.ImageBlock) *client.ImagePart {
 func encodeFileBlock(block *api.FileBlock) *client.TextPart {
 	text := block.URL
 	if text == "" && block.Data != nil {
-		if block.MimeType == "" {
+		if block.MediaType == "" {
 			// If no mime type, treat the data as plain text
 			text = string(block.Data)
 		} else {
@@ -146,7 +146,7 @@ func encodeFileBlock(block *api.FileBlock) *client.TextPart {
 			// not part of the TypeScript OpenRouter implementation. We've added it.
 			// Double check that this is beneficial.
 			text = fmt.Sprintf("data:%s;base64,%s",
-				block.MimeType,
+				block.MediaType,
 				base64.StdEncoding.EncodeToString(block.Data),
 			)
 		}

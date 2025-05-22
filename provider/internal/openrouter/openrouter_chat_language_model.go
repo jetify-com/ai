@@ -217,8 +217,8 @@ func (m *OpenRouterChatLanguageModel) buildRequestBody(
 	}
 
 	// Add call options
-	if options.MaxTokens > 0 {
-		body["max_tokens"] = options.MaxTokens
+	if options.MaxOutputTokens > 0 {
+		body["max_tokens"] = options.MaxOutputTokens
 	}
 	if options.Temperature != nil {
 		body["temperature"] = options.Temperature
@@ -426,10 +426,9 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 					if tc.Function.Arguments != "" {
 						toolCall.Function.Arguments += tc.Function.Arguments
 						if !yield(api.ToolCallDeltaEvent{
-							ToolCallID:   toolCall.ID,
-							ToolCallType: "function",
-							ToolName:     toolCall.Function.Name,
-							ArgsDelta:    []byte(tc.Function.Arguments),
+							ToolCallID: toolCall.ID,
+							ToolName:   toolCall.Function.Name,
+							ArgsDelta:  []byte(tc.Function.Arguments),
 						}) {
 							return
 						}

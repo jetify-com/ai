@@ -58,17 +58,54 @@ func TestResponseContains(t *testing.T) {
 			name: "matching usage",
 			expected: api.Response{
 				Usage: api.Usage{
-					PromptTokens:     10,
-					CompletionTokens: 20,
+					InputTokens:       10,
+					OutputTokens:      20,
+					TotalTokens:       30,
+					ReasoningTokens:   10,
+					CachedInputTokens: 5,
 				},
 			},
 			contains: api.Response{
 				Usage: api.Usage{
-					PromptTokens:     10,
-					CompletionTokens: 20,
+					InputTokens:       10,
+					OutputTokens:      20,
+					TotalTokens:       30,
+					ReasoningTokens:   10,
+					CachedInputTokens: 5,
 				},
 			},
 			wantFail: false,
+		},
+		{
+			name: "exact usage check",
+			expected: api.Response{
+				Usage: api.Usage{
+					InputTokens: 10,
+					// All other fields should be 0
+				},
+			},
+			contains: api.Response{
+				Usage: api.Usage{
+					InputTokens: 10,
+					// All other fields should be 0
+				},
+			},
+			wantFail: false,
+		},
+		{
+			name: "mismatched usage",
+			expected: api.Response{
+				Usage: api.Usage{
+					InputTokens: 10,
+				},
+			},
+			contains: api.Response{
+				Usage: api.Usage{
+					InputTokens:  10,
+					OutputTokens: 20, // This will cause the test to fail since OutputTokens doesn't match
+				},
+			},
+			wantFail: true,
 		},
 		{
 			name: "matching response info",
@@ -76,14 +113,14 @@ func TestResponseContains(t *testing.T) {
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "test-id",
 					ModelID:   "test-model",
-					Timestamp: &now,
+					Timestamp: now,
 				},
 			},
 			contains: api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "test-id",
 					ModelID:   "test-model",
-					Timestamp: &now,
+					Timestamp: now,
 				},
 			},
 			wantFail: false,
@@ -136,6 +173,50 @@ func TestResponseContains(t *testing.T) {
 				},
 			},
 			wantFail: false,
+		},
+		{
+			name: "matching files",
+			expected: api.Response{
+				Files: []api.FileBlock{
+					{
+						Filename:  "test.txt",
+						Data:      []byte("test content"),
+						MediaType: "text/plain",
+					},
+				},
+			},
+			contains: api.Response{
+				Files: []api.FileBlock{
+					{
+						Filename:  "test.txt",
+						Data:      []byte("test content"),
+						MediaType: "text/plain",
+					},
+				},
+			},
+			wantFail: false,
+		},
+		{
+			name: "mismatched files",
+			expected: api.Response{
+				Files: []api.FileBlock{
+					{
+						Filename:  "test.txt",
+						Data:      []byte("test content"),
+						MediaType: "text/plain",
+					},
+				},
+			},
+			contains: api.Response{
+				Files: []api.FileBlock{
+					{
+						Filename:  "different.txt",
+						Data:      []byte("different content"),
+						MediaType: "text/plain",
+					},
+				},
+			},
+			wantFail: true,
 		},
 	}
 

@@ -135,8 +135,10 @@ func decodeReasoning(block anthropic.BetaContentBlock) api.Reasoning {
 // decodeUsage converts Anthropic Usage to API SDK Usage
 func decodeUsage(usage anthropic.BetaUsage) api.Usage {
 	return api.Usage{
-		PromptTokens:     int(usage.InputTokens),
-		CompletionTokens: int(usage.OutputTokens),
+		InputTokens:       int(usage.InputTokens),
+		OutputTokens:      int(usage.OutputTokens),
+		TotalTokens:       int(usage.InputTokens + usage.OutputTokens),
+		CachedInputTokens: int(usage.CacheReadInputTokens),
 	}
 }
 

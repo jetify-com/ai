@@ -131,7 +131,7 @@ func EncodeImageBlock(block *api.ImageBlock) (anthropic.BetaImageBlockParam, err
 			Source: anthropic.F[anthropic.BetaImageBlockParamSourceUnion](urlSource),
 		}
 	} else if block.Data != nil {
-		mimeType := block.MimeType
+		mimeType := block.MediaType
 		if mimeType == "" {
 			mimeType = "image/jpeg" // Default to JPEG if no mime type specified
 		}
@@ -158,7 +158,7 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, [
 
 	if block.URL != "" {
 		// Check if it's a PDF URL by looking at the extension or mime type
-		isPDF = block.MimeType == "application/pdf"
+		isPDF = block.MediaType == "application/pdf"
 
 		if !isPDF && block.URL != "" {
 			// Parse the URL to extract the path component
@@ -187,7 +187,7 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, [
 			param.Source = anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](textSource)
 		}
 	} else if block.Data != nil {
-		mimeType := block.MimeType
+		mimeType := block.MediaType
 		if mimeType == "application/pdf" {
 			// Base64 PDF source
 			base64Data := base64.StdEncoding.EncodeToString(block.Data)

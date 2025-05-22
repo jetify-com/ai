@@ -157,8 +157,11 @@ func TestGenerate(t *testing.T) {
 			exchanges: standardExchange,
 			expectedResp: api.Response{
 				Usage: api.Usage{
-					PromptTokens:     345,
-					CompletionTokens: 538,
+					InputTokens:       345,
+					OutputTokens:      538,
+					TotalTokens:       883,
+					ReasoningTokens:   123,
+					CachedInputTokens: 234,
 				},
 			},
 		},
@@ -1817,7 +1820,7 @@ func TestStream(t *testing.T) {
 				&api.ResponseMetadataEvent{
 					ID:        "resp_67c9a81b6a048190a9ee441c5755a4e8",
 					ModelID:   "gpt-4o-2024-07-18",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
 				},
 				&api.TextDeltaEvent{
 					TextDelta: "Hello,",
@@ -1827,9 +1830,12 @@ func TestStream(t *testing.T) {
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonStop,
-					Usage: &api.Usage{
-						PromptTokens:     543,
-						CompletionTokens: 478,
+					Usage: api.Usage{
+						InputTokens:       543,
+						OutputTokens:      478,
+						TotalTokens:       512,
+						ReasoningTokens:   123,
+						CachedInputTokens: 234,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{
@@ -2000,16 +2006,16 @@ func TestStream(t *testing.T) {
 				&api.ResponseMetadataEvent{
 					ID:        "resp_67c9a81b6a048190a9ee441c5755a4e8",
 					ModelID:   "gpt-4o-2024-07-18",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
 				},
 				&api.TextDeltaEvent{
 					TextDelta: "Hello,",
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonLength,
-					Usage: &api.Usage{
-						PromptTokens:     0,
-						CompletionTokens: 0,
+					Usage: api.Usage{
+						InputTokens:  0,
+						OutputTokens: 0,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{
@@ -2283,19 +2289,17 @@ func TestStream(t *testing.T) {
 				&api.ResponseMetadataEvent{
 					ID:        "resp_67cb13a755c08190acbe3839a49632fc",
 					ModelID:   "gpt-4o-2024-07-18",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 7, 15, 41, 27, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 7, 15, 41, 27, 0, time.UTC),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_6KxSghkb4MVnunFH2TxPErLP",
-					ToolName:     "currentLocation",
-					ToolCallType: "function",
-					ArgsDelta:    []byte(""),
+					ToolCallID: "call_6KxSghkb4MVnunFH2TxPErLP",
+					ToolName:   "currentLocation",
+					ArgsDelta:  []byte(""),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_6KxSghkb4MVnunFH2TxPErLP",
-					ToolName:     "currentLocation",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("{}"),
+					ToolCallID: "call_6KxSghkb4MVnunFH2TxPErLP",
+					ToolName:   "currentLocation",
+					ArgsDelta:  []byte("{}"),
 				},
 				&api.ToolCallEvent{
 					ToolCallID: "call_pgjcAI4ZegMkP6bsAV7sfrJA",
@@ -2303,40 +2307,34 @@ func TestStream(t *testing.T) {
 					Args:       json.RawMessage(`{}`),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte(""),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte(""),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("{"),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte("{"),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("\"location\""),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte("\"location\""),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("\":\""),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte("\":\""),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("\"Rome\""),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte("\"Rome\""),
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_Dg6WUmFHNeR5JxX1s53s1G4b",
-					ToolName:     "weather",
-					ToolCallType: "function",
-					ArgsDelta:    []byte("\"}\""),
+					ToolCallID: "call_Dg6WUmFHNeR5JxX1s53s1G4b",
+					ToolName:   "weather",
+					ArgsDelta:  []byte("\"}\""),
 				},
 				&api.ToolCallEvent{
 					ToolCallID: "call_X2PAkDJInno9VVnNkDrfhboW",
@@ -2345,9 +2343,9 @@ func TestStream(t *testing.T) {
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonToolCalls,
-					Usage: &api.Usage{
-						PromptTokens:     0,
-						CompletionTokens: 0,
+					Usage: api.Usage{
+						InputTokens:  0,
+						OutputTokens: 0,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{
@@ -2359,7 +2357,7 @@ func TestStream(t *testing.T) {
 			},
 		},
 		{
-			name:    "should_stream_sources",
+			name:    "should stream sources",
 			modelID: "gpt-4o-mini",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
@@ -2719,7 +2717,7 @@ func TestStream(t *testing.T) {
 				&api.ResponseMetadataEvent{
 					ID:        "resp_67cf3390786881908b27489d7e8cfb6b",
 					ModelID:   "gpt-4o-mini-2024-07-18",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 10, 18, 46, 40, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 10, 18, 46, 40, 0, time.UTC),
 				},
 				&api.TextDeltaEvent{
 					TextDelta: "Last week",
@@ -2754,9 +2752,12 @@ func TestStream(t *testing.T) {
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonStop,
-					Usage: &api.Usage{
-						PromptTokens:     327,
-						CompletionTokens: 834,
+					Usage: api.Usage{
+						InputTokens:       327,
+						OutputTokens:      834,
+						TotalTokens:       1161,
+						ReasoningTokens:   0,
+						CachedInputTokens: 0,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{
@@ -2877,7 +2878,7 @@ func TestStream(t *testing.T) {
 				&api.ResponseMetadataEvent{
 					ID:        "resp_67c9a81b6a048190a9ee441c5755a4e8",
 					ModelID:   "o3-mini-2025-01-31",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
 				},
 				&api.ReasoningEvent{
 					TextDelta: "**Exploring burrito origins**\n\nThe user is",
@@ -2893,9 +2894,12 @@ func TestStream(t *testing.T) {
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonStop,
-					Usage: &api.Usage{
-						PromptTokens:     543,
-						CompletionTokens: 478,
+					Usage: api.Usage{
+						InputTokens:       543,
+						OutputTokens:      478,
+						TotalTokens:       1021,
+						ReasoningTokens:   350,
+						CachedInputTokens: 234,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{

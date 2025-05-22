@@ -39,8 +39,9 @@ func TestDecodeResponse(t *testing.T) {
 			want: api.Response{
 				Text: "Hello world",
 				Usage: api.Usage{
-					PromptTokens:     100,
-					CompletionTokens: 50,
+					InputTokens:  100,
+					OutputTokens: 50,
+					TotalTokens:  150,
 				},
 				FinishReason: api.FinishReasonStop,
 			},
@@ -75,8 +76,9 @@ func TestDecodeResponse(t *testing.T) {
 			want: api.Response{
 				Text: "Info from [example](https://example.com)",
 				Usage: api.Usage{
-					PromptTokens:     150,
-					CompletionTokens: 75,
+					InputTokens:  150,
+					OutputTokens: 75,
+					TotalTokens:  225,
 				},
 				FinishReason: api.FinishReasonStop,
 				Sources: []api.Source{
@@ -108,8 +110,9 @@ func TestDecodeResponse(t *testing.T) {
 			want: api.Response{
 				Text: "",
 				Usage: api.Usage{
-					PromptTokens:     200,
-					CompletionTokens: 100,
+					InputTokens:  200,
+					OutputTokens: 100,
+					TotalTokens:  300,
 				},
 				FinishReason: api.FinishReasonToolCalls,
 				ToolCalls: []api.ToolCallBlock{
@@ -150,8 +153,11 @@ func TestDecodeResponse(t *testing.T) {
 			want: api.Response{
 				Text: "Test message",
 				Usage: api.Usage{
-					PromptTokens:     100,
-					CompletionTokens: 50,
+					InputTokens:       100,
+					OutputTokens:      50,
+					TotalTokens:       150,
+					ReasoningTokens:   30,
+					CachedInputTokens: 25,
 				},
 				FinishReason: api.FinishReasonStop,
 				ProviderMetadata: api.NewProviderMetadata(map[string]any{
@@ -751,18 +757,101 @@ func TestDecodeToolCalls(t *testing.T) {
 }
 
 func TestDecodeUsage(t *testing.T) {
-	// Simple test for usage conversion
-	usage := responses.ResponseUsage{
-		InputTokens:  100,
-		OutputTokens: 50,
+	tests := []struct {
+		name     string
+		input    responses.ResponseUsage
+		expected api.Usage
+	}{
+		{
+			name: "basic usage",
+			input: responses.ResponseUsage{
+				InputTokens:  100,
+				OutputTokens: 50,
+			},
+			expected: api.Usage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				TotalTokens:  150,
+			},
+		},
+		{
+			name: "with total tokens",
+			input: responses.ResponseUsage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				TotalTokens:  200,
+			},
+			expected: api.Usage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				TotalTokens:  200,
+			},
+		},
+		{
+			name: "total tokens differs from sum",
+			input: responses.ResponseUsage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				TotalTokens:  175, // Different from sum (150)
+			},
+			expected: api.Usage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				TotalTokens:  175, // Should use provided total, not sum
+			},
+		},
+		{
+			name: "with token details",
+			input: responses.ResponseUsage{
+				InputTokens:  100,
+				OutputTokens: 50,
+				InputTokensDetails: responses.ResponseUsageInputTokensDetails{
+					CachedTokens: 25,
+				},
+				OutputTokensDetails: responses.ResponseUsageOutputTokensDetails{
+					ReasoningTokens: 30,
+				},
+			},
+			expected: api.Usage{
+				InputTokens:       100,
+				OutputTokens:      50,
+				TotalTokens:       150,
+				ReasoningTokens:   30,
+				CachedInputTokens: 25,
+			},
+		},
+		{
+			name: "zero values",
+			input: responses.ResponseUsage{
+				InputTokens:  0,
+				OutputTokens: 0,
+			},
+			expected: api.Usage{
+				InputTokens:  0,
+				OutputTokens: 0,
+				TotalTokens:  0,
+			},
+		},
+		{
+			name: "large values",
+			input: responses.ResponseUsage{
+				InputTokens:  1000000,
+				OutputTokens: 500000,
+			},
+			expected: api.Usage{
+				InputTokens:  1000000,
+				OutputTokens: 500000,
+				TotalTokens:  1500000,
+			},
+		},
 	}
 
-	result := decodeUsage(usage)
-
-	assert.Equal(t, api.Usage{
-		PromptTokens:     100,
-		CompletionTokens: 50,
-	}, result)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			result := decodeUsage(testCase.input)
+			assert.Equal(t, testCase.expected, result)
+		})
+	}
 }
 
 func TestDecodeFinishReason(t *testing.T) {

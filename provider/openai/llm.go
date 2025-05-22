@@ -2,7 +2,6 @@ package openai
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/openai/openai-go"
 	"go.jetify.com/ai/api"
@@ -45,10 +44,6 @@ func NewLanguageModel(modelID string, opts ...ModelOption) *LanguageModel {
 	return model
 }
 
-func (m *LanguageModel) SpecificationVersion() string {
-	return "v1"
-}
-
 func (m *LanguageModel) ProviderName() string {
 	return "openai"
 }
@@ -57,20 +52,16 @@ func (m *LanguageModel) ModelID() string {
 	return m.modelID
 }
 
-func (m *LanguageModel) DefaultObjectGenerationMode() api.ObjectGenerationMode {
-	return api.ObjectGenerationModeJSON
-}
-
-func (m *LanguageModel) SupportsImageURLs() bool {
-	return true
-}
-
-func (m *LanguageModel) SupportsStructuredOutputs() bool {
-	return false
-}
-
-func (m *LanguageModel) SupportsURL(u *url.URL) bool {
-	return true
+func (m *LanguageModel) SupportedUrls() []api.SupportedURL {
+	// TODO: Make configurable via the constructor.
+	return []api.SupportedURL{
+		{
+			MediaType: "image/*",
+			URLPatterns: []string{
+				"^https?://.*",
+			},
+		},
+	}
 }
 
 func (m *LanguageModel) Generate(

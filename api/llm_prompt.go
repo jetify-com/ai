@@ -157,7 +157,7 @@ type TextBlock struct {
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var _ ContentBlock = &TextBlock{}
@@ -173,12 +173,12 @@ type ReasoningBlock struct {
 	Text string `json:"text"`
 
 	// Signature is an optional signature for verifying that the reasoning originated from the model.
-	Signature string `json:"signature,omitempty"`
+	Signature string `json:"signature,omitzero"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var (
@@ -200,7 +200,7 @@ type RedactedReasoningBlock struct {
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var (
@@ -219,20 +219,20 @@ func (b RedactedReasoningBlock) GetProviderMetadata() *ProviderMetadata { return
 // TODO: merge into file block in language model v2
 type ImageBlock struct {
 	// URL is the external URL of the image.
-	URL string `json:"url,omitempty"`
+	URL string `json:"url,omitzero"`
 
 	// Data contains the image data as raw bytes.
 	// If this is set, also set the MimeType so that the AI SDK knows
 	// how to interpret the data.
-	Data []byte `json:"data,omitempty"`
+	Data []byte `json:"data,omitzero"`
 
-	// MimeType is the optional mime type of the image
-	MimeType string `json:"mime_type,omitempty"`
+	// MediaType is the IANA media type (mime type) of the image
+	MediaType string `json:"media_type,omitzero"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var _ ContentBlock = &ImageBlock{}
@@ -249,31 +249,36 @@ func ImageBlockFromURL(url string) *ImageBlock {
 }
 
 // ImageBlockFromData creates a new image block from raw bytes.
-func ImageBlockFromData(data []byte, mimeType string) *ImageBlock {
+func ImageBlockFromData(data []byte, mediaType string) *ImageBlock {
 	return &ImageBlock{
-		Data:     data,
-		MimeType: mimeType,
+		Data:      data,
+		MediaType: mediaType,
 	}
 }
 
 // FileBlock represents a file in a message.
 // Either URL or Data should be set, but not both.
 type FileBlock struct {
+	// Filename is the filename of the file. Optional.
+	Filename string `json:"filename,omitzero"` // TODO: input only
+
 	// URL is the external URL of the file.
-	URL string `json:"url,omitempty"`
+	URL string `json:"url,omitzero"`
 
 	// Data contains the file data as raw bytes.
 	// If this is set, also set the MimeType so that the AI SDK knows
 	// how to interpret the data.
-	Data []byte `json:"data,omitempty"`
+	Data []byte `json:"data,omitzero"`
 
-	// MimeType is the mime type of the file
-	MimeType string `json:"mime_type,omitempty"`
+	// MediaType is the IANA media type (mime type) of the file.
+	// It can support wildcards, e.g. `image/*` (in which case the provider needs to take appropriate action).
+	// See: https://www.iana.org/assignments/media-types/media-types.xhtml
+	MediaType string `json:"media_type,omitzero"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var _ ContentBlock = &FileBlock{}
@@ -290,10 +295,10 @@ func FileBlockFromURL(url string) *FileBlock {
 }
 
 // FileBlockFromData creates a new file block from raw bytes.
-func FileBlockFromData(data []byte, mimeType string) *FileBlock {
+func FileBlockFromData(data []byte, mediaType string) *FileBlock {
 	return &FileBlock{
-		Data:     data,
-		MimeType: mimeType,
+		Data:      data,
+		MediaType: mediaType,
 	}
 }
 
@@ -314,7 +319,7 @@ type ToolCallBlock struct {
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var _ ContentBlock = &ToolCallBlock{}
@@ -323,7 +328,8 @@ func (b ToolCallBlock) Type() ContentBlockType { return ContentBlockTypeToolCall
 
 func (b ToolCallBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
-// ToolResultBlock represents a tool result in a message
+// ToolResultBlock represents a tool result in a message. Usually sent back to the model as input,
+// after it requested a tool call with a matching ToolCallID.
 type ToolResultBlock struct {
 	// ToolCallID is the ID of the tool call that this result is associated with
 	ToolCallID string `json:"tool_call_id"`
@@ -335,18 +341,18 @@ type ToolResultBlock struct {
 	Result any `json:"result"`
 
 	// IsError indicates if the result is an error or an error message
-	IsError bool `json:"is_error,omitempty"`
+	IsError bool `json:"is_error,omitzero"`
 
 	// Content contains tool results as an array of blocks.
 	// This enables advanced tool results including images.
 	// When this is used, the Result field should be ignored
 	// (if the provider supports content).
-	Content []ContentBlock `json:"content,omitempty"`
+	Content []ContentBlock `json:"content,omitzero"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 var _ ContentBlock = &ToolResultBlock{}
@@ -354,3 +360,20 @@ var _ ContentBlock = &ToolResultBlock{}
 func (b ToolResultBlock) Type() ContentBlockType { return ContentBlockTypeToolResult }
 
 func (b ToolResultBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+
+// SourceBlock represents a source that has been used as input to generate the response.
+type SourceBlock struct { // TODO: output only
+	// ID is the ID of the source.
+	ID string `json:"id"`
+
+	// URL is the external URL of the source.
+	URL string `json:"url"`
+
+	// Title is the title of the source.
+	Title string `json:"title,omitzero"`
+
+	// ProviderMetadata contains additional provider-specific metadata.
+	// They are passed through to the provider from the AI SDK and enable
+	// provider-specific functionality that can be fully encapsulated in the provider.
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"` // TODO: output
+}

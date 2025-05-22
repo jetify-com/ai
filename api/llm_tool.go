@@ -14,7 +14,7 @@ type ToolChoice struct {
 	Type string `json:"type"`
 
 	// ToolName specifies which tool to use when Type is "tool"
-	ToolName string `json:"tool_name,omitempty"`
+	ToolName string `json:"tool_name,omitzero"`
 }
 
 // ToolDefinition represents a tool that can be used in a language model call.
@@ -33,12 +33,12 @@ type FunctionTool struct {
 
 	// Description explains the tool's purpose. The language model uses this to understand
 	// the tool's purpose and provide better completion suggestions.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitzero"`
 
 	// InputSchema defines the expected inputs. The language model uses this to understand
 	// the tool's input requirements and provide matching suggestions.
 	// InputSchema should be defined using a JSON schema.
-	InputSchema *jsonschema.Definition `json:"input_schema,omitempty"`
+	InputSchema *jsonschema.Definition `json:"input_schema,omitzero"`
 }
 
 var _ ToolDefinition = &FunctionTool{}

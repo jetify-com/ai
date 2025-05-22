@@ -39,6 +39,7 @@ type streamDecoder struct {
 	// Usage statistics
 	promptTokens     int
 	completionTokens int
+	totalTokens      int
 
 	// Advanced usage statistics
 	inputCachedTokens     int
@@ -119,9 +120,12 @@ func (d *streamDecoder) decodeEvents(stream StreamReader) iter.Seq[api.StreamEve
 		// Send the final finish event
 		yield(&api.FinishEvent{
 			FinishReason: finishReason,
-			Usage: &api.Usage{
-				PromptTokens:     d.promptTokens,
-				CompletionTokens: d.completionTokens,
+			Usage: api.Usage{
+				InputTokens:       d.promptTokens,
+				OutputTokens:      d.completionTokens,
+				TotalTokens:       d.totalTokens,
+				ReasoningTokens:   d.outputReasoningTokens,
+				CachedInputTokens: d.inputCachedTokens,
 			},
 			ProviderMetadata: metadata,
 		})
@@ -216,10 +220,9 @@ func (d *streamDecoder) decodeOutputItemAdded(event responses.ResponseStreamEven
 		d.hasToolCalls = true
 
 		return &api.ToolCallDeltaEvent{
-			ToolCallID:   funcCall.CallID,
-			ToolCallType: "function",
-			ToolName:     funcCall.Name,
-			ArgsDelta:    []byte(funcCall.Arguments),
+			ToolCallID: funcCall.CallID,
+			ToolName:   funcCall.Name,
+			ArgsDelta:  []byte(funcCall.Arguments),
 		}
 	}
 
@@ -240,10 +243,9 @@ func (d *streamDecoder) decodeFunctionCallArgumentsDelta(event responses.Respons
 	}
 
 	return &api.ToolCallDeltaEvent{
-		ToolCallID:   toolCall.toolCallID,
-		ToolCallType: "function",
-		ToolName:     toolCall.toolName,
-		ArgsDelta:    []byte(argsDelta.Delta),
+		ToolCallID: toolCall.toolCallID,
+		ToolName:   toolCall.toolName,
+		ArgsDelta:  []byte(argsDelta.Delta),
 	}
 }
 
@@ -271,29 +273,43 @@ func (d *streamDecoder) decodeResponseCreated(event responses.ResponseStreamEven
 	timestamp := time.Unix(int64(created.Response.CreatedAt), 0).UTC()
 	return &api.ResponseMetadataEvent{
 		ID:        created.Response.ID,
-		Timestamp: &timestamp,
+		Timestamp: timestamp,
 		ModelID:   created.Response.Model,
 	}
 }
 
-// decodeResponseCompleted handles response completed events
-// This function updates internal state and does not yield an event itself.
-// The final finish event is yielded by the decodeEvents iterator.
+// decodeResponseCompleted processes the response.completed event which has final usage statistics
 func (d *streamDecoder) decodeResponseCompleted(event responses.ResponseStreamEventUnion) api.StreamEvent {
 	completed := event.AsResponseCompleted()
-	d.promptTokens = int(completed.Response.Usage.InputTokens)
-	d.completionTokens = int(completed.Response.Usage.OutputTokens)
 
-	if !param.IsOmitted(completed.Response.Usage.InputTokensDetails) {
-		d.inputCachedTokens = int(completed.Response.Usage.InputTokensDetails.CachedTokens)
+	// Update usage statistics from the response if available
+	usage := completed.Response.Usage
+	if !param.IsOmitted(usage) {
+		d.promptTokens = int(usage.InputTokens)
+		d.completionTokens = int(usage.OutputTokens)
+
+		// If totalTokens is provided and non-zero, use it; otherwise compute it
+		totalTokens := int(usage.TotalTokens)
+		if totalTokens == 0 {
+			totalTokens = d.promptTokens + d.completionTokens
+		}
+		d.totalTokens = totalTokens
+
+		// Also update advanced usage statistics if available
+		if !param.IsOmitted(usage.InputTokensDetails) {
+			d.inputCachedTokens = int(usage.InputTokensDetails.CachedTokens)
+		}
+		if !param.IsOmitted(usage.OutputTokensDetails) {
+			d.outputReasoningTokens = int(usage.OutputTokensDetails.ReasoningTokens)
+		}
 	}
-	if !param.IsOmitted(completed.Response.Usage.OutputTokensDetails) {
-		d.outputReasoningTokens = int(completed.Response.Usage.OutputTokensDetails.ReasoningTokens)
-	}
+
+	// Preserve the existing behavior for incomplete reason
 	if completed.Response.IncompleteDetails.Reason != "" {
 		d.incompleteReason = completed.Response.IncompleteDetails.Reason
 	}
-	return nil // No event yielded directly from here
+
+	return nil
 }
 
 // decodeResponseFailedOrIncomplete handles response failed or incomplete events

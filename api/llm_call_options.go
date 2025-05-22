@@ -12,45 +12,45 @@ type CallOptions struct {
 	// Settings are the numerical or generative knobs that tune the model's
 	// behavior such as Temperature and MaxTokens.
 
-	// MaxTokens specifies the maximum number of tokens to generate
-	MaxTokens int `json:"max_tokens,omitempty"`
+	// MaxOutputTokens specifies the maximum number of tokens to generate
+	MaxOutputTokens int `json:"max_output_tokens,omitzero"`
 
 	// Temperature controls randomness in the model's output.
 	// It is recommended to set either Temperature or TopP, but not both.
-	Temperature *float64 `json:"temperature,omitempty"`
+	Temperature *float64 `json:"temperature,omitzero"`
 
 	// StopSequences specifies sequences that will stop generation when produced.
 	// Providers may have limits on the number of stop sequences.
-	StopSequences []string `json:"stop_sequences,omitempty"`
+	StopSequences []string `json:"stop_sequences,omitzero"`
 
 	// TopP controls nucleus sampling.
 	// It is recommended to set either Temperature or TopP, but not both.
-	TopP float64 `json:"top_p,omitempty"`
+	TopP float64 `json:"top_p,omitzero"`
 
 	// TopK limits sampling to the top K options for each token.
 	// Used to remove "long tail" low probability responses.
 	// Recommended for advanced use cases only.
-	TopK int `json:"top_k,omitempty"`
+	TopK int `json:"top_k,omitzero"`
 
 	// PresencePenalty affects the likelihood of the model repeating
 	// information that is already in the prompt
-	PresencePenalty float64 `json:"presence_penalty,omitempty"`
+	PresencePenalty float64 `json:"presence_penalty,omitzero"`
 
 	// FrequencyPenalty affects the likelihood of the model
 	// repeatedly using the same words or phrases
-	FrequencyPenalty float64 `json:"frequency_penalty,omitempty"`
+	FrequencyPenalty float64 `json:"frequency_penalty,omitzero"`
 
 	// ResponseFormat specifies whether the output should be text or JSON.
 	// For JSON output, a schema can optionally guide the model.
-	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
+	ResponseFormat *ResponseFormat `json:"response_format,omitzero"`
 
 	// Seed provides an integer seed for random sampling.
 	// If supported by the model, calls will generate deterministic results.
-	Seed int `json:"seed,omitempty"`
+	Seed int `json:"seed,omitzero"`
 
 	// Headers specifies additional HTTP headers to send with the request.
 	// Only applicable for HTTP-based providers.
-	Headers map[string]string `json:"headers,omitempty"`
+	Headers map[string]string `json:"headers,omitzero"`
 
 	// InputFormat specifies whether the user provided the input as messages or as a prompt.
 	// This can help guide non-chat models in the expansion, as different expansions
@@ -74,7 +74,7 @@ type CallOptions struct {
 	// ProviderMetadata contains additional provider-specific metadata.
 	// The metadata is passed through to the provider from the AI SDK and enables
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
 func (o CallOptions) GetProviderMetadata() *ProviderMetadata { return o.ProviderMetadata }
@@ -85,13 +85,13 @@ type ResponseFormat struct {
 	Type string `json:"type"`
 
 	// Schema optionally provides a JSON schema to guide the model's output
-	Schema *jsonschema.Definition `json:"schema,omitempty"`
+	Schema *jsonschema.Definition `json:"schema,omitzero"`
 
 	// Name optionally provides a name for the output to guide the model
-	Name string `json:"name,omitempty"`
+	Name string `json:"name,omitzero"`
 
 	// Description optionally provides additional context to guide the model
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitzero"`
 }
 
 // ModeConfig represents the different mode configurations available for language model calls
@@ -104,11 +104,11 @@ type ModeConfig interface {
 type RegularMode struct {
 	// Tools that are available for the model
 	// TODO Spec V2: move to call settings
-	Tools []ToolDefinition `json:"tools,omitempty"`
+	Tools []ToolDefinition `json:"tools,omitzero"`
 
 	// ToolChoice specifies how the tool should be selected. Defaults to 'auto'.
 	// TODO Spec V2: move to call settings
-	ToolChoice *ToolChoice `json:"tool_choice,omitempty"`
+	ToolChoice *ToolChoice `json:"tool_choice,omitzero"`
 }
 
 var _ ModeConfig = RegularMode{}
@@ -122,13 +122,13 @@ func (r RegularMode) modeConfig() {}
 // ObjectJSONMode represents object generation with json mode enabled (streaming: text delta)
 type ObjectJSONMode struct {
 	// Schema is the JSON schema that the generated output should conform to
-	Schema *jsonschema.Definition `json:"schema,omitempty"`
+	Schema *jsonschema.Definition `json:"schema,omitzero"`
 
 	// Name of output that should be generated. Used by some providers for additional LLM guidance.
-	Name string `json:"name,omitempty"`
+	Name string `json:"name,omitzero"`
 
 	// Description of the output that should be generated. Used by some providers for additional LLM guidance.
-	Description string `json:"description,omitempty"`
+	Description string `json:"description,omitzero"`
 }
 
 var _ ModeConfig = ObjectJSONMode{}

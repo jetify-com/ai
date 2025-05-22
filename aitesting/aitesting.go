@@ -41,15 +41,19 @@ func ResponseContains(testingT T, expected api.Response, contains api.Response) 
 		assert.Equal(testingT, expected.Reasoning, contains.Reasoning, "Reasoning mismatch")
 	}
 
+	// Compare files if set
+	if len(expected.Files) > 0 {
+		assert.Equal(testingT, expected.Files, contains.Files, "Files mismatch")
+	}
+
 	// Compare tool calls if set
 	if len(expected.ToolCalls) > 0 {
 		assert.Equal(testingT, expected.ToolCalls, contains.ToolCalls, "ToolCalls mismatch")
 	}
 
 	// Compare usage if set
-	if expected.Usage.PromptTokens != 0 || expected.Usage.CompletionTokens != 0 {
-		assert.Equal(testingT, expected.Usage.PromptTokens, contains.Usage.PromptTokens, "PromptTokens mismatch")
-		assert.Equal(testingT, expected.Usage.CompletionTokens, contains.Usage.CompletionTokens, "CompletionTokens mismatch")
+	if !expected.Usage.IsZero() {
+		assert.Equal(testingT, expected.Usage, contains.Usage, "Usage mismatch")
 	}
 
 	// Compare finish reason if set
@@ -57,24 +61,10 @@ func ResponseContains(testingT T, expected api.Response, contains api.Response) 
 		assert.Equal(testingT, expected.FinishReason, contains.FinishReason, "FinishReason mismatch")
 	}
 
-	// Compare raw call if set
-	if expected.RawCall.RawPrompt != nil || len(expected.RawCall.RawSettings) > 0 {
-		assert.Equal(testingT, expected.RawCall.RawPrompt, contains.RawCall.RawPrompt, "RawCall.RawPrompt mismatch")
-		assert.Equal(testingT, expected.RawCall.RawSettings, contains.RawCall.RawSettings, "RawCall.RawSettings mismatch")
-	}
-
-	// Compare raw response if set
-	if expected.RawResponse != nil {
-		assert.NotNil(testingT, contains.RawResponse, "RawResponse should not be nil")
-		if len(expected.RawResponse.Headers) > 0 {
-			assert.Equal(testingT, expected.RawResponse.Headers, contains.RawResponse.Headers, "RawResponse.Headers mismatch")
-		}
-	}
-
 	// Compare request info if set
 	if expected.RequestInfo != nil {
 		assert.NotNil(testingT, contains.RequestInfo, "RequestInfo should not be nil")
-		if expected.RequestInfo.Body != "" {
+		if expected.RequestInfo.Body != nil {
 			assert.Equal(testingT, expected.RequestInfo.Body, contains.RequestInfo.Body, "RequestInfo.Body mismatch")
 		}
 	}
@@ -91,7 +81,7 @@ func ResponseContains(testingT T, expected api.Response, contains api.Response) 
 		if expected.ResponseInfo.ModelID != "" {
 			assert.Equal(testingT, expected.ResponseInfo.ModelID, contains.ResponseInfo.ModelID, "ResponseInfo.ModelID mismatch")
 		}
-		if expected.ResponseInfo.Timestamp != nil {
+		if !expected.ResponseInfo.Timestamp.IsZero() {
 			assert.Equal(testingT, expected.ResponseInfo.Timestamp, contains.ResponseInfo.Timestamp, "ResponseInfo.Timestamp mismatch")
 		}
 	}

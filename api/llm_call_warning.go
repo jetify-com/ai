@@ -14,14 +14,14 @@ type CallWarning struct {
 	// the name of the field?
 
 	// Setting contains the name of the unsupported setting when Type is "unsupported-setting"
-	Setting string `json:"setting,omitempty"`
+	Setting string `json:"setting,omitzero"`
 
 	// Tool contains the unsupported tool when Type is "unsupported-tool"
-	Tool ToolDefinition `json:"tool,omitempty"`
+	Tool ToolDefinition `json:"tool,omitzero"`
 
 	// Details provides additional information about the warning
-	Details string `json:"details,omitempty"`
+	Details string `json:"details,omitzero"`
 
 	// Message contains a human-readable warning message
-	Message string `json:"message,omitempty"`
+	Message string `json:"message,omitzero"`
 }

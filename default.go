@@ -1,4 +1,4 @@
-package aisdk
+package ai
 
 import (
 	"sync/atomic"

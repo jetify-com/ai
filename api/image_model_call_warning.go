@@ -28,7 +28,7 @@ type UnsupportedSettingWarning struct {
 	Setting string `json:"setting"`
 
 	// Details provides additional information about why the setting is unsupported
-	Details *string `json:"details,omitempty"`
+	Details *string `json:"details,omitzero"`
 }
 
 func (UnsupportedSettingWarning) isImageCallWarning() {}

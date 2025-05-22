@@ -208,8 +208,8 @@ func (b *ResponseBuilder) addSource(e *api.SourceEvent) error {
 func (b *ResponseBuilder) addFile(e *api.FileEvent) error {
 	b.currentState = fileState
 	b.resp.Files = append(b.resp.Files, api.FileBlock{
-		MimeType: e.MimeType,
-		Data:     slices.Clone(e.Data),
+		MediaType: e.MediaType,
+		Data:      slices.Clone(e.Data),
 	})
 	return nil
 }
@@ -242,8 +242,8 @@ func (b *ResponseBuilder) addFinish(e *api.FinishEvent) error {
 	b.resp.FinishReason = e.FinishReason
 
 	// Update usage
-	if e.Usage != nil {
-		b.usage = *e.Usage
+	if !e.Usage.IsZero() {
+		b.usage = e.Usage
 		b.resp.Usage = b.usage
 	}
 
@@ -276,14 +276,6 @@ func (b *ResponseBuilder) AddMetadata(sr *api.StreamResponse) error {
 	// Only copy warnings if the source has warnings
 	if len(sr.Warnings) > 0 {
 		b.resp.Warnings = sr.Warnings
-	}
-
-	// Copy raw call info
-	b.resp.RawCall = sr.RawCall
-
-	// Copy other metadata if not nil
-	if sr.RawResponse != nil {
-		b.resp.RawResponse = sr.RawResponse
 	}
 
 	if sr.RequestInfo != nil {

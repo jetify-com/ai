@@ -240,9 +240,16 @@ func decodeAnnotations(annotations []responses.ResponseOutputTextAnnotationUnion
 
 // decodeUsage converts an OpenAI ResponseUsage to API SDK Usage
 func decodeUsage(usage responses.ResponseUsage) api.Usage {
+	totalTokens := usage.TotalTokens
+	if totalTokens == 0 {
+		totalTokens = usage.InputTokens + usage.OutputTokens
+	}
 	return api.Usage{
-		PromptTokens:     int(usage.InputTokens),
-		CompletionTokens: int(usage.OutputTokens),
+		InputTokens:       int(usage.InputTokens),
+		OutputTokens:      int(usage.OutputTokens),
+		TotalTokens:       int(totalTokens),
+		ReasoningTokens:   int(usage.OutputTokensDetails.ReasoningTokens),
+		CachedInputTokens: int(usage.InputTokensDetails.CachedTokens),
 	}
 }
 

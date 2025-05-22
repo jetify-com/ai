@@ -68,16 +68,17 @@ func TestDecodeUsage(t *testing.T) {
 				OutputTokens: 200,
 			},
 			want: api.Usage{
-				PromptTokens:     100,
-				CompletionTokens: 200,
+				InputTokens:  100,
+				OutputTokens: 200,
+				TotalTokens:  300,
 			},
 		},
 		{
 			name:  "zero usage",
 			usage: anthropic.BetaUsage{},
 			want: api.Usage{
-				PromptTokens:     0,
-				CompletionTokens: 0,
+				InputTokens:  0,
+				OutputTokens: 0,
 			},
 		},
 	}
@@ -416,8 +417,9 @@ func TestDecodeResponse(t *testing.T) {
 				Text:         "Hello, I am Claude",
 				FinishReason: api.FinishReasonStop,
 				Usage: api.Usage{
-					PromptTokens:     150,
-					CompletionTokens: 250,
+					InputTokens:  150,
+					OutputTokens: 250,
+					TotalTokens:  400,
 				},
 				ResponseInfo: &api.ResponseInfo{
 					ID:      "msg_123",

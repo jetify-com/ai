@@ -209,8 +209,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{
-						Data:     []byte{0, 1, 2, 3},
-						MimeType: "image/png",
+						Data:      []byte{0, 1, 2, 3},
+						MediaType: "image/png",
 					},
 				},
 			},
@@ -256,8 +256,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{
-						Data:     []byte{0, 1, 2, 3},
-						MimeType: "image/png",
+						Data:      []byte{0, 1, 2, 3},
+						MediaType: "image/png",
 						ProviderMetadata: api.NewProviderMetadata(map[string]any{
 							"openai": Metadata{
 								ImageDetail: "low",
@@ -286,8 +286,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
-						Data:     []byte{1, 2, 3, 4, 5},
-						MimeType: "application/pdf",
+						Data:      []byte{1, 2, 3, 4, 5},
+						MediaType: "application/pdf",
 						ProviderMetadata: api.NewProviderMetadata(map[string]any{
 							"openai": Metadata{
 								Filename: "document.pdf",
@@ -316,8 +316,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
-						Data:     []byte{1, 2, 3, 4, 5},
-						MimeType: "application/pdf",
+						Data:      []byte{1, 2, 3, 4, 5},
+						MediaType: "application/pdf",
 					},
 				},
 			},
@@ -341,8 +341,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
-						Data:     []byte{1, 2, 3, 4, 5},
-						MimeType: "text/plain",
+						Data:      []byte{1, 2, 3, 4, 5},
+						MediaType: "text/plain",
 					},
 				},
 			},
@@ -355,8 +355,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
-						URL:      "https://example.com/document.pdf",
-						MimeType: "application/pdf",
+						URL:       "https://example.com/document.pdf",
+						MediaType: "application/pdf",
 					},
 				},
 			},
@@ -485,8 +485,8 @@ var userMessageTests = []testCase{
 			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{
-						Data:     []byte{1, 2, 3, 4},
-						MimeType: "image/png",
+						Data:      []byte{1, 2, 3, 4},
+						MediaType: "image/png",
 					},
 				},
 			},
@@ -872,8 +872,8 @@ var toolMessageTests = []testCase{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
 							api.ImageBlock{
-								Data:     []byte("test-image-data"),
-								MimeType: "image/png",
+								Data:      []byte("test-image-data"),
+								MediaType: "image/png",
 							},
 						},
 						ProviderMetadata: api.NewProviderMetadata(map[string]any{
@@ -928,8 +928,8 @@ var toolMessageTests = []testCase{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
 							api.ImageBlock{
-								Data:     []byte("test-image-data"),
-								MimeType: "image/png",
+								Data:      []byte("test-image-data"),
+								MediaType: "image/png",
 							},
 						},
 					},
@@ -970,12 +970,12 @@ var toolMessageTests = []testCase{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
 							api.ImageBlock{
-								Data:     []byte("test-image-data"),
-								MimeType: "image/png",
+								Data:      []byte("test-image-data"),
+								MediaType: "image/png",
 							},
 							api.ImageBlock{
-								Data:     []byte("test-image-data-2"),
-								MimeType: "image/png",
+								Data:      []byte("test-image-data-2"),
+								MediaType: "image/png",
 							},
 						},
 					},

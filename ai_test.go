@@ -1,8 +1,7 @@
-package aisdk
+package ai
 
 import (
 	"context"
-	"net/url"
 	"testing"
 
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -17,10 +16,10 @@ func TestCallOptionBuilders(t *testing.T) {
 		validate func(*testing.T, *GenerateTextConfig)
 	}{
 		{
-			name:   "WithMaxTokens",
-			option: WithMaxTokens(100),
+			name:   "WithMaxOutputTokens",
+			option: WithMaxOutputTokens(100),
 			validate: func(t *testing.T, opts *GenerateTextConfig) {
-				assert.Equal(t, 100, opts.CallOptions.MaxTokens)
+				assert.Equal(t, 100, opts.CallOptions.MaxOutputTokens)
 			},
 		},
 		{
@@ -201,12 +200,12 @@ func TestBuildCallOptions(t *testing.T) {
 		{
 			name: "Multiple options",
 			opts: []GenerateOption{
-				WithMaxTokens(100),
+				WithMaxOutputTokens(100),
 				WithTemperature(0.7),
 				WithInputFormat(api.InputFormatMessages),
 			},
 			validate: func(t *testing.T, opts GenerateTextConfig) {
-				assert.Equal(t, 100, opts.CallOptions.MaxTokens)
+				assert.Equal(t, 100, opts.CallOptions.MaxOutputTokens)
 				assert.NotNil(t, opts.CallOptions.Temperature)
 				assert.Equal(t, 0.7, *opts.CallOptions.Temperature)
 				assert.Equal(t, api.InputFormatMessages, opts.CallOptions.InputFormat)
@@ -248,10 +247,6 @@ func (m *mockLanguageModel) Stream(ctx context.Context, prompt []api.Message, op
 	return api.StreamResponse{}, nil
 }
 
-func (m *mockLanguageModel) DefaultObjectGenerationMode() api.ObjectGenerationMode {
-	return "json"
-}
-
 func (m *mockLanguageModel) ModelID() string {
 	return m.name
 }
@@ -260,18 +255,6 @@ func (m *mockLanguageModel) ProviderName() string {
 	return "mock-provider"
 }
 
-func (m *mockLanguageModel) SpecificationVersion() string {
-	return "v1"
-}
-
-func (m *mockLanguageModel) SupportsImageURLs() bool {
-	return true
-}
-
-func (m *mockLanguageModel) SupportsStructuredOutputs() bool {
-	return false
-}
-
-func (m *mockLanguageModel) SupportsURL(u *url.URL) bool {
-	return false
+func (m *mockLanguageModel) SupportedUrls() []api.SupportedURL {
+	return nil
 }

@@ -103,8 +103,8 @@ func applyCallOptions(params *responses.ResponseNewParams, opts api.CallOptions,
 	if opts.TopP > 0 {
 		params.TopP = openai.Float(opts.TopP)
 	}
-	if opts.MaxTokens > 0 {
-		params.MaxOutputTokens = openai.Int(int64(opts.MaxTokens))
+	if opts.MaxOutputTokens > 0 {
+		params.MaxOutputTokens = openai.Int(int64(opts.MaxOutputTokens))
 	}
 
 	// Handle JSON response format if specified

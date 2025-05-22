@@ -12,8 +12,8 @@ type Source struct {
 	URL string `json:"url"`
 
 	// Title is the optional title of the source.
-	Title string `json:"title,omitempty"`
+	Title string `json:"title,omitzero"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
-	ProviderMetadata ProviderMetadata `json:"provider_metadata,omitempty"`
+	ProviderMetadata ProviderMetadata `json:"provider_metadata,omitzero"`
 }

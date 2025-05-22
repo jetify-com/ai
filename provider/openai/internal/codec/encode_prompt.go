@@ -186,7 +186,7 @@ func EncodeFileBlock(block *api.FileBlock) (*responses.ResponseInputContentUnion
 	}
 
 	// For file data, check the mime type
-	if block.MimeType != "application/pdf" {
+	if block.MediaType != "application/pdf" {
 		return nil, fmt.Errorf("only PDF files are supported in user messages")
 	}
 
@@ -204,7 +204,7 @@ func EncodeFileBlock(block *api.FileBlock) (*responses.ResponseInputContentUnion
 
 	// Set the file data with data URL format
 	fileParam.Filename = openai.String(filename)
-	dataURL := fmt.Sprintf("data:%s;base64,%s", block.MimeType, base64Data)
+	dataURL := fmt.Sprintf("data:%s;base64,%s", block.MediaType, base64Data)
 	fileParam.FileData = openai.String(dataURL)
 
 	// Create content union param with the file
@@ -249,8 +249,8 @@ func EncodeImageBlock(block *api.ImageBlock) (*responses.ResponseInputContentUni
 	} else if block.Data != nil {
 		// For base64 data, create a data URL
 		mimeType := "image/jpeg" // Default mime type
-		if block.MimeType != "" {
-			mimeType = block.MimeType
+		if block.MediaType != "" {
+			mimeType = block.MediaType
 		}
 
 		// Properly encode the binary data as base64
@@ -357,7 +357,7 @@ func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseIn
 
 	// Create data URL from image data
 	// TODO: Add helper methods to the image and file blocks to make this easier
-	dataURL := "data:" + imageBlock.MimeType + ";base64," + base64.StdEncoding.EncodeToString(imageBlock.Data)
+	dataURL := "data:" + imageBlock.MediaType + ";base64," + base64.StdEncoding.EncodeToString(imageBlock.Data)
 
 	screenshot := responses.ResponseComputerToolCallOutputScreenshotParam{
 		Type:     "computer_screenshot",

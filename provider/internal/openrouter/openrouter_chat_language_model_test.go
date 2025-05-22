@@ -120,8 +120,9 @@ func TestDoGenerate(t *testing.T) {
 			},
 			expectedResp: api.Response{
 				Usage: api.Usage{
-					PromptTokens:     20,
-					CompletionTokens: 5,
+					InputTokens:  20,
+					OutputTokens: 5,
+					TotalTokens:  25,
 				},
 			},
 		},
@@ -152,25 +153,6 @@ func TestDoGenerate(t *testing.T) {
 			},
 			expectedResp: api.Response{
 				FinishReason: api.FinishReasonUnknown,
-			},
-		},
-		{
-			name: "should expose raw response headers",
-			mockResp: responseValues{
-				Content: "",
-				Headers: map[string]string{
-					"test-header": "test-value",
-				},
-			},
-			expectedResp: api.Response{
-				RawResponse: &api.RawResponse{
-					Headers: map[string]string{
-						// Default headers:
-						"Content-Type": "application/json",
-						// Custom headers:
-						"Test-Header": "test-value",
-					},
-				},
 			},
 		},
 		{

@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/api"
-	"go.jetify.com/pkg/pointer"
 )
 
 func TestDecodeStreamEvents(t *testing.T) {
@@ -28,7 +27,7 @@ func TestDecodeStreamEvents(t *testing.T) {
 			want: []api.StreamEvent{
 				&api.ResponseMetadataEvent{
 					ID:        "resp_123",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
 					ModelID:   "gpt-4",
 				},
 				&api.TextDeltaEvent{
@@ -36,9 +35,10 @@ func TestDecodeStreamEvents(t *testing.T) {
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonStop,
-					Usage: &api.Usage{
-						PromptTokens:     10,
-						CompletionTokens: 5,
+					Usage: api.Usage{
+						InputTokens:  10,
+						OutputTokens: 5,
+						TotalTokens:  15,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{
@@ -62,20 +62,20 @@ func TestDecodeStreamEvents(t *testing.T) {
 			want: []api.StreamEvent{
 				&api.ResponseMetadataEvent{
 					ID:        "resp_456",
-					Timestamp: pointer.Ptr(time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC)),
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
 					ModelID:   "gpt-4",
 				},
 				&api.ToolCallDeltaEvent{
-					ToolCallID:   "call_123",
-					ToolCallType: "function",
-					ToolName:     "get_weather",
-					ArgsDelta:    []byte(`{"location":"New York"}`),
+					ToolCallID: "call_123",
+					ToolName:   "get_weather",
+					ArgsDelta:  []byte(`{"location":"New York"}`),
 				},
 				&api.FinishEvent{
 					FinishReason: api.FinishReasonToolCalls,
-					Usage: &api.Usage{
-						PromptTokens:     15,
-						CompletionTokens: 8,
+					Usage: api.Usage{
+						InputTokens:  15,
+						OutputTokens: 8,
+						TotalTokens:  23,
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{
 						"openai": &Metadata{

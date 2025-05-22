@@ -38,7 +38,7 @@ func TestEncodePrompt(t *testing.T) {
 				&api.UserMessage{
 					Content: []api.ContentBlock{
 						&api.TextBlock{Text: "hello"},
-						&api.ImageBlock{Data: []byte{0, 1, 2, 3}, MimeType: "image/png"},
+						&api.ImageBlock{Data: []byte{0, 1, 2, 3}, MediaType: "image/png"},
 						&api.FileBlock{URL: "http://example.com/file.txt"},
 					},
 				},
