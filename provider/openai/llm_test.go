@@ -785,8 +785,8 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.ObjectToolMode{
-					Tool: api.FunctionTool{
+				Tools: []api.ToolDefinition{
+					api.FunctionTool{
 						Name:        "response",
 						Description: "A response",
 						InputSchema: &jsonschema.Definition{
@@ -798,6 +798,10 @@ func TestGenerate(t *testing.T) {
 							AdditionalProperties: false,
 						},
 					},
+				},
+				ToolChoice: &api.ToolChoice{
+					Type:     "tool",
+					ToolName: "response",
 				},
 			},
 			exchanges: []httpmock.Exchange{
@@ -858,7 +862,9 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.ObjectJSONMode{},
+				ResponseFormat: &api.ResponseFormat{
+					Type: "json",
+				},
 			},
 			exchanges: []httpmock.Exchange{
 				{
@@ -901,7 +907,8 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.ObjectJSONMode{
+				ResponseFormat: &api.ResponseFormat{
+					Type:        "json",
 					Name:        "response",
 					Description: "A response",
 					Schema: &jsonschema.Definition{
@@ -968,7 +975,8 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.ObjectJSONMode{
+				ResponseFormat: &api.ResponseFormat{
+					Type:        "json",
 					Name:        "response",
 					Description: "A response",
 					Schema: &jsonschema.Definition{
@@ -1040,13 +1048,11 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: []api.ToolDefinition{
-						&codec.WebSearchTool{
-							SearchContextSize: "high",
-							UserLocation: &codec.WebSearchUserLocation{
-								City: "San Francisco",
-							},
+				Tools: []api.ToolDefinition{
+					&codec.WebSearchTool{
+						SearchContextSize: "high",
+						UserLocation: &codec.WebSearchUserLocation{
+							City: "San Francisco",
 						},
 					},
 				},
@@ -1097,17 +1103,15 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					ToolChoice: &api.ToolChoice{
-						Type:     "tool",
-						ToolName: "web_search_preview",
-					},
-					Tools: []api.ToolDefinition{
-						&codec.WebSearchTool{
-							SearchContextSize: "high",
-							UserLocation: &codec.WebSearchUserLocation{
-								City: "San Francisco",
-							},
+				ToolChoice: &api.ToolChoice{
+					Type:     "tool",
+					ToolName: "web_search_preview",
+				},
+				Tools: []api.ToolDefinition{
+					&codec.WebSearchTool{
+						SearchContextSize: "high",
+						UserLocation: &codec.WebSearchUserLocation{
+							City: "San Francisco",
 						},
 					},
 				},
@@ -1161,7 +1165,6 @@ func TestGenerate(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode:             api.RegularMode{},
 				StopSequences:    []string{"\n\n"},
 				TopK:             1,
 				PresencePenalty:  0.1,
@@ -1339,9 +1342,7 @@ func TestGenerate_ToolCalls(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: standardTools,
-				},
+				Tools: standardTools,
 			},
 			exchanges: standardExchange,
 			expectedResp: api.Response{
@@ -1364,9 +1365,7 @@ func TestGenerate_ToolCalls(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: standardTools,
-				},
+				Tools: standardTools,
 			},
 			exchanges: standardExchange,
 			expectedResp: api.Response{
@@ -1546,13 +1545,11 @@ func TestGenerate_WebSearch(t *testing.T) {
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: []api.ToolDefinition{
-						&codec.WebSearchTool{
-							SearchContextSize: "medium",
-							UserLocation: &codec.WebSearchUserLocation{
-								Country: "US",
-							},
+				Tools: []api.ToolDefinition{
+					&codec.WebSearchTool{
+						SearchContextSize: "medium",
+						UserLocation: &codec.WebSearchUserLocation{
+							Country: "US",
 						},
 					},
 				},
@@ -1567,13 +1564,11 @@ func TestGenerate_WebSearch(t *testing.T) {
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: []api.ToolDefinition{
-						&codec.WebSearchTool{
-							SearchContextSize: "medium",
-							UserLocation: &codec.WebSearchUserLocation{
-								Country: "US",
-							},
+				Tools: []api.ToolDefinition{
+					&codec.WebSearchTool{
+						SearchContextSize: "medium",
+						UserLocation: &codec.WebSearchUserLocation{
+							Country: "US",
 						},
 					},
 				},
@@ -2031,9 +2026,7 @@ func TestStream(t *testing.T) {
 			modelID: "gpt-4o",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: standardTools,
-				},
+				Tools: standardTools,
 			},
 			exchanges: []httpmock.Exchange{
 				{
@@ -2361,13 +2354,11 @@ func TestStream(t *testing.T) {
 			modelID: "gpt-4o-mini",
 			prompt:  standardPrompt,
 			options: api.CallOptions{
-				Mode: api.RegularMode{
-					Tools: []api.ToolDefinition{
-						&codec.WebSearchTool{
-							SearchContextSize: "medium",
-							UserLocation: &codec.WebSearchUserLocation{
-								Country: "US",
-							},
+				Tools: []api.ToolDefinition{
+					&codec.WebSearchTool{
+						SearchContextSize: "medium",
+						UserLocation: &codec.WebSearchUserLocation{
+							Country: "US",
 						},
 					},
 				},

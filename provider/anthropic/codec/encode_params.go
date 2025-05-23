@@ -65,20 +65,20 @@ func encodeCallOptions(opts api.CallOptions) (anthropic.BetaMessageNewParams, []
 	warnings = append(warnings, thinkingWarnings...)
 
 	// Handle tool configuration
-	if opts.Mode != nil {
-		tools, err := EncodeToolMode(opts.Mode)
-		if err != nil {
-			return params, warnings, err
-		}
-		params.Betas = anthropic.F(append(params.Betas.Value, tools.Betas...))
-		warnings = append(warnings, tools.Warnings...)
+	tools, err := EncodeTools(opts.Tools, opts.ToolChoice)
+	if err != nil {
+		return params, warnings, err
+	}
 
-		if len(tools.Tools) > 0 {
-			params.Tools = anthropic.F(tools.Tools)
-		}
-		if len(tools.ToolChoice) > 0 {
-			params.ToolChoice = anthropic.F(tools.ToolChoice[0])
-		}
+	// Apply tool configuration to params
+	params.Betas = anthropic.F(append(params.Betas.Value, tools.Betas...))
+	warnings = append(warnings, tools.Warnings...)
+
+	if len(tools.Tools) > 0 {
+		params.Tools = anthropic.F(tools.Tools)
+	}
+	if len(tools.ToolChoice) > 0 {
+		params.ToolChoice = anthropic.F(tools.ToolChoice[0])
 	}
 	return params, warnings, nil
 }

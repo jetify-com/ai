@@ -10,10 +10,11 @@ import (
 	"go.jetify.com/ai/api"
 )
 
-func TestEncodeRegularMode(t *testing.T) {
+func TestEncodeTools(t *testing.T) {
 	tests := []struct {
 		name               string
-		input              api.RegularMode
+		tools              []api.ToolDefinition
+		toolChoice         *api.ToolChoice
 		expectedTools      []string
 		expectedToolChoice string
 		expectedWarnings   []api.CallWarning
@@ -21,19 +22,17 @@ func TestEncodeRegularMode(t *testing.T) {
 	}{
 		{
 			name:  "empty tools list",
-			input: api.RegularMode{},
+			tools: []api.ToolDefinition{},
 		},
 		{
 			name: "single function tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "test_function",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "test_function",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
 				},
@@ -56,26 +55,24 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "multiple function tools",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "function1",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "function1",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
-					api.FunctionTool{
-						Name: "function2",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param2": {Type: "number"},
-							},
-							Required: []string{"param2"},
+				},
+				api.FunctionTool{
+					Name: "function2",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param2": {Type: "number"},
 						},
+						Required: []string{"param2"},
 					},
 				},
 			},
@@ -111,11 +108,9 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "file search tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&FileSearchTool{
-						VectorStoreIDs: []string{"store1", "store2"},
-					},
+			tools: []api.ToolDefinition{
+				&FileSearchTool{
+					VectorStoreIDs: []string{"store1", "store2"},
 				},
 			},
 			expectedTools: []string{
@@ -127,20 +122,18 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "mix of function and provider-defined tools",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "mixed_function",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "mixed_function",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
-					&FileSearchTool{
-						VectorStoreIDs: []string{"store3"},
-					},
+				},
+				&FileSearchTool{
+					VectorStoreIDs: []string{"store3"},
 				},
 			},
 			expectedTools: []string{
@@ -165,10 +158,8 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "unsupported tool type with warning",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&mockUnsupportedTool{id: "unsupported_tool"},
-				},
+			tools: []api.ToolDefinition{
+				&mockUnsupportedTool{id: "unsupported_tool"},
 			},
 			expectedWarnings: []api.CallWarning{
 				{
@@ -179,21 +170,19 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "tool choice auto",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "function_with_choice",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "function_with_choice",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
 				},
-				ToolChoice: &api.ToolChoice{
-					Type: "auto",
-				},
+			},
+			toolChoice: &api.ToolChoice{
+				Type: "auto",
 			},
 			expectedTools: []string{
 				`{
@@ -214,21 +203,19 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "tool choice none",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "function_with_choice",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "function_with_choice",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
 				},
-				ToolChoice: &api.ToolChoice{
-					Type: "none",
-				},
+			},
+			toolChoice: &api.ToolChoice{
+				Type: "none",
 			},
 			expectedTools: []string{
 				`{
@@ -249,31 +236,29 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "tool choice specific function",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "function1",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
-						},
-					},
-					api.FunctionTool{
-						Name: "function2",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param2": {Type: "number"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "function1",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
 				},
-				ToolChoice: &api.ToolChoice{
-					Type:     "tool",
-					ToolName: "function2",
+				api.FunctionTool{
+					Name: "function2",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param2": {Type: "number"},
+						},
+					},
 				},
+			},
+			toolChoice: &api.ToolChoice{
+				Type:     "tool",
+				ToolName: "function2",
 			},
 			expectedTools: []string{
 				`{
@@ -307,16 +292,14 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "tool choice provider-defined tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&FileSearchTool{
-						VectorStoreIDs: []string{"store1"},
-					},
+			tools: []api.ToolDefinition{
+				&FileSearchTool{
+					VectorStoreIDs: []string{"store1"},
 				},
-				ToolChoice: &api.ToolChoice{
-					Type:     "tool",
-					ToolName: "file_search",
-				},
+			},
+			toolChoice: &api.ToolChoice{
+				Type:     "tool",
+				ToolName: "file_search",
 			},
 			expectedTools: []string{
 				`{
@@ -328,10 +311,8 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "web search tool with minimal settings",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&WebSearchTool{},
-				},
+			tools: []api.ToolDefinition{
+				&WebSearchTool{},
 			},
 			expectedTools: []string{
 				`{
@@ -341,11 +322,9 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "web search tool with search context size",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&WebSearchTool{
-						SearchContextSize: "large",
-					},
+			tools: []api.ToolDefinition{
+				&WebSearchTool{
+					SearchContextSize: "large",
 				},
 			},
 			expectedTools: []string{
@@ -357,15 +336,13 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "web search tool with user location",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&WebSearchTool{
-						UserLocation: &WebSearchUserLocation{
-							City:     "San Francisco",
-							Country:  "US",
-							Region:   "CA",
-							Timezone: "America/Los_Angeles",
-						},
+			tools: []api.ToolDefinition{
+				&WebSearchTool{
+					UserLocation: &WebSearchUserLocation{
+						City:     "San Francisco",
+						Country:  "US",
+						Region:   "CA",
+						Timezone: "America/Los_Angeles",
 					},
 				},
 			},
@@ -383,15 +360,51 @@ func TestEncodeRegularMode(t *testing.T) {
 			},
 		},
 		{
+			name: "computer use tool",
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayHeight: 768,
+					DisplayWidth:  1366,
+					Environment:   "windows",
+				},
+			},
+			expectedTools: []string{
+				`{
+					"type": "computer_use_preview",
+					"display_height": 768,
+					"display_width": 1366,
+					"environment": "windows"
+				}`,
+			},
+		},
+		{
+			name: "computer use tool missing required display width",
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayHeight: 768,
+					Environment:   "windows",
+				},
+			},
+			expectedError: "displayWidth is required and must be positive",
+		},
+		{
+			name: "computer use tool missing required display height",
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayWidth: 1366,
+					Environment:  "windows",
+				},
+			},
+			expectedError: "displayHeight is required and must be positive",
+		},
+		{
 			name: "web search tool with partial user location",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&WebSearchTool{
-						SearchContextSize: "medium",
-						UserLocation: &WebSearchUserLocation{
-							City:    "London",
-							Country: "UK",
-						},
+			tools: []api.ToolDefinition{
+				&WebSearchTool{
+					SearchContextSize: "medium",
+					UserLocation: &WebSearchUserLocation{
+						City:    "London",
+						Country: "UK",
 					},
 				},
 			},
@@ -409,13 +422,11 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "computer use tool with mac environment",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&ComputerUseTool{
-						DisplayHeight: 800,
-						DisplayWidth:  1200,
-						Environment:   "mac",
-					},
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayHeight: 800,
+					DisplayWidth:  1200,
+					Environment:   "mac",
 				},
 			},
 			expectedTools: []string{
@@ -429,13 +440,11 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "computer use tool with browser environment",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&ComputerUseTool{
-						DisplayHeight: 1080,
-						DisplayWidth:  1920,
-						Environment:   "browser",
-					},
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayHeight: 1080,
+					DisplayWidth:  1920,
+					Environment:   "browser",
 				},
 			},
 			expectedTools: []string{
@@ -449,46 +458,30 @@ func TestEncodeRegularMode(t *testing.T) {
 		},
 		{
 			name: "computer use tool with invalid environment",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&ComputerUseTool{
-						DisplayHeight: 768,
-						DisplayWidth:  1366,
-						Environment:   "invalid_env",
-					},
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{
+					DisplayHeight: 768,
+					DisplayWidth:  1366,
+					Environment:   "invalid_env",
 				},
 			},
 			expectedError: "environment must be one of: mac, windows, ubuntu, browser",
 		},
 		{
-			name: "computer use tool missing required display height",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&ComputerUseTool{
-						DisplayWidth: 1366,
-						Environment:  "windows",
-					},
-				},
-			},
-			expectedError: "displayHeight is required and must be positive",
-		},
-		{
 			name: "invalid tool choice type",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name: "function1",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {Type: "string"},
-							},
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name: "function1",
+					InputSchema: &jsonschema.Definition{
+						Type: "object",
+						Properties: map[string]jsonschema.Definition{
+							"param1": {Type: "string"},
 						},
 					},
 				},
-				ToolChoice: &api.ToolChoice{
-					Type: "invalid",
-				},
+			},
+			toolChoice: &api.ToolChoice{
+				Type: "invalid",
 			},
 			expectedError: "unsupported tool choice type",
 		},
@@ -496,7 +489,7 @@ func TestEncodeRegularMode(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := EncodeRegularMode(tc.input, api.CallOptions{})
+			result, err := EncodeTools(tc.tools, tc.toolChoice, api.CallOptions{})
 
 			if tc.expectedError != "" {
 				require.Error(t, err)

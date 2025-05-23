@@ -371,7 +371,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 	}
 }
 
-func TestEncodeRegularMode(t *testing.T) {
+func TestEncodeTools(t *testing.T) {
 	functionTool := api.FunctionTool{
 		Name:        "test_function",
 		Description: "A test function",
@@ -396,329 +396,214 @@ func TestEncodeRegularMode(t *testing.T) {
 	// Use a concrete tool type that we know won't be handled correctly
 	unsupportedTool := &mockUnsupportedTool{}
 
-	tests := []struct {
-		name             string
-		input            api.RegularMode
-		expectTools      int
-		expectBetas      int
-		expectWarnings   int
-		expectNilTools   bool
-		expectNilChoice  bool
-		expectedBetas    []anthropic.AnthropicBeta
-		expectedWarnings []api.CallWarning
-		wantErr          bool
-	}{
-		{
-			name: "no tools",
-			input: api.RegularMode{
-				Tools:      nil,
-				ToolChoice: nil,
-			},
-			expectNilTools:   true,
-			expectNilChoice:  true,
-			expectedBetas:    []anthropic.AnthropicBeta{},
-			expectedWarnings: []api.CallWarning{},
-		},
-		{
-			name: "function tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					functionTool,
-				},
-				ToolChoice: nil,
-			},
-			expectTools:      1,
-			expectBetas:      0,
-			expectWarnings:   0,
-			expectNilChoice:  true,
-			expectedBetas:    []anthropic.AnthropicBeta{},
-			expectedWarnings: []api.CallWarning{},
-		},
-		{
-			name: "provider tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					computerTool,
-				},
-				ToolChoice: &api.ToolChoice{
-					Type: "auto",
-				},
-			},
-			expectTools:      1,
-			expectBetas:      1,
-			expectWarnings:   0,
-			expectedBetas:    []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
-			expectedWarnings: []api.CallWarning{},
-		},
-		{
-			name: "mixed tools",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					functionTool,
-					computerTool,
-				},
-				ToolChoice: &api.ToolChoice{
-					Type: "required",
-				},
-			},
-			expectTools:      2,
-			expectBetas:      1,
-			expectWarnings:   0,
-			expectedBetas:    []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
-			expectedWarnings: []api.CallWarning{},
-		},
-		{
-			name: "unsupported tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					unsupportedTool,
-				},
-				ToolChoice: nil,
-			},
-			expectTools:     0,
-			expectBetas:     0,
-			expectWarnings:  1,
-			expectNilChoice: true,
-			expectedBetas:   []anthropic.AnthropicBeta{},
-			expectedWarnings: []api.CallWarning{
-				{
-					Type: "unsupported-tool",
-					Tool: unsupportedTool,
-				},
-			},
-		},
-		{
-			name: "unsupported tool choice",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					functionTool,
-				},
-				ToolChoice: &api.ToolChoice{
-					Type: "invalid_type",
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "none tool choice",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					functionTool,
-					computerTool,
-				},
-				ToolChoice: &api.ToolChoice{
-					Type: "none",
-				},
-			},
-			expectTools:      0, // For "none" tool choice, tools should be nil
-			expectBetas:      1, // But we still expect betas
-			expectWarnings:   0,
-			expectNilTools:   true,
-			expectNilChoice:  true,
-			expectedBetas:    []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
-			expectedWarnings: []api.CallWarning{},
+	// Helper to create expected tool choice
+	autoChoice := []anthropic.BetaToolChoiceUnionParam{
+		anthropic.BetaToolChoiceAutoParam{
+			Type: anthropic.F(anthropic.BetaToolChoiceAutoTypeAuto),
 		},
 	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result, err := encodeRegularMode(tc.input)
-			if tc.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-
-			if tc.expectNilTools && tc.expectNilChoice && tc.expectBetas == 0 && tc.expectWarnings == 0 {
-				assert.Equal(t, AnthropicTools{}, result, "Result should be an empty struct when no tools, no choice, no betas, and no warnings")
-				return
-			}
-
-			require.NotNil(t, result)
-
-			if tc.expectNilTools {
-				assert.Nil(t, result.Tools, "Tools should be nil")
-			} else {
-				assert.Len(t, result.Tools, tc.expectTools, "Unexpected number of tools")
-			}
-
-			if tc.expectNilChoice {
-				assert.Nil(t, result.ToolChoice, "ToolChoice should be nil")
-			} else {
-				assert.NotNil(t, result.ToolChoice, "ToolChoice should not be nil")
-			}
-
-			assert.Len(t, result.Betas, tc.expectBetas, "Unexpected number of betas")
-			assert.Len(t, result.Warnings, tc.expectWarnings, "Unexpected number of warnings")
-
-			// Check specific beta values
-			assert.ElementsMatch(t, tc.expectedBetas, result.Betas, "Beta values mismatch")
-
-			// Check specific warning content
-			assert.ElementsMatch(t, tc.expectedWarnings, result.Warnings, "Warnings mismatch")
-		})
+	anyChoice := []anthropic.BetaToolChoiceUnionParam{
+		anthropic.BetaToolChoiceAnyParam{
+			Type: anthropic.F(anthropic.BetaToolChoiceAnyTypeAny),
+		},
 	}
-}
+	specificChoice := func(toolName string) []anthropic.BetaToolChoiceUnionParam {
+		return []anthropic.BetaToolChoiceUnionParam{
+			anthropic.BetaToolChoiceToolParam{
+				Type: anthropic.F(anthropic.BetaToolChoiceToolTypeTool),
+				Name: anthropic.String(toolName),
+			},
+		}
+	}
 
-func TestEncodeToolMode(t *testing.T) {
 	tests := []struct {
 		name    string
-		input   api.ModeConfig
+		tools   []api.ToolDefinition
+		choice  *api.ToolChoice
 		want    AnthropicTools
 		wantErr bool
 	}{
 		{
-			name:  "regular mode without tools",
-			input: api.RegularMode{},
-			want:  AnthropicTools{},
+			name:   "no tools",
+			tools:  nil,
+			choice: nil,
+			want:   AnthropicTools{},
 		},
 		{
-			name: "regular mode with function tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name:        "test_function",
-						Description: "A test function",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-							Properties: map[string]jsonschema.Definition{
-								"param1": {
-									Type:        "string",
-									Description: "First parameter",
-								},
-							},
-							Required: []string{"param1"},
-						},
-					},
-				},
-			},
+			name:  "function tool",
+			tools: []api.ToolDefinition{functionTool},
 			want: AnthropicTools{
-				Tools: []anthropic.BetaToolUnionUnionParam{
-					anthropic.BetaToolParam{
-						Name:        anthropic.String("test_function"),
-						Description: anthropic.String("A test function"),
-						InputSchema: anthropic.F(anthropic.BetaToolInputSchemaParam{
-							Type: anthropic.F(anthropic.BetaToolInputSchemaTypeObject),
-							Properties: anthropic.F[interface{}](map[string]interface{}{
-								"param1": map[string]interface{}{
-									"type":        "string",
-									"description": "First parameter",
-								},
-							}),
-							ExtraFields: map[string]interface{}{
-								"required": []string{"param1"},
-							},
-						}),
-					},
-				},
-				Betas:    []anthropic.AnthropicBeta{},
-				Warnings: []api.CallWarning{},
-			},
-		},
-		{
-			name:    "object json mode",
-			input:   api.ObjectJSONMode{},
-			wantErr: true,
-		},
-		{
-			name: "object tool mode",
-			input: api.ObjectToolMode{
-				Tool: api.FunctionTool{
-					Name:        "test_tool",
-					Description: "A test tool",
-					InputSchema: &jsonschema.Definition{
-						Type: "object",
-					},
-				},
-			},
-			want: AnthropicTools{
-				Tools: []anthropic.BetaToolUnionUnionParam{
-					anthropic.BetaToolParam{
-						Name:        anthropic.String("test_tool"),
-						Description: anthropic.String("A test tool"),
-						InputSchema: anthropic.F(anthropic.BetaToolInputSchemaParam{
-							Type: anthropic.F(anthropic.BetaToolInputSchemaTypeObject),
-						}),
-					},
-				},
-				ToolChoice: []anthropic.BetaToolChoiceUnionParam{
-					anthropic.BetaToolChoiceToolParam{
-						Type: anthropic.F(anthropic.BetaToolChoiceToolTypeTool),
-						Name: anthropic.String("test_tool"),
-					},
-				},
-				Betas:    []anthropic.AnthropicBeta{},
-				Warnings: []api.CallWarning{},
-			},
-		},
-		{
-			name: "regular mode with tool choice none",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					api.FunctionTool{
-						Name:        "test_function",
-						Description: "A test function",
-						InputSchema: &jsonschema.Definition{
-							Type: "object",
-						},
-					},
-				},
-				ToolChoice: &api.ToolChoice{
-					Type: "none",
-				},
-			},
-			want: AnthropicTools{
-				Tools:      nil,
+				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool)},
 				ToolChoice: nil,
 				Betas:      []anthropic.AnthropicBeta{},
 				Warnings:   []api.CallWarning{},
 			},
 		},
 		{
-			name: "regular mode with provider defined tool",
-			input: api.RegularMode{
-				Tools: []api.ToolDefinition{
-					&ComputerUseTool{
-						DisplayWidthPx:  800,
-						DisplayHeightPx: 600,
-						DisplayNumber:   1,
-					},
-				},
-			},
+			name:   "provider tool with auto choice",
+			tools:  []api.ToolDefinition{computerTool},
+			choice: &api.ToolChoice{Type: "auto"},
 			want: AnthropicTools{
-				Tools: []anthropic.BetaToolUnionUnionParam{
-					anthropic.BetaToolComputerUse20250124Param{
-						Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-						Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-						DisplayWidthPx:  anthropic.Int(800),
-						DisplayHeightPx: anthropic.Int(600),
-						DisplayNumber:   anthropic.Int(1),
-					},
-				},
-				Betas: []anthropic.AnthropicBeta{
-					anthropic.AnthropicBetaComputerUse2025_01_24,
-				},
-				Warnings: []api.CallWarning{},
+				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeComputerTool()},
+				ToolChoice: autoChoice,
+				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
+				Warnings:   []api.CallWarning{},
 			},
 		},
 		{
-			name:    "unsupported mode type",
-			input:   nil,
+			name:   "mixed tools with required choice",
+			tools:  []api.ToolDefinition{functionTool, computerTool},
+			choice: &api.ToolChoice{Type: "required"},
+			want: AnthropicTools{
+				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
+				ToolChoice: anyChoice,
+				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
+				Warnings:   []api.CallWarning{},
+			},
+		},
+		{
+			name:  "unsupported tool",
+			tools: []api.ToolDefinition{unsupportedTool},
+			want: AnthropicTools{
+				Tools:      []anthropic.BetaToolUnionUnionParam{},
+				ToolChoice: nil,
+				Betas:      []anthropic.AnthropicBeta{},
+				Warnings: []api.CallWarning{
+					{Type: "unsupported-tool", Tool: unsupportedTool},
+				},
+			},
+		},
+		{
+			name:    "unsupported tool choice",
+			tools:   []api.ToolDefinition{functionTool},
+			choice:  &api.ToolChoice{Type: "invalid_type"},
 			wantErr: true,
+		},
+		{
+			name:   "none tool choice",
+			tools:  []api.ToolDefinition{functionTool, computerTool},
+			choice: &api.ToolChoice{Type: "none"},
+			want: AnthropicTools{
+				Tools:      nil,
+				ToolChoice: nil,
+				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
+				Warnings:   []api.CallWarning{},
+			},
+		},
+		{
+			name:   "specific tool choice",
+			tools:  []api.ToolDefinition{functionTool},
+			choice: &api.ToolChoice{Type: "tool", ToolName: "test_function"},
+			want: AnthropicTools{
+				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool)},
+				ToolChoice: specificChoice("test_function"),
+				Betas:      []anthropic.AnthropicBeta{},
+				Warnings:   []api.CallWarning{},
+			},
+		},
+		{
+			name: "object tool mode equivalent",
+			tools: []api.ToolDefinition{
+				api.FunctionTool{
+					Name:        "test_tool",
+					Description: "A test tool",
+					InputSchema: &jsonschema.Definition{Type: "object"},
+				},
+			},
+			choice: &api.ToolChoice{Type: "tool", ToolName: "test_tool"},
+			want: AnthropicTools{
+				Tools: []anthropic.BetaToolUnionUnionParam{
+					mustEncodeFunctionTool(api.FunctionTool{
+						Name:        "test_tool",
+						Description: "A test tool",
+						InputSchema: &jsonschema.Definition{Type: "object"},
+					}),
+				},
+				ToolChoice: specificChoice("test_tool"),
+				Betas:      []anthropic.AnthropicBeta{},
+				Warnings:   []api.CallWarning{},
+			},
+		},
+		{
+			name: "multiple provider tools with same beta",
+			tools: []api.ToolDefinition{
+				&ComputerUseTool{DisplayWidthPx: 800, DisplayHeightPx: 600, DisplayNumber: 1},
+				&TextEditorTool{},
+				&BashTool{},
+			},
+			want: AnthropicTools{
+				Tools: []anthropic.BetaToolUnionUnionParam{
+					mustEncodeComputerTool(),
+					mustEncodeTextEditorTool(),
+					mustEncodeBashTool(),
+				},
+				ToolChoice: nil,
+				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
+				Warnings:   []api.CallWarning{},
+			},
+		},
+		{
+			name:  "mixed supported and unsupported tools",
+			tools: []api.ToolDefinition{functionTool, unsupportedTool, computerTool},
+			want: AnthropicTools{
+				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
+				ToolChoice: nil,
+				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
+				Warnings: []api.CallWarning{
+					{Type: "unsupported-tool", Tool: unsupportedTool},
+				},
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := EncodeToolMode(tc.input)
+			result, err := EncodeTools(tc.tools, tc.choice)
 			if tc.wantErr {
 				assert.Error(t, err)
 				return
 			}
-
 			require.NoError(t, err)
-			assert.Equal(t, tc.want, result)
+
+			// Compare each field separately for better error messages
+			assert.ElementsMatch(t, tc.want.Tools, result.Tools, "Tools mismatch")
+			assert.Equal(t, tc.want.ToolChoice, result.ToolChoice, "ToolChoice mismatch")
+			assert.ElementsMatch(t, tc.want.Betas, result.Betas, "Betas mismatch")
+			assert.ElementsMatch(t, tc.want.Warnings, result.Warnings, "Warnings mismatch")
 		})
+	}
+}
+
+// Helper functions to create expected tool encodings
+func mustEncodeFunctionTool(tool api.FunctionTool) anthropic.BetaToolUnionUnionParam {
+	result, err := EncodeFunctionTool(tool)
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
+func mustEncodeComputerTool() anthropic.BetaToolUnionUnionParam {
+	return anthropic.BetaToolComputerUse20250124Param{
+		Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
+		Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
+		DisplayWidthPx:  anthropic.Int(800),
+		DisplayHeightPx: anthropic.Int(600),
+		DisplayNumber:   anthropic.Int(1),
+	}
+}
+
+func mustEncodeTextEditorTool() anthropic.BetaToolUnionUnionParam {
+	return anthropic.BetaToolTextEditor20250124Param{
+		Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
+		Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+	}
+}
+
+func mustEncodeBashTool() anthropic.BetaToolUnionUnionParam {
+	return anthropic.BetaToolBash20250124Param{
+		Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
+		Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
 	}
 }
 

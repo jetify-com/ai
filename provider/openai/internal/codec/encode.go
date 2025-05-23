@@ -22,9 +22,9 @@ func Encode(modelID string, prompt []api.Message, opts api.CallOptions) (respons
 		return responses.ResponseNewParams{}, warnings, err
 	}
 
-	// Handle Mode configuration (which can override ResponseFormat)
-	if opts.Mode != nil {
-		tools, err := EncodeToolMode(opts.Mode, opts)
+	// Handle tool configuration from top-level CallOptions
+	if len(opts.Tools) > 0 || opts.ToolChoice != nil {
+		tools, err := EncodeTools(opts.Tools, opts.ToolChoice, opts)
 		if err != nil {
 			return responses.ResponseNewParams{}, warnings, err
 		}
@@ -39,12 +39,6 @@ func Encode(modelID string, prompt []api.Message, opts api.CallOptions) (respons
 			tools.ToolChoice.OfFunctionTool != nil ||
 			tools.ToolChoice.OfHostedTool != nil {
 			params.ToolChoice = tools.ToolChoice
-		}
-
-		// Apply response format if set (ObjectJSONMode)
-		// This will override any ResponseFormat set by applyCallOptions
-		if tools.ResponseFormat != nil {
-			params.Text = *tools.ResponseFormat
 		}
 
 		warnings = append(warnings, tools.Warnings...)

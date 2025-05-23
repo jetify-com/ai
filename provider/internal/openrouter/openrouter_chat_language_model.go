@@ -159,61 +159,45 @@ func (m *OpenRouterChatLanguageModel) buildRequestBody(
 		}
 	}
 
-	//nolint:staticcheck // SA1019 Using deprecated Mode interface until v2 migration
-	switch mode := options.Mode.(type) {
-	case api.RegularMode:
-		if len(mode.Tools) > 0 {
-			tools := make([]map[string]any, 0, len(mode.Tools))
-			for _, tool := range mode.Tools {
-				if funcTool, ok := tool.(api.FunctionTool); ok {
-					tools = append(tools, map[string]any{
-						"type": "function",
-						"function": map[string]any{
-							"name":        funcTool.Name,
-							"description": funcTool.Description,
-							"parameters":  funcTool.InputSchema,
-						},
-					})
-				}
-			}
-			body["tools"] = tools
-		}
-
-		if mode.ToolChoice != nil {
-			switch mode.ToolChoice.Type {
-			case "auto", "none", "required":
-				body["tool_choice"] = mode.ToolChoice.Type
-			case "tool":
-				body["tool_choice"] = map[string]any{
+	// Handle tools from top-level CallOptions
+	if len(options.Tools) > 0 {
+		tools := make([]map[string]any, 0, len(options.Tools))
+		for _, tool := range options.Tools {
+			if funcTool, ok := tool.(api.FunctionTool); ok {
+				tools = append(tools, map[string]any{
 					"type": "function",
 					"function": map[string]any{
-						"name": mode.ToolChoice.ToolName,
+						"name":        funcTool.Name,
+						"description": funcTool.Description,
+						"parameters":  funcTool.InputSchema,
 					},
-				}
+				})
 			}
 		}
+		body["tools"] = tools
+	}
 
-	case api.ObjectJSONMode:
+	// Handle tool choice from top-level CallOptions
+	if options.ToolChoice != nil {
+		switch options.ToolChoice.Type {
+		case "auto", "none", "required":
+			body["tool_choice"] = options.ToolChoice.Type
+		case "tool":
+			body["tool_choice"] = map[string]any{
+				"type": "function",
+				"function": map[string]any{
+					"name": options.ToolChoice.ToolName,
+				},
+			}
+		}
+	}
+
+	// Handle response format from top-level CallOptions
+	if options.ResponseFormat != nil && options.ResponseFormat.Type == "json" {
 		body["response_format"] = map[string]any{"type": "json_object"}
-		if mode.Schema != nil {
-			body["response_format"].(map[string]any)["schema"] = mode.Schema
+		if options.ResponseFormat.Schema != nil {
+			body["response_format"].(map[string]any)["schema"] = options.ResponseFormat.Schema
 		}
-
-	case api.ObjectToolMode:
-		body["tool_choice"] = map[string]any{
-			"type": "function",
-			"function": map[string]any{
-				"name": mode.Tool.Name,
-			},
-		}
-		body["tools"] = []map[string]any{{
-			"type": "function",
-			"function": map[string]any{
-				"name":        mode.Tool.Name,
-				"description": mode.Tool.Description,
-				"parameters":  mode.Tool.InputSchema,
-			},
-		}}
 	}
 
 	// Add call options

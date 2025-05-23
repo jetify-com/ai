@@ -8,10 +8,6 @@ import jsonschema "github.com/sashabaranov/go-openai/jsonschema"
 
 // CallOptions represents the options for language model calls.
 type CallOptions struct {
-	// === Generative Settings ===
-	// Settings are the numerical or generative knobs that tune the model's
-	// behavior such as Temperature and MaxTokens.
-
 	// MaxOutputTokens specifies the maximum number of tokens to generate
 	MaxOutputTokens int `json:"max_output_tokens,omitzero"`
 
@@ -48,28 +44,16 @@ type CallOptions struct {
 	// If supported by the model, calls will generate deterministic results.
 	Seed int `json:"seed,omitzero"`
 
+	// Tools that are available for the model to use.
+	Tools []ToolDefinition `json:"tools,omitzero"`
+
+	// ToolChoice specifies how the model should select which tool to use.
+	// Defaults to 'auto'.
+	ToolChoice *ToolChoice `json:"tool_choice,omitzero"`
+
 	// Headers specifies additional HTTP headers to send with the request.
 	// Only applicable for HTTP-based providers.
 	Headers map[string]string `json:"headers,omitzero"`
-
-	// InputFormat specifies whether the user provided the input as messages or as a prompt.
-	// This can help guide non-chat models in the expansion, as different expansions
-	// may be needed for chat vs non-chat use cases.
-	InputFormat InputFormat `json:"input_format"` // "messages" or "prompt"
-
-	// === Other Options ===
-
-	// Mode affects the behavior of the language model. It is required to
-	// support provider-independent streaming and generation of structured objects.
-	// The model can take this information and e.g. configure json mode, the correct
-	// low level grammar, etc. It can also be used to optimize the efficiency of the
-	// streaming, e.g. tool-delta stream parts are only needed in the
-	// object-tool mode.
-	//
-	// Mode will be removed in v2, and at that point it will be deprecated.
-	// All necessary settings will be directly supported through the call settings,
-	// in particular responseFormat, toolChoice, and tools.
-	Mode ModeConfig `json:"mode"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// The metadata is passed through to the provider from the AI SDK and enables
@@ -93,73 +77,3 @@ type ResponseFormat struct {
 	// Description optionally provides additional context to guide the model
 	Description string `json:"description,omitzero"`
 }
-
-// ModeConfig represents the different mode configurations available for language model calls
-type ModeConfig interface {
-	Type() string
-	modeConfig()
-}
-
-// RegularMode represents the regular mode configuration for streaming text & complete tool calls
-type RegularMode struct {
-	// Tools that are available for the model
-	// TODO Spec V2: move to call settings
-	Tools []ToolDefinition `json:"tools,omitzero"`
-
-	// ToolChoice specifies how the tool should be selected. Defaults to 'auto'.
-	// TODO Spec V2: move to call settings
-	ToolChoice *ToolChoice `json:"tool_choice,omitzero"`
-}
-
-var _ ModeConfig = RegularMode{}
-
-func (r RegularMode) Type() string {
-	return "regular"
-}
-
-func (r RegularMode) modeConfig() {}
-
-// ObjectJSONMode represents object generation with json mode enabled (streaming: text delta)
-type ObjectJSONMode struct {
-	// Schema is the JSON schema that the generated output should conform to
-	Schema *jsonschema.Definition `json:"schema,omitzero"`
-
-	// Name of output that should be generated. Used by some providers for additional LLM guidance.
-	Name string `json:"name,omitzero"`
-
-	// Description of the output that should be generated. Used by some providers for additional LLM guidance.
-	Description string `json:"description,omitzero"`
-}
-
-var _ ModeConfig = ObjectJSONMode{}
-
-func (o ObjectJSONMode) Type() string {
-	return "object-json"
-}
-
-func (o ObjectJSONMode) modeConfig() {}
-
-// ObjectToolMode represents object generation with tool mode enabled (streaming: tool call deltas)
-type ObjectToolMode struct {
-	// Tool configuration for object-tool mode
-	Tool FunctionTool `json:"tool"`
-}
-
-var _ ModeConfig = ObjectToolMode{}
-
-func (o ObjectToolMode) Type() string {
-	return "object-tool"
-}
-
-func (o ObjectToolMode) modeConfig() {}
-
-// InputFormat specifies whether the input is provided as messages or as a prompt
-type InputFormat string
-
-const (
-	// InputFormatMessages indicates the input is a sequence of chat messages
-	InputFormatMessages InputFormat = "messages"
-
-	// InputFormatPrompt indicates the input is a single text prompt
-	InputFormatPrompt InputFormat = "prompt"
-)

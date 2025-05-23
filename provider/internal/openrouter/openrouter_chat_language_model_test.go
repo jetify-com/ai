@@ -261,11 +261,7 @@ func TestDoGenerate(t *testing.T) {
 
 			model := NewOpenRouterChatLanguageModel(provider, modelID, tt.settings)
 
-			got, err := model.DoGenerate(t.Context(), testPrompt,
-				api.CallOptions{
-					InputFormat: api.InputFormatPrompt,
-				},
-			)
+			got, err := model.DoGenerate(t.Context(), testPrompt, api.CallOptions{})
 			if tt.wantErr {
 				require.Error(t, err)
 				return

@@ -12,115 +12,8 @@ import (
 type AnthropicTools struct {
 	Tools      []anthropic.BetaToolUnionUnionParam
 	ToolChoice []anthropic.BetaToolChoiceUnionParam
-
-	Betas    []anthropic.AnthropicBeta
-	Warnings []api.CallWarning
-}
-
-func EncodeToolMode(mode api.ModeConfig) (AnthropicTools, error) {
-	switch m := mode.(type) {
-	case api.RegularMode:
-		return encodeRegularMode(m)
-	case *api.RegularMode:
-		return encodeRegularMode(*m)
-
-	case api.ObjectJSONMode:
-		return AnthropicTools{}, fmt.Errorf("json-mode object generation is not supported")
-
-	case *api.ObjectJSONMode:
-		return AnthropicTools{}, fmt.Errorf("json-mode object generation is not supported")
-
-	case api.ObjectToolMode:
-		return encodeObjectToolMode(m)
-
-	case *api.ObjectToolMode:
-		return encodeObjectToolMode(*m)
-
-	default:
-		return AnthropicTools{}, fmt.Errorf("unsupported mode type: %T", mode)
-	}
-}
-
-func encodeRegularMode(mode api.RegularMode) (AnthropicTools, error) {
-	if len(mode.Tools) == 0 {
-		return AnthropicTools{}, nil
-	}
-
-	tools := make([]anthropic.BetaToolUnionUnionParam, 0, len(mode.Tools))
-	warnings := make([]api.CallWarning, 0)
-	betasMap := make(map[anthropic.AnthropicBeta]bool)
-
-	// Process each tool
-	for _, toolItem := range mode.Tools {
-		switch tool := toolItem.(type) {
-		case api.FunctionTool:
-			functionTool, err := EncodeFunctionTool(tool)
-			if err != nil {
-				return AnthropicTools{}, err
-			}
-			tools = append(tools, functionTool)
-		case *api.FunctionTool:
-			functionTool, err := EncodeFunctionTool(*tool)
-			if err != nil {
-				return AnthropicTools{}, err
-			}
-			tools = append(tools, functionTool)
-		case api.ProviderDefinedTool:
-			providerTool, toolBetas, toolWarnings, err := EncodeProviderDefinedTool(tool)
-			if err != nil {
-				return AnthropicTools{}, err
-			}
-
-			// Add tool if it's not nil (some tools might be unsupported)
-			if providerTool != nil {
-				tools = append(tools, providerTool)
-			}
-
-			// Add betas to the map
-			for _, beta := range toolBetas {
-				betasMap[beta] = true
-			}
-
-			// Add warnings
-			warnings = append(warnings, toolWarnings...)
-		default:
-			warnings = append(warnings, api.CallWarning{
-				Type: "unsupported-tool",
-				Tool: toolItem,
-			})
-		}
-	}
-
-	// Create beta slice from map keys
-	betas := make([]anthropic.AnthropicBeta, 0, len(betasMap))
-	for beta := range betasMap {
-		betas = append(betas, beta)
-	}
-
-	// Process tool choice
-	toolChoice, err := EncodeToolChoice(mode.ToolChoice)
-	if err != nil {
-		return AnthropicTools{}, err
-	}
-
-	// Special case for "none" tool choice
-	if mode.ToolChoice != nil && mode.ToolChoice.Type == "none" {
-		// Anthropic does not support 'none' tool choice, so we remove the tools
-		// but still return warnings and betas
-		return AnthropicTools{
-			Tools:      nil,
-			ToolChoice: nil,
-			Betas:      betas,
-			Warnings:   warnings,
-		}, nil
-	}
-
-	return AnthropicTools{
-		Tools:      tools,
-		ToolChoice: toolChoice,
-		Betas:      betas,
-		Warnings:   warnings,
-	}, nil
+	Betas      []anthropic.AnthropicBeta
+	Warnings   []api.CallWarning
 }
 
 // encodeInputSchema converts the JSON schema definition to Anthropic's schema format
@@ -162,34 +55,6 @@ func encodeInputSchema(schema *jsonschema.Definition) (anthropic.BetaToolInputSc
 	}
 
 	return inputSchema, nil
-}
-
-func encodeObjectToolMode(mode api.ObjectToolMode) (AnthropicTools, error) {
-	inputSchema, err := encodeInputSchema(mode.Tool.InputSchema)
-	if err != nil {
-		return AnthropicTools{}, fmt.Errorf("error encoding input schema: %w", err)
-	}
-
-	tool := anthropic.BetaToolParam{
-		Name:        anthropic.String(mode.Tool.Name),
-		Description: anthropic.String(mode.Tool.Description),
-		InputSchema: anthropic.F(inputSchema),
-	}
-	tools := []anthropic.BetaToolUnionUnionParam{tool}
-
-	toolChoice := []anthropic.BetaToolChoiceUnionParam{
-		anthropic.BetaToolChoiceToolParam{
-			Type: anthropic.F(anthropic.BetaToolChoiceToolTypeTool),
-			Name: anthropic.String(mode.Tool.Name),
-		},
-	}
-
-	return AnthropicTools{
-		Tools:      tools,
-		ToolChoice: toolChoice,
-		Betas:      []anthropic.AnthropicBeta{},
-		Warnings:   []api.CallWarning{},
-	}, nil
 }
 
 // EncodeFunctionTool converts an API FunctionTool to Anthropic's tool format
@@ -336,4 +201,90 @@ func EncodeToolChoice(
 	default:
 		return nil, fmt.Errorf("unsupported tool choice type: %s", toolChoice.Type)
 	}
+}
+
+// EncodeTools processes the top-level Tools and ToolChoice fields from CallOptions
+// and returns all the anthropic-specific tool configuration
+func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice) (AnthropicTools, error) {
+	var warnings []api.CallWarning
+
+	// Handle case where no tools are provided
+	if len(tools) == 0 && toolChoice == nil {
+		return AnthropicTools{}, nil
+	}
+
+	anthropicTools := make([]anthropic.BetaToolUnionUnionParam, 0, len(tools))
+	betasMap := make(map[anthropic.AnthropicBeta]bool)
+
+	// Process each tool
+	for _, toolItem := range tools {
+		switch tool := toolItem.(type) {
+		case api.FunctionTool:
+			functionTool, err := EncodeFunctionTool(tool)
+			if err != nil {
+				return AnthropicTools{}, err
+			}
+			anthropicTools = append(anthropicTools, functionTool)
+		case *api.FunctionTool:
+			functionTool, err := EncodeFunctionTool(*tool)
+			if err != nil {
+				return AnthropicTools{}, err
+			}
+			anthropicTools = append(anthropicTools, functionTool)
+		case api.ProviderDefinedTool:
+			providerTool, toolBetas, toolWarnings, err := EncodeProviderDefinedTool(tool)
+			if err != nil {
+				return AnthropicTools{}, err
+			}
+
+			// Add tool if it's not nil (some tools might be unsupported)
+			if providerTool != nil {
+				anthropicTools = append(anthropicTools, providerTool)
+			}
+
+			// Add betas to the map
+			for _, beta := range toolBetas {
+				betasMap[beta] = true
+			}
+
+			// Add warnings
+			warnings = append(warnings, toolWarnings...)
+		default:
+			warnings = append(warnings, api.CallWarning{
+				Type: "unsupported-tool",
+				Tool: toolItem,
+			})
+		}
+	}
+
+	// Create beta slice from map keys
+	betas := make([]anthropic.AnthropicBeta, 0, len(betasMap))
+	for beta := range betasMap {
+		betas = append(betas, beta)
+	}
+
+	// Process tool choice
+	anthropicToolChoice, err := EncodeToolChoice(toolChoice)
+	if err != nil {
+		return AnthropicTools{}, err
+	}
+
+	// Special case for "none" tool choice
+	if toolChoice != nil && toolChoice.Type == "none" {
+		// Anthropic does not support 'none' tool choice, so we remove the tools
+		// but still return warnings and betas
+		return AnthropicTools{
+			Tools:      nil,
+			ToolChoice: nil,
+			Betas:      betas,
+			Warnings:   warnings,
+		}, nil
+	}
+
+	return AnthropicTools{
+		Tools:      anthropicTools,
+		ToolChoice: anthropicToolChoice,
+		Betas:      betas,
+		Warnings:   warnings,
+	}, nil
 }
