@@ -125,6 +125,24 @@ func encodeProviderDefinedTool(tool api.ProviderDefinedTool) (*responses.ToolUni
 			return nil, nil, err
 		}
 	case "openai.web_search_preview":
+		// TODO: Decide how to evolve handling of the web search tool.
+		// So far, there are three types of tools:
+		// 1. User provided tools (function calls)
+		// 2. Built in or provider defined tools that require the client to perform the action
+		// 3. Built in or provider defined tools where the LLM can perform the action by itself.
+		//
+		// Web search is an example where the LLM already performs the action automatically,
+		// and it's already returning a list of sources, along with the text that it generated.
+		//
+		// We have a few options:
+		// 1. Ignore it. The tool has already been executed. The text already contains the sources.
+		//This is what Vercel does.
+		// 2. Include it. But maybe we should mark it as already executed somehow so users can distinguish.
+		// 3. Instead of including it as a ToolCall, include it as a ToolResult. Normally, ToolResults are
+		//    sent by the client as part of the prompt, letting the LLM know that the tool it requested has
+		//    been executed. But it might be OK, to allow the LLM to return a ToolResult as part of the response
+		//    in cases when it executes a tool by itself.
+
 		result, err = encodeWebSearchTool(tool)
 		if err != nil {
 			return nil, nil, err

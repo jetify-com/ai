@@ -15,7 +15,7 @@ func StreamToResponse(stream *api.StreamResponse) (*api.Response, error) {
 	}
 
 	// Process each event in the stream
-	for event := range stream.Events {
+	for event := range stream.Stream {
 		if err := builder.AddEvent(event); err != nil {
 			return nil, err
 		}

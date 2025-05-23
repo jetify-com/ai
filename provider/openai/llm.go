@@ -89,7 +89,9 @@ func (m *LanguageModel) Generate(
 func (m *LanguageModel) Stream(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
 ) (api.StreamResponse, error) {
-	params, warnings, err := codec.Encode(m.modelID, prompt, opts)
+	// TODO: add warnings to the stream response by adding an initial StreamStart event
+	// (it could happen inside of codec.Encode)
+	params, _, err := codec.Encode(m.modelID, prompt, opts)
 	if err != nil {
 		return api.StreamResponse{}, err
 	}
@@ -100,6 +102,5 @@ func (m *LanguageModel) Stream(
 		return api.StreamResponse{}, err
 	}
 
-	response.Warnings = append(response.Warnings, warnings...)
 	return response, nil
 }

@@ -11,22 +11,16 @@ import (
 
 // responseContent holds the parsed content from an OpenAI message
 type responseContent struct {
-	Text      string
-	Sources   []api.Source
-	ToolCalls []api.ToolCallBlock
-	Reasoning []api.Reasoning
-	HasTools  bool
+	Content  []api.ContentBlock
+	HasTools bool
 }
 
 // DecodeResponse converts an OpenAI Response to the AI SDK Response type
 func DecodeResponse(msg *responses.Response) (api.Response, error) {
 	if msg == nil {
 		return api.Response{
-			Sources:   []api.Source{},
-			ToolCalls: []api.ToolCallBlock{},
-			Warnings:  []api.CallWarning{},
-			LogProbs:  api.LogProbs{},
-			Reasoning: []api.Reasoning{},
+			Content:  []api.ContentBlock{},
+			Warnings: []api.CallWarning{},
 		}, nil
 	}
 
@@ -37,16 +31,10 @@ func DecodeResponse(msg *responses.Response) (api.Response, error) {
 
 	// Create the response with the extracted fields
 	resp := api.Response{
-		Text:             content.Text,
-		Sources:          content.Sources,
-		ToolCalls:        content.ToolCalls,
-		Reasoning:        content.Reasoning,
+		Content:          content.Content,
 		Usage:            decodeUsage(msg.Usage),
 		ProviderMetadata: decodeProviderMetadata(msg),
-
-		// TODO: handle the fields below, and also add any response/request metadata
-		Warnings: []api.CallWarning{},
-		LogProbs: api.LogProbs{},
+		Warnings:         []api.CallWarning{},
 	}
 
 	resp.FinishReason = decodeFinishReason(msg.IncompleteDetails.Reason, content.HasTools)
@@ -54,18 +42,15 @@ func DecodeResponse(msg *responses.Response) (api.Response, error) {
 	return resp, nil
 }
 
-// decodeContent processes all content from the response in a single pass
+// decodeContent processes all content from the response in sequential order
 func decodeContent(msg *responses.Response) (responseContent, error) {
 	content := responseContent{
-		Sources:   []api.Source{},
-		ToolCalls: []api.ToolCallBlock{},
+		Content: []api.ContentBlock{},
 	}
 
 	if msg == nil {
 		return content, nil
 	}
-
-	var textParts []string
 
 	for _, outputItem := range msg.Output {
 		switch outputItem.Type {
@@ -74,7 +59,7 @@ func decodeContent(msg *responses.Response) (responseContent, error) {
 			if err != nil {
 				return responseContent{}, fmt.Errorf("failed to decode tool call: %w", err)
 			}
-			content.ToolCalls = append(content.ToolCalls, toolCall)
+			content.Content = append(content.Content, &toolCall)
 			content.HasTools = true
 		case "message":
 			message := outputItem.AsMessage()
@@ -83,9 +68,19 @@ func decodeContent(msg *responses.Response) (responseContent, error) {
 				if contentPart.Type != "output_text" {
 					continue
 				}
-				text, sources := decodeOutputText(contentPart.AsOutputText())
-				textParts = append(textParts, text)
-				content.Sources = append(content.Sources, sources...)
+
+				textOutput := contentPart.AsOutputText()
+
+				// Add text block first (if non-empty)
+				if textOutput.Text != "" {
+					content.Content = append(content.Content, &api.TextBlock{
+						Text: textOutput.Text,
+					})
+				}
+
+				// Add source blocks immediately after the text
+				sourceBlocks := decodeAnnotations(textOutput.Annotations)
+				content.Content = append(content.Content, sourceBlocks...)
 			}
 		case "reasoning":
 			reasoning, err := decodeReasoning(outputItem)
@@ -93,14 +88,13 @@ func decodeContent(msg *responses.Response) (responseContent, error) {
 				return responseContent{}, fmt.Errorf("failed to decode reasoning: %w", err)
 			}
 			if reasoning != nil {
-				content.Reasoning = append(content.Reasoning, reasoning)
+				content.Content = append(content.Content, reasoning)
 			}
 		default:
 			return responseContent{}, fmt.Errorf("unknown output item type: %s", outputItem.Type)
 		}
 	}
 
-	content.Text = strings.Join(textParts, "\n")
 	return content, nil
 }
 
@@ -171,8 +165,8 @@ func decodeWebSearchCall(webSearch responses.ResponseFunctionWebSearch) (api.Too
 
 // decodeComputerCall processes a computer call output item
 func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (api.ToolCallBlock, error) {
-	// Convert safety checks to our internal type
-	var safetyChecks []ComputerSafetyCheck
+	// Convert safety checks to our internal type - initialize as empty slice
+	safetyChecks := make([]ComputerSafetyCheck, 0, len(computerCall.PendingSafetyChecks))
 	for _, check := range computerCall.PendingSafetyChecks {
 		safetyChecks = append(safetyChecks, ComputerSafetyCheck{
 			ID:      check.ID,
@@ -212,15 +206,9 @@ func decodeToolCall(item responses.ResponseOutputItemUnion) (api.ToolCallBlock, 
 	}
 }
 
-// decodeOutputText decodes an output text content part and returns the text and any sources
-func decodeOutputText(textOutput responses.ResponseOutputText) (string, []api.Source) {
-	sources := decodeAnnotations(textOutput.Annotations)
-	return textOutput.Text, sources
-}
-
-// decodeAnnotations extracts URL citations from annotations
-func decodeAnnotations(annotations []responses.ResponseOutputTextAnnotationUnion) []api.Source {
-	var sources []api.Source
+// decodeAnnotations converts annotations to source blocks
+func decodeAnnotations(annotations []responses.ResponseOutputTextAnnotationUnion) []api.ContentBlock {
+	var sourceBlocks []api.ContentBlock
 	for i, annotation := range annotations {
 		if annotation.Type != "url_citation" {
 			// TODO: handle other annotation types: file_citation, file_path.
@@ -228,14 +216,13 @@ func decodeAnnotations(annotations []responses.ResponseOutputTextAnnotationUnion
 		}
 
 		urlCitation := annotation.AsURLCitation()
-		sources = append(sources, api.Source{
-			SourceType: "url",
-			ID:         fmt.Sprintf("source-%d", i),
-			URL:        urlCitation.URL,
-			Title:      urlCitation.Title,
+		sourceBlocks = append(sourceBlocks, &api.SourceBlock{
+			ID:    fmt.Sprintf("source-%d", i),
+			URL:   urlCitation.URL,
+			Title: urlCitation.Title,
 		})
 	}
-	return sources
+	return sourceBlocks
 }
 
 // decodeUsage converts an OpenAI ResponseUsage to API SDK Usage

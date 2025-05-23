@@ -130,6 +130,8 @@ const (
 	ContentBlockTypeReasoning ContentBlockType = "reasoning"
 	// ContentBlockTypeRedactedReasoning represents redacted reasoning data
 	ContentBlockTypeRedactedReasoning ContentBlockType = "redacted-reasoning"
+	// ContentBlockTypeSource represents a source block
+	ContentBlockTypeSource ContentBlockType = "source"
 )
 
 // ContentBlock represents a block of content in a message
@@ -362,7 +364,7 @@ func (b ToolResultBlock) Type() ContentBlockType { return ContentBlockTypeToolRe
 func (b ToolResultBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // SourceBlock represents a source that has been used as input to generate the response.
-type SourceBlock struct { // TODO: output only
+type SourceBlock struct {
 	// ID is the ID of the source.
 	ID string `json:"id"`
 
@@ -375,5 +377,11 @@ type SourceBlock struct { // TODO: output only
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable
 	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"` // TODO: output
+	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
+
+var _ ContentBlock = &SourceBlock{}
+
+func (b SourceBlock) Type() ContentBlockType { return ContentBlockTypeSource }
+
+func (b SourceBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }

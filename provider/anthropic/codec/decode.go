@@ -21,10 +21,7 @@ func DecodeResponse(msg *anthropic.BetaMessage) (api.Response, error) {
 		ProviderMetadata: decodeProviderMetadata(msg),
 	}
 
-	content := decodeContent(msg.Content)
-	response.Text = content.Text
-	response.ToolCalls = content.ToolCalls
-	response.Reasoning = content.Reasoning
+	response.Content = decodeContent(msg.Content)
 
 	return response, nil
 }
@@ -51,21 +48,10 @@ func decodeProviderMetadata(msg *anthropic.BetaMessage) *api.ProviderMetadata {
 	})
 }
 
-// responseContent holds the parsed content from an Anthropic message
-type responseContent struct {
-	Text      string
-	ToolCalls []api.ToolCallBlock
-	Reasoning []api.Reasoning
-}
-
 // decodeContent processes the content blocks from an Anthropic message
-// and returns a responseContent with text, tool calls, and reasoning blocks
-func decodeContent(blocks []anthropic.BetaContentBlock) responseContent {
-	// Initialize with empty slices to avoid nil references
-	content := responseContent{
-		ToolCalls: []api.ToolCallBlock{},
-		Reasoning: []api.Reasoning{},
-	}
+// and returns an ordered slice of content blocks
+func decodeContent(blocks []anthropic.BetaContentBlock) []api.ContentBlock {
+	content := make([]api.ContentBlock, 0)
 
 	if blocks == nil {
 		return content
@@ -74,12 +60,17 @@ func decodeContent(blocks []anthropic.BetaContentBlock) responseContent {
 	for _, block := range blocks {
 		switch block.Type {
 		case anthropic.BetaContentBlockTypeText:
-			content.Text += block.Text
+			// Only add text block if it has content
+			if block.Text != "" {
+				content = append(content, &api.TextBlock{
+					Text: block.Text,
+				})
+			}
 		case anthropic.BetaContentBlockTypeToolUse:
-			content.ToolCalls = append(content.ToolCalls, decodeToolUse(block))
+			content = append(content, decodeToolUse(block))
 		case anthropic.BetaContentBlockTypeThinking, anthropic.BetaContentBlockTypeRedactedThinking:
 			if reasoningBlock := decodeReasoning(block); reasoningBlock != nil {
-				content.Reasoning = append(content.Reasoning, reasoningBlock)
+				content = append(content, reasoningBlock)
 			}
 		}
 	}
@@ -87,8 +78,8 @@ func decodeContent(blocks []anthropic.BetaContentBlock) responseContent {
 	return content
 }
 
-// decodeToolUse converts an Anthropic tool use block to an AI SDK FunctionToolCall
-func decodeToolUse(block anthropic.BetaContentBlock) api.ToolCallBlock {
+// decodeToolUse converts an Anthropic tool use block to an AI SDK ToolCallBlock
+func decodeToolUse(block anthropic.BetaContentBlock) *api.ToolCallBlock {
 	var args string
 	if block.Input != nil {
 		rawArgs, err := json.Marshal(block.Input)
@@ -102,7 +93,7 @@ func decodeToolUse(block anthropic.BetaContentBlock) api.ToolCallBlock {
 		args = "{}"
 	}
 
-	return api.ToolCallBlock{
+	return &api.ToolCallBlock{
 		ToolCallID: block.ID,
 		ToolName:   block.Name,
 		Args:       json.RawMessage(args),

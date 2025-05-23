@@ -147,7 +147,9 @@ func TestGenerate(t *testing.T) {
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
 			expectedResp: api.Response{
-				Text: "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 			},
 		},
 		{
@@ -235,7 +237,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text: "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				// We don't expect any warnings
 				Warnings: []api.CallWarning{},
 			},
@@ -282,7 +286,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text: "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{
 					{
 						Type:    "unsupported-setting",
@@ -347,7 +353,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text: "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{
 					{
 						Type:    "unsupported-setting",
@@ -428,7 +436,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -473,7 +483,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -516,7 +528,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -559,7 +573,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -602,7 +618,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -645,7 +663,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -690,7 +710,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -733,7 +755,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -776,7 +800,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -853,7 +879,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -898,7 +926,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -966,7 +996,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -1039,7 +1071,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -1094,7 +1128,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -1156,7 +1192,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text:     "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{},
 			},
 		},
@@ -1198,7 +1236,9 @@ func TestGenerate(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text: "answer text",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "answer text"},
+				},
 				Warnings: []api.CallWarning{
 					{Type: "unsupported-setting", Setting: "FrequencyPenalty"},
 					{Type: "unsupported-setting", Setting: "PresencePenalty"},
@@ -1346,13 +1386,13 @@ func TestGenerate_ToolCalls(t *testing.T) {
 			},
 			exchanges: standardExchange,
 			expectedResp: api.Response{
-				ToolCalls: []api.ToolCallBlock{
-					{
+				Content: []api.ContentBlock{
+					&api.ToolCallBlock{
 						ToolCallID: "call_0NdsJqOS8N3J9l2p0p4WpYU9",
 						ToolName:   "weather",
 						Args:       json.RawMessage(`{"location":"San Francisco"}`),
 					},
-					{
+					&api.ToolCallBlock{
 						ToolCallID: "call_gexo0HtjUfmAIW4gjNOgyrcr",
 						ToolName:   "cityAttractions",
 						Args:       json.RawMessage(`{"city":"San Francisco"}`),
@@ -1555,7 +1595,13 @@ func TestGenerate_WebSearch(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Text: expectedText,
+				Content: []api.ContentBlock{
+					&api.ToolCallBlock{
+						ToolCallID: "ws_67cf2b3051e88190b006770db6fdb13d",
+						ToolName:   "openai.web_search_preview",
+					},
+					&api.TextBlock{Text: expectedText},
+				},
 			},
 		},
 		{
@@ -1574,36 +1620,36 @@ func TestGenerate_WebSearch(t *testing.T) {
 				},
 			},
 			expectedResp: api.Response{
-				Sources: []api.Source{
-					{
-						SourceType: "url",
-						ID:         "source-0",
-						URL:        "https://www.axios.com/local/san-francisco/2025/03/07/bruce-lee-statue-sf-chinatown?utm_source=chatgpt.com",
-						Title:      "Bruce Lee statue to be installed in SF Chinatown",
+				Content: []api.ContentBlock{
+					&api.ToolCallBlock{
+						ToolCallID: "ws_67cf2b3051e88190b006770db6fdb13d",
+						ToolName:   "openai.web_search_preview",
 					},
-					{
-						SourceType: "url",
-						ID:         "source-1",
-						URL:        "https://www.axios.com/local/san-francisco/2025/03/03/bay-area-office-leasing-activity?utm_source=chatgpt.com",
-						Title:      "The Bay Area is set to make an office leasing comeback",
+					&api.TextBlock{Text: expectedText},
+					&api.SourceBlock{
+						ID:    "source-0",
+						URL:   "https://www.axios.com/local/san-francisco/2025/03/07/bruce-lee-statue-sf-chinatown?utm_source=chatgpt.com",
+						Title: "Bruce Lee statue to be installed in SF Chinatown",
 					},
-					{
-						SourceType: "url",
-						ID:         "source-2",
-						URL:        "https://www.axios.com/local/san-francisco/2025/03/03/where-to-see-spring-blooms-bay-area?utm_source=chatgpt.com",
-						Title:      "Where to see spring blooms in the Bay Area",
+					&api.SourceBlock{
+						ID:    "source-1",
+						URL:   "https://www.axios.com/local/san-francisco/2025/03/03/bay-area-office-leasing-activity?utm_source=chatgpt.com",
+						Title: "The Bay Area is set to make an office leasing comeback",
 					},
-					{
-						SourceType: "url",
-						ID:         "source-3",
-						URL:        "https://www.axios.com/local/san-francisco/2025/03/03/great-highway-park-opening-april-recall-campaign?utm_source=chatgpt.com",
-						Title:      "Oceanfront Great Highway park set to open in April",
+					&api.SourceBlock{
+						ID:    "source-2",
+						URL:   "https://www.axios.com/local/san-francisco/2025/03/03/where-to-see-spring-blooms-bay-area?utm_source=chatgpt.com",
+						Title: "Where to see spring blooms in the Bay Area",
 					},
-					{
-						SourceType: "url",
-						ID:         "source-4",
-						URL:        "https://www.axios.com/local/san-francisco/2025/03/03/climate-weather-spring-temperatures-warmer-sf?utm_source=chatgpt.com",
-						Title:      "San Francisco's spring seasons are getting warmer",
+					&api.SourceBlock{
+						ID:    "source-3",
+						URL:   "https://www.axios.com/local/san-francisco/2025/03/03/great-highway-park-opening-april-recall-campaign?utm_source=chatgpt.com",
+						Title: "Oceanfront Great Highway park set to open in April",
+					},
+					&api.SourceBlock{
+						ID:    "source-4",
+						URL:   "https://www.axios.com/local/san-francisco/2025/03/03/climate-weather-spring-temperatures-warmer-sf?utm_source=chatgpt.com",
+						Title: "San Francisco's spring seasons are getting warmer",
 					},
 				},
 			},
@@ -3013,7 +3059,7 @@ func runStreamTests(t *testing.T, tests []struct {
 
 			// Collect all events from the stream
 			var gotEvents []api.StreamEvent
-			for event := range resp.Events {
+			for event := range resp.Stream {
 				gotEvents = append(gotEvents, event)
 			}
 

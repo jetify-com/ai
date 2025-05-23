@@ -24,10 +24,8 @@ const (
 // you must synchronize access to the builder yourself.
 type ResponseBuilder struct {
 	resp api.Response
-	// Map of tool call ID to index in orderedToolCalls
+	// Map of tool call ID to index in Content array (for parallel tool calls)
 	toolCallIndices map[string]int
-	// Ordered slice of tool calls to maintain order
-	orderedToolCalls []api.ToolCallBlock
 	// Error encountered during event processing
 	err error
 
@@ -43,19 +41,14 @@ type ResponseBuilder struct {
 func NewResponseBuilder() *ResponseBuilder {
 	return &ResponseBuilder{
 		resp: api.Response{
-			// Initialize with empty values
-			Text:         "",
-			Reasoning:    []api.Reasoning{},
-			ToolCalls:    []api.ToolCallBlock{},
-			Sources:      []api.Source{},
+			// Initialize with empty Content slice
+			Content:      []api.ContentBlock{},
 			Warnings:     []api.CallWarning{},
 			FinishReason: api.FinishReason(""),
-			Files:        []api.FileBlock{},
 		},
-		toolCallIndices:  make(map[string]int),
-		orderedToolCalls: make([]api.ToolCallBlock, 0),
-		currentState:     noState,
-		err:              nil,
+		toolCallIndices: make(map[string]int),
+		currentState:    noState,
+		err:             nil,
 	}
 }
 
@@ -75,29 +68,54 @@ func (b *ResponseBuilder) AddEvent(event api.StreamEvent) error {
 	// - Validate that we have a model ID if this isn't the first event
 	// The reason we haven't implemented these yet is because I'm not sure if all providers have those guarantees.
 
-	switch e := event.(type) {
+	switch evt := event.(type) {
+	// Handle pointer types
 	case *api.TextDeltaEvent:
-		return b.addTextDelta(e)
+		return b.addTextDelta(evt)
 	case *api.ReasoningEvent:
-		return b.addReasoning(e)
+		return b.addReasoning(evt)
 	case *api.ReasoningSignatureEvent:
-		return b.addReasoningSignature(e)
+		return b.addReasoningSignature(evt)
 	case *api.RedactedReasoningEvent:
-		return b.addRedactedReasoning(e)
+		return b.addRedactedReasoning(evt)
 	case *api.ToolCallEvent:
-		return b.addToolCall(e)
+		return b.addToolCall(evt)
 	case *api.ToolCallDeltaEvent:
-		return b.addToolCallDelta(e)
+		return b.addToolCallDelta(evt)
 	case *api.SourceEvent:
-		return b.addSource(e)
+		return b.addSource(evt)
 	case *api.FileEvent:
-		return b.addFile(e)
+		return b.addFile(evt)
 	case *api.ResponseMetadataEvent:
-		return b.addResponseMetadata(e)
+		return b.addResponseMetadata(evt)
 	case *api.FinishEvent:
-		return b.addFinish(e)
+		return b.addFinish(evt)
 	case *api.ErrorEvent:
-		return b.addError(e)
+		return b.addError(evt)
+
+	// Handle value types
+	case api.TextDeltaEvent:
+		return b.addTextDelta(&evt)
+	case api.ReasoningEvent:
+		return b.addReasoning(&evt)
+	case api.ReasoningSignatureEvent:
+		return b.addReasoningSignature(&evt)
+	case api.RedactedReasoningEvent:
+		return b.addRedactedReasoning(&evt)
+	case api.ToolCallEvent:
+		return b.addToolCall(&evt)
+	case api.ToolCallDeltaEvent:
+		return b.addToolCallDelta(&evt)
+	case api.SourceEvent:
+		return b.addSource(&evt)
+	case api.FileEvent:
+		return b.addFile(&evt)
+	case api.ResponseMetadataEvent:
+		return b.addResponseMetadata(&evt)
+	case api.FinishEvent:
+		return b.addFinish(&evt)
+	case api.ErrorEvent:
+		return b.addError(&evt)
 	default:
 		return fmt.Errorf("unknown event type: %T", event)
 	}
@@ -105,20 +123,42 @@ func (b *ResponseBuilder) AddEvent(event api.StreamEvent) error {
 
 // addTextDelta adds a text delta event to the response.
 func (b *ResponseBuilder) addTextDelta(e *api.TextDeltaEvent) error {
+	// Only concatenate with last block if the last content block is a TextBlock
+	if len(b.resp.Content) > 0 {
+		if lastBlock, ok := b.resp.Content[len(b.resp.Content)-1].(*api.TextBlock); ok {
+			// Append to existing text block
+			lastBlock.Text += e.TextDelta
+			return nil
+		}
+	}
+
+	// Create new text block
 	b.currentState = textState
-	b.resp.Text += e.TextDelta
+	b.resp.Content = append(b.resp.Content, &api.TextBlock{
+		Text: e.TextDelta,
+	})
 	return nil
 }
 
 // addReasoning adds a reasoning event to the response.
 func (b *ResponseBuilder) addReasoning(e *api.ReasoningEvent) error {
+	// Only concatenate with last block if the last content block is a ReasoningBlock
+	if len(b.resp.Content) > 0 {
+		if lastBlock, ok := b.resp.Content[len(b.resp.Content)-1].(*api.ReasoningBlock); ok {
+			// Append to existing reasoning block
+			lastBlock.Text += e.TextDelta
+			return nil
+		}
+	}
+
 	// Validate state transition
 	if b.currentState != noState && b.currentState != reasoningState {
 		return fmt.Errorf("invalid state transition: cannot add reasoning in state %v", b.currentState)
 	}
 
+	// Create new reasoning block
 	b.currentState = reasoningState
-	b.resp.Reasoning = append(b.resp.Reasoning, &api.ReasoningBlock{
+	b.resp.Content = append(b.resp.Content, &api.ReasoningBlock{
 		Text: e.TextDelta,
 	})
 	return nil
@@ -126,11 +166,11 @@ func (b *ResponseBuilder) addReasoning(e *api.ReasoningEvent) error {
 
 // addReasoningSignature adds a reasoning signature event to the response.
 func (b *ResponseBuilder) addReasoningSignature(e *api.ReasoningSignatureEvent) error {
-	if len(b.resp.Reasoning) == 0 {
-		return fmt.Errorf("cannot add reasoning signature: no reasoning blocks exist")
+	if len(b.resp.Content) == 0 {
+		return fmt.Errorf("cannot add reasoning signature: no content blocks exist")
 	}
 
-	if block, ok := b.resp.Reasoning[len(b.resp.Reasoning)-1].(*api.ReasoningBlock); ok {
+	if block, ok := b.resp.Content[len(b.resp.Content)-1].(*api.ReasoningBlock); ok {
 		block.Signature = e.Signature
 		return nil
 	}
@@ -145,7 +185,7 @@ func (b *ResponseBuilder) addRedactedReasoning(e *api.RedactedReasoningEvent) er
 	}
 
 	b.currentState = reasoningState
-	b.resp.Reasoning = append(b.resp.Reasoning, &api.RedactedReasoningBlock{
+	b.resp.Content = append(b.resp.Content, &api.RedactedReasoningBlock{
 		Data: e.Data,
 	})
 	return nil
@@ -161,13 +201,14 @@ func (b *ResponseBuilder) addToolCall(e *api.ToolCallEvent) error {
 	b.currentState = toolCallState
 
 	// Create new tool call block
-	b.orderedToolCalls = append(b.orderedToolCalls, api.ToolCallBlock{
+	toolCall := &api.ToolCallBlock{
 		ToolCallID: e.ToolCallID,
 		ToolName:   e.ToolName,
 		Args:       slices.Clone(e.Args),
-	})
+	}
+	b.resp.Content = append(b.resp.Content, toolCall)
 	// Store index in the map
-	b.toolCallIndices[e.ToolCallID] = len(b.orderedToolCalls) - 1
+	b.toolCallIndices[e.ToolCallID] = len(b.resp.Content) - 1
 
 	return nil
 }
@@ -180,17 +221,20 @@ func (b *ResponseBuilder) addToolCallDelta(e *api.ToolCallDeltaEvent) error {
 	idx, exists := b.toolCallIndices[e.ToolCallID]
 	if !exists {
 		// Create new tool call block if it doesn't exist
-		b.orderedToolCalls = append(b.orderedToolCalls, api.ToolCallBlock{
+		toolCall := &api.ToolCallBlock{
 			ToolCallID: e.ToolCallID,
 			ToolName:   e.ToolName,
 			Args:       make([]byte, 0),
-		})
-		idx = len(b.orderedToolCalls) - 1
+		}
+		b.resp.Content = append(b.resp.Content, toolCall)
+		idx = len(b.resp.Content) - 1
 		b.toolCallIndices[e.ToolCallID] = idx
 	}
 
 	// Append the new args to the existing args
-	b.orderedToolCalls[idx].Args = append(b.orderedToolCalls[idx].Args, slices.Clone(e.ArgsDelta)...)
+	if toolCall, ok := b.resp.Content[idx].(*api.ToolCallBlock); ok {
+		toolCall.Args = append(toolCall.Args, slices.Clone(e.ArgsDelta)...)
+	}
 
 	return nil
 }
@@ -198,16 +242,19 @@ func (b *ResponseBuilder) addToolCallDelta(e *api.ToolCallDeltaEvent) error {
 // addSource adds a source event to the response.
 func (b *ResponseBuilder) addSource(e *api.SourceEvent) error {
 	b.currentState = sourceState
-	// Create a copy of the source to prevent mutation
-	sourceCopy := e.Source
-	b.resp.Sources = append(b.resp.Sources, sourceCopy)
+	b.resp.Content = append(b.resp.Content, &api.SourceBlock{
+		ID:               e.Source.ID,
+		URL:              e.Source.URL,
+		Title:            e.Source.Title,
+		ProviderMetadata: &e.Source.ProviderMetadata,
+	})
 	return nil
 }
 
 // addFile adds a file event to the response.
 func (b *ResponseBuilder) addFile(e *api.FileEvent) error {
 	b.currentState = fileState
-	b.resp.Files = append(b.resp.Files, api.FileBlock{
+	b.resp.Content = append(b.resp.Content, &api.FileBlock{
 		MediaType: e.MediaType,
 		Data:      slices.Clone(e.Data),
 	})
@@ -260,9 +307,6 @@ func (b *ResponseBuilder) addError(e *api.ErrorEvent) error {
 
 // Build creates a Response from the collected events.
 func (b *ResponseBuilder) Build() (api.Response, error) {
-	// Copy the ordered tool calls to the response
-	b.resp.ToolCalls = slices.Clone(b.orderedToolCalls)
-
 	// Return any error that was encountered during event processing
 	if b.err != nil {
 		return b.resp, b.err
@@ -273,17 +317,12 @@ func (b *ResponseBuilder) Build() (api.Response, error) {
 // AddMetadata adds metadata from a StreamResponse to the builder.
 // It preserves existing non-nil slices in the response.
 func (b *ResponseBuilder) AddMetadata(sr *api.StreamResponse) error {
-	// Only copy warnings if the source has warnings
-	if len(sr.Warnings) > 0 {
-		b.resp.Warnings = sr.Warnings
-	}
-
 	if sr.RequestInfo != nil {
 		b.resp.RequestInfo = sr.RequestInfo
 	}
 
-	if sr.ProviderMetadata != nil {
-		b.resp.ProviderMetadata = sr.ProviderMetadata
+	if sr.ResponseInfo != nil {
+		b.resp.ResponseInfo = sr.ResponseInfo
 	}
 
 	return nil

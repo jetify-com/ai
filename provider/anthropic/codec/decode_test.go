@@ -231,7 +231,7 @@ func TestDecodeToolUse(t *testing.T) {
 	tests := []struct {
 		name  string
 		block anthropic.BetaContentBlock
-		want  api.ToolCallBlock
+		want  *api.ToolCallBlock
 	}{
 		{
 			name: "block with input",
@@ -241,7 +241,7 @@ func TestDecodeToolUse(t *testing.T) {
 				Type:  anthropic.BetaContentBlockTypeToolUse,
 				Input: json.RawMessage(`{"query":"test"}`),
 			},
-			want: api.ToolCallBlock{
+			want: &api.ToolCallBlock{
 				ToolCallID: "call_123",
 				ToolName:   "search",
 				Args:       json.RawMessage(`{"query":"test"}`),
@@ -254,7 +254,7 @@ func TestDecodeToolUse(t *testing.T) {
 				Name: "get_time",
 				Type: anthropic.BetaContentBlockTypeToolUse,
 			},
-			want: api.ToolCallBlock{
+			want: &api.ToolCallBlock{
 				ToolCallID: "call_456",
 				ToolName:   "get_time",
 				Args:       json.RawMessage(`{}`),
@@ -282,7 +282,7 @@ func TestDecodeToolUseWithMarshalError(t *testing.T) {
 		Input: json.RawMessage(`{malformed json`), // Invalid JSON
 	}
 
-	expected := api.ToolCallBlock{
+	expected := &api.ToolCallBlock{
 		ToolCallID: "call_789",
 		ToolName:   "error_call",
 		Args:       json.RawMessage(`{}`),
@@ -298,7 +298,7 @@ func TestDecodeContent(t *testing.T) {
 	tests := []struct {
 		name   string
 		blocks []anthropic.BetaContentBlock
-		want   responseContent
+		want   []api.ContentBlock
 	}{
 		{
 			name: "multiple block types",
@@ -318,73 +318,56 @@ func TestDecodeContent(t *testing.T) {
 					Input: json.RawMessage(`{"location":"New York"}`),
 				},
 			},
-			want: responseContent{
-				Text: "Hello world",
-				ToolCalls: []api.ToolCallBlock{
-					{
-						ToolCallID: "call_789",
-						ToolName:   "get_weather",
-						Args:       json.RawMessage(`{"location":"New York"}`),
-					},
+			want: []api.ContentBlock{
+				&api.TextBlock{
+					Text: "Hello world",
 				},
-				Reasoning: []api.Reasoning{
-					&api.ReasoningBlock{
-						Text: "Thinking process",
-					},
+				&api.ReasoningBlock{
+					Text: "Thinking process",
+				},
+				&api.ToolCallBlock{
+					ToolCallID: "call_789",
+					ToolName:   "get_weather",
+					Args:       json.RawMessage(`{"location":"New York"}`),
 				},
 			},
 		},
 		{
 			name:   "nil blocks",
 			blocks: nil,
-			want: responseContent{
-				Text:      "",
-				ToolCalls: []api.ToolCallBlock{},
-				Reasoning: []api.Reasoning{},
-			},
+			want:   []api.ContentBlock{},
 		},
 		{
 			name:   "empty blocks",
 			blocks: []anthropic.BetaContentBlock{},
-			want: responseContent{
-				Text:      "",
-				ToolCalls: []api.ToolCallBlock{},
-				Reasoning: []api.Reasoning{},
-			},
+			want:   []api.ContentBlock{},
 		},
 		{
-			name: "empty block type",
+			name: "empty text block should be skipped",
 			blocks: []anthropic.BetaContentBlock{
 				{
-					Type: "",
+					Type: anthropic.BetaContentBlockTypeText,
+					Text: "", // Empty text should be skipped
+				},
+			},
+			want: []api.ContentBlock{},
+		},
+		{
+			name: "unknown block type should be skipped",
+			blocks: []anthropic.BetaContentBlock{
+				{
+					Type: "", // Unknown type
 					Text: "Should be skipped",
 				},
 			},
-			want: responseContent{
-				Text:      "",
-				ToolCalls: []api.ToolCallBlock{},
-				Reasoning: []api.Reasoning{},
-			},
+			want: []api.ContentBlock{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := decodeContent(tt.blocks)
-			assert.Equal(t, tt.want.Text, got.Text)
-			assert.Equal(t, len(tt.want.ToolCalls), len(got.ToolCalls))
-
-			// Compare tool calls individually to use JSONEq for Args
-			for i, wantToolCall := range tt.want.ToolCalls {
-				if i < len(got.ToolCalls) {
-					gotToolCall := got.ToolCalls[i]
-					assert.Equal(t, wantToolCall.ToolCallID, gotToolCall.ToolCallID)
-					assert.Equal(t, wantToolCall.ToolName, gotToolCall.ToolName)
-					assert.JSONEq(t, string(wantToolCall.Args), string(gotToolCall.Args))
-				}
-			}
-
-			assert.Equal(t, tt.want.Reasoning, got.Reasoning)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -414,7 +397,11 @@ func TestDecodeResponse(t *testing.T) {
 				},
 			},
 			want: api.Response{
-				Text:         "Hello, I am Claude",
+				Content: []api.ContentBlock{
+					&api.TextBlock{
+						Text: "Hello, I am Claude",
+					},
+				},
 				FinishReason: api.FinishReasonStop,
 				Usage: api.Usage{
 					InputTokens:  150,
@@ -433,8 +420,6 @@ func TestDecodeResponse(t *testing.T) {
 						},
 					},
 				}),
-				ToolCalls: []api.ToolCallBlock{},
-				Reasoning: []api.Reasoning{},
 			},
 			wantErr: false,
 		},
@@ -442,6 +427,7 @@ func TestDecodeResponse(t *testing.T) {
 			name: "empty message",
 			msg:  &anthropic.BetaMessage{},
 			want: api.Response{
+				Content:      []api.ContentBlock{},
 				FinishReason: api.FinishReasonUnknown,
 				ResponseInfo: &api.ResponseInfo{},
 				ProviderMetadata: api.NewProviderMetadata(map[string]any{
@@ -449,8 +435,6 @@ func TestDecodeResponse(t *testing.T) {
 						Usage: Usage{},
 					},
 				}),
-				ToolCalls: []api.ToolCallBlock{},
-				Reasoning: []api.Reasoning{},
 			},
 			wantErr: false,
 		},
@@ -470,13 +454,7 @@ func TestDecodeResponse(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, tt.want.Text, got.Text)
-			assert.Equal(t, tt.want.FinishReason, got.FinishReason)
-			assert.Equal(t, tt.want.Usage, got.Usage)
-			assert.Equal(t, tt.want.ResponseInfo, got.ResponseInfo)
-			assert.Equal(t, tt.want.ProviderMetadata, got.ProviderMetadata)
-			assert.Equal(t, tt.want.ToolCalls, got.ToolCalls)
-			assert.Equal(t, tt.want.Reasoning, got.Reasoning)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

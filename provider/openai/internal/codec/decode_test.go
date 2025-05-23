@@ -37,7 +37,9 @@ func TestDecodeResponse(t *testing.T) {
 				}
 			}`,
 			want: api.Response{
-				Text: "Hello world",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "Hello world"},
+				},
 				Usage: api.Usage{
 					InputTokens:  100,
 					OutputTokens: 50,
@@ -74,21 +76,20 @@ func TestDecodeResponse(t *testing.T) {
 				}
 			}`,
 			want: api.Response{
-				Text: "Info from [example](https://example.com)",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "Info from [example](https://example.com)"},
+					&api.SourceBlock{
+						ID:    "source-0",
+						URL:   "https://example.com",
+						Title: "Example Site",
+					},
+				},
 				Usage: api.Usage{
 					InputTokens:  150,
 					OutputTokens: 75,
 					TotalTokens:  225,
 				},
 				FinishReason: api.FinishReasonStop,
-				Sources: []api.Source{
-					{
-						SourceType: "url",
-						ID:         "source-0",
-						URL:        "https://example.com",
-						Title:      "Example Site",
-					},
-				},
 			},
 		},
 		{
@@ -108,20 +109,19 @@ func TestDecodeResponse(t *testing.T) {
 				}
 			}`,
 			want: api.Response{
-				Text: "",
+				Content: []api.ContentBlock{
+					&api.ToolCallBlock{
+						ToolCallID: "call1",
+						ToolName:   "get_weather",
+						Args:       json.RawMessage(`{"location":"New York"}`),
+					},
+				},
 				Usage: api.Usage{
 					InputTokens:  200,
 					OutputTokens: 100,
 					TotalTokens:  300,
 				},
 				FinishReason: api.FinishReasonToolCalls,
-				ToolCalls: []api.ToolCallBlock{
-					{
-						ToolCallID: "call1",
-						ToolName:   "get_weather",
-						Args:       json.RawMessage(`{"location":"New York"}`),
-					},
-				},
 			},
 		},
 		{
@@ -151,7 +151,9 @@ func TestDecodeResponse(t *testing.T) {
 				}
 			}`,
 			want: api.Response{
-				Text: "Test message",
+				Content: []api.ContentBlock{
+					&api.TextBlock{Text: "Test message"},
+				},
 				Usage: api.Usage{
 					InputTokens:       100,
 					OutputTokens:      50,
@@ -185,20 +187,11 @@ func TestDecodeResponse(t *testing.T) {
 			require.NoError(t, err)
 
 			// Ensure all slice fields are initialized as empty slices:
-			if testCase.want.Sources == nil {
-				testCase.want.Sources = []api.Source{}
-			}
-			if testCase.want.ToolCalls == nil {
-				testCase.want.ToolCalls = []api.ToolCallBlock{}
-			}
-			if testCase.want.Reasoning == nil {
-				testCase.want.Reasoning = []api.Reasoning{}
+			if testCase.want.Content == nil {
+				testCase.want.Content = []api.ContentBlock{}
 			}
 			if testCase.want.Warnings == nil {
 				testCase.want.Warnings = []api.CallWarning{}
-			}
-			if testCase.want.LogProbs == nil {
-				testCase.want.LogProbs = api.LogProbs{}
 			}
 
 			// Use ResponseContains to verify the response
@@ -211,7 +204,7 @@ func TestDecodeText(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    string
+		want    []api.ContentBlock
 		wantErr string
 	}{
 		{
@@ -229,7 +222,9 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want: "Hello world",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Hello world"},
+			},
 		},
 		{
 			name: "multiple text segments in same message",
@@ -250,7 +245,10 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want: "First\nSecond",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "First"},
+				&api.TextBlock{Text: "Second"},
+			},
 		},
 		{
 			name: "multiple messages with text",
@@ -276,7 +274,10 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want: "Message 1\nMessage 2",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Message 1"},
+				&api.TextBlock{Text: "Message 2"},
+			},
 		},
 		{
 			name: "mixed content types",
@@ -300,19 +301,22 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want: "Text before\nText after",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Text before"},
+				&api.TextBlock{Text: "Text after"},
+			},
 		},
 		{
 			name: "empty response",
 			input: `{
 				"output": []
 			}`,
-			want: "",
+			want: []api.ContentBlock{},
 		},
 		{
 			name:  "nil response",
 			input: "null",
-			want:  "",
+			want:  []api.ContentBlock{},
 		},
 		{
 			name: "non-message type",
@@ -329,7 +333,7 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want:    "",
+			want:    []api.ContentBlock{},
 			wantErr: "unknown output item type: not_a_message",
 		},
 		{
@@ -347,7 +351,7 @@ func TestDecodeText(t *testing.T) {
 					}
 				]
 			}`,
-			want: "",
+			want: []api.ContentBlock{},
 		},
 	}
 
@@ -367,7 +371,8 @@ func TestDecodeText(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, testCase.want, got.Text)
+
+			assert.Equal(t, testCase.want, got.Content)
 		})
 	}
 }
@@ -376,7 +381,7 @@ func TestDecodeSources(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    []api.Source
+		want    []api.ContentBlock
 		wantErr string
 	}{
 		{
@@ -402,12 +407,12 @@ func TestDecodeSources(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.Source{
-				{
-					SourceType: "url",
-					ID:         "source-0",
-					URL:        "https://example.com",
-					Title:      "Example Site",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Info from [example](https://example.com)"},
+				&api.SourceBlock{
+					ID:    "source-0",
+					URL:   "https://example.com",
+					Title: "Example Site",
 				},
 			},
 		},
@@ -440,18 +445,17 @@ func TestDecodeSources(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.Source{
-				{
-					SourceType: "url",
-					ID:         "source-0",
-					URL:        "https://example1.com",
-					Title:      "Example Site 1",
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Info from [example1](https://example1.com) and [example2](https://example2.com)"},
+				&api.SourceBlock{
+					ID:    "source-0",
+					URL:   "https://example1.com",
+					Title: "Example Site 1",
 				},
-				{
-					SourceType: "url",
-					ID:         "source-1",
-					URL:        "https://example2.com",
-					Title:      "Example Site 2",
+				&api.SourceBlock{
+					ID:    "source-1",
+					URL:   "https://example2.com",
+					Title: "Example Site 2",
 				},
 			},
 		},
@@ -476,7 +480,9 @@ func TestDecodeSources(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.Source{},
+			want: []api.ContentBlock{
+				&api.TextBlock{Text: "Info from source"},
+			},
 		},
 		{
 			name: "non-message type",
@@ -501,7 +507,7 @@ func TestDecodeSources(t *testing.T) {
 					}
 				]
 			}`,
-			want:    []api.Source{},
+			want:    []api.ContentBlock{},
 			wantErr: "unknown output item type: not_a_message",
 		},
 	}
@@ -519,7 +525,8 @@ func TestDecodeSources(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, testCase.want, got.Sources)
+
+			assert.Equal(t, testCase.want, got.Content)
 		})
 	}
 }
@@ -528,7 +535,7 @@ func TestDecodeToolCalls(t *testing.T) {
 	tests := []struct {
 		name     string
 		response string
-		want     []api.ToolCallBlock
+		want     []api.ContentBlock
 		wantErr  string
 	}{
 		{
@@ -543,8 +550,8 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "call1",
 					ToolName:   "get_weather",
 					Args:       json.RawMessage(`{"location":"New York"}`),
@@ -569,13 +576,13 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "call1",
 					ToolName:   "get_weather",
 					Args:       json.RawMessage(`{"location":"New York"}`),
 				},
-				{
+				&api.ToolCallBlock{
 					ToolCallID: "call2",
 					ToolName:   "get_time",
 					Args:       json.RawMessage(`{"timezone":"EST"}`),
@@ -595,8 +602,8 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "search1",
 					ToolName:   "openai.file_search",
 					Args:       json.RawMessage(`{"query":"find main.go","include_pattern":"*.go","exclude_pattern":"vendor/*","id":"search1","type":"file_search_call"}`),
@@ -615,8 +622,8 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "web1",
 					ToolName:   "openai.web_search_preview",
 					Args:       json.RawMessage(`{"query":"golang best practices","num_results":5,"id":"web1","type":"web_search_call"}`),
@@ -635,11 +642,16 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "comp1",
 					ToolName:   "openai.computer_use_preview",
 					Args:       json.RawMessage(`{"command":"ls -la","working_directory":"/tmp","id":"comp1","type":"computer_call"}`),
+					ProviderMetadata: api.NewProviderMetadata(map[string]any{
+						"openai": &Metadata{
+							ComputerSafetyChecks: []ComputerSafetyCheck{},
+						},
+					}),
 				},
 			},
 		},
@@ -667,8 +679,8 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "comp2",
 					ToolName:   "openai.computer_use_preview",
 					Args:       json.RawMessage(`{"command":"rm -rf /","working_directory":"/","id":"comp2","type":"computer_call","pending_safety_checks":[{"id":"check1","code":"file_access","message":"File access requested"},{"id":"check2","code":"dangerous_command","message":"Potentially dangerous command detected"}]}`),
@@ -704,8 +716,8 @@ func TestDecodeToolCalls(t *testing.T) {
 					}
 				]
 			}`,
-			want: []api.ToolCallBlock{
-				{
+			want: []api.ContentBlock{
+				&api.ToolCallBlock{
 					ToolCallID: "comp3",
 					ToolName:   "openai.computer_use_preview",
 					Args:       json.RawMessage(`{"command":"echo hello","working_directory":"/tmp","id":"comp3","type":"computer_call","pending_safety_checks":[]}`),
@@ -745,12 +757,20 @@ func TestDecodeToolCalls(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			// Compare each tool call individually to verify Args as JSON
-			require.Equal(t, len(testCase.want), len(got.ToolCalls))
-			for i, wantCall := range testCase.want {
-				assert.Equal(t, wantCall.ToolCallID, got.ToolCalls[i].ToolCallID)
-				assert.Equal(t, wantCall.ToolName, got.ToolCalls[i].ToolName)
-				assert.JSONEq(t, string(wantCall.Args), string(got.ToolCalls[i].Args))
+			// Compare content blocks directly
+			require.Equal(t, len(testCase.want), len(got.Content))
+			for i, wantBlock := range testCase.want {
+				if wantToolCall, ok := wantBlock.(*api.ToolCallBlock); ok {
+					gotToolCall, ok := got.Content[i].(*api.ToolCallBlock)
+					require.True(t, ok, "expected content block %d to be a ToolCallBlock", i)
+
+					assert.Equal(t, wantToolCall.ToolCallID, gotToolCall.ToolCallID)
+					assert.Equal(t, wantToolCall.ToolName, gotToolCall.ToolName)
+					assert.JSONEq(t, string(wantToolCall.Args), string(gotToolCall.Args))
+					assert.Equal(t, wantToolCall.ProviderMetadata, gotToolCall.ProviderMetadata)
+				} else {
+					assert.Equal(t, wantBlock, got.Content[i])
+				}
 			}
 		})
 	}

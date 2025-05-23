@@ -111,7 +111,7 @@ func TestDecodeStreamEvents(t *testing.T) {
 
 			// Collect all events from the stream
 			var got []api.StreamEvent
-			for event := range result.Events {
+			for event := range result.Stream {
 				got = append(got, event)
 			}
 

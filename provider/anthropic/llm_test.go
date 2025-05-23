@@ -6,7 +6,6 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/api"
 	"go.jetify.com/pkg/httpmock"
@@ -17,7 +16,8 @@ func TestGenerate(t *testing.T) {
 		name        string
 		prompt      []api.Message
 		exchanges   []httpmock.Exchange
-		expectError bool
+		expected    *api.Response // Expected response for successful cases
+		expectError string        // Expected error message, empty means no error expected
 	}{
 		{
 			name: "successful generation with user message",
@@ -43,6 +43,13 @@ func TestGenerate(t *testing.T) {
 							},
 							Role: anthropic.MessageRoleAssistant,
 						},
+					},
+				},
+			},
+			expected: &api.Response{
+				Content: []api.ContentBlock{
+					&api.TextBlock{
+						Text: "I'm doing well, thank you for asking!",
 					},
 				},
 			},
@@ -75,6 +82,13 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
+			expected: &api.Response{
+				Content: []api.ContentBlock{
+					&api.TextBlock{
+						Text: "4",
+					},
+				},
+			},
 		},
 		{
 			name: "api error",
@@ -91,11 +105,11 @@ func TestGenerate(t *testing.T) {
 					},
 					Response: httpmock.Response{
 						StatusCode: http.StatusInternalServerError,
-						Body:       map[string]interface{}{"error": "internal server error"},
+						Body:       map[string]any{"error": "internal server error"},
 					},
 				},
 			},
-			expectError: true,
+			expectError: "500 Internal Server Error",
 		},
 	}
 
@@ -117,18 +131,18 @@ func TestGenerate(t *testing.T) {
 			// Call Generate with empty CallOptions
 			resp, err := model.Generate(t.Context(), tt.prompt, api.CallOptions{})
 
-			if tt.expectError {
+			if tt.expectError != "" {
 				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectError)
 				return
 			}
 
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 
-			// For successful cases, verify response content
-			message := tt.exchanges[0].Response.Body.(*anthropic.Message)
-			if len(message.Content) > 0 {
-				assert.Equal(t, message.Content[0].Text, resp.Text)
+			// For successful cases, verify response content matches expected
+			if tt.expected != nil {
+				require.Equal(t, tt.expected.Content, resp.Content)
 			}
 		})
 	}

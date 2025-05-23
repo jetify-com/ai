@@ -60,23 +60,8 @@ type SupportedURL struct {
 
 // Response represents the result of a non-streaming language model generation.
 type Response struct {
-	// Text that the model has generated. Can be empty if the model has only
-	// generated tool calls.
-	Text string `json:"text,omitzero"`
-
-	// Reasoning text that the model has generated. Can be empty if the model
-	// has only generated text.
-	Reasoning []Reasoning `json:"reasoning,omitzero"`
-
-	// Files that the model has generated as binary data.
-	// Can be empty if the model didn't generate any files.
-	Files []FileBlock `json:"files,omitzero"`
-
-	// TODO: change reasoning to support reasoning blocks as well
-
-	// Tool calls that the model has generated. Can be empty if the model has
-	// only generated text.
-	ToolCalls []ToolCallBlock `json:"tool_calls,omitzero"`
+	// Content contains the ordered list of content blocks that the model generated.
+	Content []ContentBlock `json:"content"`
 
 	// FinishReason contains an explanation for why the model finished generating.
 	FinishReason FinishReason `json:"finish_reason"`
@@ -84,25 +69,30 @@ type Response struct {
 	// Usage contains information about the number of tokens used by the model.
 	Usage Usage `json:"usage"`
 
-	// Warnings is a list of warnings that occurred during the call,
-	// e.g. unsupported settings.
-	Warnings []CallWarning `json:"warnings,omitzero"`
-
 	// Additional provider-specific metadata. They are passed through from the
 	// provider to enable provider-specific functionality.
 	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 
-	// Sources are the sources that have been used as input to
-	// generate the response.
-	Sources []Source `json:"sources,omitzero"`
-	// TODO: decide if sources and citations are the same thing and if so how to
-	// merge the concepts. We currently have not implemented citations but they're
-	// available in anthropic for example.
+	// RequestInfo is optional request information for telemetry and debugging purposes.
+	RequestInfo *RequestInfo `json:"request,omitzero"`
 
-	// LogProbs are the log probabilities for the completion.
-	// nil if the mode does not support logprobs or if it was not enabled.
-	// @deprecated will be changed into a provider-specific extension in v2
-	LogProbs LogProbs `json:"logprobs,omitzero"`
+	// ResponseInfo is optional response information for telemetry and debugging purposes.
+	ResponseInfo *ResponseInfo `json:"response,omitzero"`
+
+	// Warnings is a list of warnings that occurred during the call,
+	// e.g. unsupported settings.
+	Warnings []CallWarning `json:"warnings,omitzero"`
+}
+
+func (r Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
+
+// StreamResponse represents the result of a streaming language model call.
+type StreamResponse struct {
+	// Stream is the sequence of events received from the model.
+	// Iterating over events might block if we're waiting for the LLM to respond.
+	Stream iter.Seq[StreamEvent]
+	// TODO: For now we're always encoding errors as ErrorEvent. Is that the right
+	// behavior or should we consider iter.Seq2[StreamEvent, error]?
 
 	// RequestInfo is optional request information for telemetry and debugging purposes.
 	RequestInfo *RequestInfo `json:"request,omitzero"`
@@ -110,37 +100,6 @@ type Response struct {
 	// ResponseInfo is optional response information for telemetry and debugging purposes.
 	ResponseInfo *ResponseInfo `json:"response,omitzero"`
 }
-
-func (r Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
-
-// StreamResponse represents the result of a streaming language model generation.
-//
-// With the exception of the Events field, all other fields are for data known at
-// the start of the stream.
-//
-// Anything that results in an update, including additional metadata, will be sent
-// as a StreamEvent.
-type StreamResponse struct {
-	// Sequence of events received from the model.
-	// Iterating over events might block if we're waiting for the LLM to respond.
-	Events iter.Seq[StreamEvent]
-	// TODO: For now we're always encoding errors as ErrorEvent. Is that the right
-	// behavior or should we consider iter.Seq2[StreamEvent, error]?
-
-	// RequestInfo is optional request information for telemetry and debugging purposes.
-	RequestInfo *RequestInfo `json:"request,omitzero"`
-
-	// Warnings is a list of warnings that occurred during the call,
-	// e.g. unsupported settings.
-	Warnings []CallWarning `json:"warnings,omitzero"`
-
-	// ProviderMetadata contains additional provider-specific metadata.
-	// They are passed through to the provider from the AI SDK and enable
-	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
-}
-
-func (r StreamResponse) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
 
 // Usage represents token usage statistics for a model call.
 //
@@ -180,7 +139,7 @@ type RequestInfo struct {
 	Body []byte `json:"body,omitzero"`
 }
 
-// ResponseInfo is a placeholder for optional response information.
+// ResponseInfo contains optional response information for telemetry.
 type ResponseInfo struct {
 	// ID for the generated response, if the provider sends one.
 	ID string `json:"id,omitzero"`
@@ -195,6 +154,7 @@ type ResponseInfo struct {
 	Header http.Header
 
 	// Body is the raw HTTP body that was returned by the provider.
+	// Not provided for streaming responses.
 	Body []byte `json:"body,omitzero"`
 
 	// Status is a status code and message. e.g. "200 OK"

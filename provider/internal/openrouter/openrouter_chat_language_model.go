@@ -271,23 +271,43 @@ func (m *OpenRouterChatLanguageModel) DoGenerate(
 
 	choice := response.Choices[0]
 
-	// Build result
-	result := api.Response{
-		Text:         stringValue(choice.Message.Content),
-		Reasoning:    convertReasoning(choice.Message.Reasoning),
-		FinishReason: codec.DecodeFinishReason(choice.FinishReason),
+	// Build content blocks
+	var content []api.ContentBlock
+
+	// Add text content if present
+	if choice.Message.Content != nil && *choice.Message.Content != "" {
+		content = append(content, &api.TextBlock{
+			Text: *choice.Message.Content,
+		})
+	}
+
+	// Add reasoning content if present
+	if choice.Message.Reasoning != nil && *choice.Message.Reasoning != "" {
+		content = append(content, &api.ReasoningBlock{
+			Text: *choice.Message.Reasoning,
+		})
 	}
 
 	// Add tool calls if present
 	if len(choice.Message.ToolCalls) > 0 {
-		result.ToolCalls = make([]api.ToolCallBlock, len(choice.Message.ToolCalls))
-		for i, tc := range choice.Message.ToolCalls {
-			result.ToolCalls[i] = api.ToolCallBlock{
+		for _, tc := range choice.Message.ToolCalls {
+			content = append(content, &api.ToolCallBlock{
 				ToolCallID: tc.ID,
 				ToolName:   tc.Function.Name,
 				Args:       json.RawMessage(tc.Function.Arguments),
-			}
+			})
 		}
+	}
+
+	// Build result
+	result := api.Response{
+		Content:      content,
+		FinishReason: codec.DecodeFinishReason(choice.FinishReason),
+		Usage: api.Usage{
+			InputTokens:  response.Usage.PromptTokens,
+			OutputTokens: response.Usage.CompletionTokens,
+			TotalTokens:  response.Usage.PromptTokens + response.Usage.CompletionTokens,
+		},
 	}
 
 	// Add logprobs if present
@@ -331,7 +351,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 	}
 
 	// Create sequence for events
-	events := func(yield func(api.StreamEvent) bool) {
+	stream := func(yield func(api.StreamEvent) bool) {
 		defer resp.Body.Close()
 
 		scanner := bufio.NewScanner(resp.Body)
@@ -354,7 +374,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 
 			var chunk chatStreamResponse
 			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-				if !yield(api.ErrorEvent{
+				if !yield(&api.ErrorEvent{
 					Err: api.NewJSONParseError(data, err),
 				}) {
 					return
@@ -372,7 +392,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 
 			// Handle text delta
 			if delta.Content != nil {
-				if !yield(api.TextDeltaEvent{
+				if !yield(&api.TextDeltaEvent{
 					TextDelta: *delta.Content,
 				}) {
 					return
@@ -381,7 +401,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 
 			// Handle reasoning delta
 			if delta.Reasoning != nil {
-				if !yield(api.ReasoningEvent{
+				if !yield(&api.ReasoningEvent{
 					TextDelta: *delta.Reasoning,
 				}) {
 					return
@@ -409,7 +429,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 
 					if tc.Function.Arguments != "" {
 						toolCall.Function.Arguments += tc.Function.Arguments
-						if !yield(api.ToolCallDeltaEvent{
+						if !yield(&api.ToolCallDeltaEvent{
 							ToolCallID: toolCall.ID,
 							ToolName:   toolCall.Function.Name,
 							ArgsDelta:  []byte(tc.Function.Arguments),
@@ -450,11 +470,20 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 				// }
 
 				finishReason := codec.DecodeFinishReason(choice.FinishReason)
-				if !yield(api.FinishEvent{
+				var usage api.Usage
+				if chunk.Usage != nil {
+					usage = api.Usage{
+						InputTokens:  chunk.Usage.PromptTokens,
+						OutputTokens: chunk.Usage.CompletionTokens,
+						TotalTokens:  chunk.Usage.PromptTokens + chunk.Usage.CompletionTokens,
+					}
+				}
+
+				if !yield(&api.FinishEvent{
 					FinishReason: finishReason,
+					Usage:        usage,
 					// TODO: Add logprobs support and usage support
 					// LogProbs:     logprobs,
-					// Usage:        &usage,
 				}) {
 					return
 				}
@@ -462,27 +491,11 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 		}
 
 		if err := scanner.Err(); err != nil {
-			yield(api.ErrorEvent{
+			yield(&api.ErrorEvent{
 				Err: fmt.Errorf("scanner error: %w", err),
 			})
 		}
 	}
 
-	return api.StreamResponse{Events: events}, nil
-}
-
-// stringValue returns an empty string if the pointer is nil, otherwise returns the string value
-func stringValue(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-// convertReasoning converts a string reasoning to a slice of api.Reasoning
-func convertReasoning(s *string) []api.Reasoning {
-	if s == nil || *s == "" {
-		return nil
-	}
-	return []api.Reasoning{&api.ReasoningBlock{Text: *s}}
+	return api.StreamResponse{Stream: stream}, nil
 }

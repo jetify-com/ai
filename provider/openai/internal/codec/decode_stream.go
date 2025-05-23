@@ -68,7 +68,7 @@ func (d *streamDecoder) DecodeStream(stream StreamReader) (api.StreamResponse, e
 	}
 
 	return api.StreamResponse{
-		Events: d.decodeEvents(stream),
+		Stream: d.decodeEvents(stream),
 	}, nil
 }
 
