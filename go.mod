@@ -7,7 +7,7 @@ require (
 	github.com/openai/openai-go v1.0.0
 	github.com/sashabaranov/go-openai v1.40.0
 	github.com/stretchr/testify v1.10.0
-	go.jetify.com/pkg v0.0.0-20250529161140-389e29497c0d
+	go.jetify.com/pkg v0.0.0-20250602221042-f9c387a74b34
 	go.jetify.com/sse v0.0.0-20250521180548-aeb6bc6de065
 )
 
