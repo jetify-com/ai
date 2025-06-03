@@ -14,8 +14,8 @@
 Jetify's **AI SDK for Go** is a unified interface for interacting with multiple AI providers including OpenAI, Anthropic, and more.
 Inspired by [Vercel's AI SDK](https://github.com/vercel/ai) for TypeScript, we bring a similar developer experience to the Go ecosystem.
 
-It is maintained and developed by [Jetify](https://www.jetify.com) and used by our AI agents to integrate
-with different LLM providers in production.
+It is maintained and developed by [Jetify](https://www.jetify.com). We are in the process of migrating our production code
+to use this SDK as the primary way our AI agents integrate with different LLM providers.
 
 ### The Problem
 
@@ -63,9 +63,9 @@ The AI SDK provides a **unified interface** across multiple AI providers, with k
 - [x] Private Alpha: We are testing the SDK with a select group of developers.
 - [x] Public Alpha: Open to all developers, but breaking changes still expected.
 - [ ] Public Beta: Stable enough for most non-enterprise use cases.
-- [ ] v1 Release: Ready for production use at scale with guaranteed API stability.
+- [ ] General Availability (v1): Ready for production use at scale with guaranteed API stability.
 
-We are currently in **Public Alpha**. The SDK functionality is stable but it's API may have breaking changes. While in alpha, minor version bumps indicate breaking changes (`0.1.0` -> `0.2.0` would indicate a breaking change). Watch "releases" of this repo to get notified of major updates.
+We are currently in **Public Alpha**. The SDK functionality is stable but the API may have breaking changes. While in alpha, minor version bumps indicate breaking changes (`0.1.0` -> `0.2.0` would indicate a breaking change). Watch "releases" of this repo to get notified of major updates.
 
 ## Installation
 
