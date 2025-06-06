@@ -81,7 +81,7 @@ type Response struct {
 
 	// Warnings is a list of warnings that occurred during the call,
 	// e.g. unsupported settings.
-	Warnings []CallWarning `json:"warnings,omitzero"`
+	Warnings []CallWarning `json:"warnings,omitempty"`
 }
 
 func (r Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
@@ -136,7 +136,7 @@ func (u Usage) IsZero() bool {
 // RequestInfo contains optional request information for telemetry.
 type RequestInfo struct {
 	// Body is the raw HTTP body that was sent to the provider
-	Body []byte `json:"body,omitzero"`
+	Body []byte `json:"body,omitempty"`
 }
 
 // ResponseInfo contains optional response information for telemetry.
@@ -155,7 +155,7 @@ type ResponseInfo struct {
 
 	// Body is the raw HTTP body that was returned by the provider.
 	// Not provided for streaming responses.
-	Body []byte `json:"body,omitzero"`
+	Body []byte `json:"body,omitempty"`
 
 	// Status is a status code and message. e.g. "200 OK"
 	Status string `json:"status,omitzero"`

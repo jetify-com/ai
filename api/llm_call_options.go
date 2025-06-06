@@ -17,7 +17,7 @@ type CallOptions struct {
 
 	// StopSequences specifies sequences that will stop generation when produced.
 	// Providers may have limits on the number of stop sequences.
-	StopSequences []string `json:"stop_sequences,omitzero"`
+	StopSequences []string `json:"stop_sequences,omitempty"`
 
 	// TopP controls nucleus sampling.
 	// It is recommended to set either Temperature or TopP, but not both.
@@ -45,7 +45,7 @@ type CallOptions struct {
 	Seed int `json:"seed,omitzero"`
 
 	// Tools that are available for the model to use.
-	Tools []ToolDefinition `json:"tools,omitzero"`
+	Tools []ToolDefinition `json:"tools,omitempty"`
 
 	// ToolChoice specifies how the model should select which tool to use.
 	// Defaults to 'auto'.
@@ -53,7 +53,7 @@ type CallOptions struct {
 
 	// Headers specifies additional HTTP headers to send with the request.
 	// Only applicable for HTTP-based providers.
-	Headers map[string]string `json:"headers,omitzero"`
+	Headers map[string]string `json:"headers,omitempty"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// The metadata is passed through to the provider from the AI SDK and enables

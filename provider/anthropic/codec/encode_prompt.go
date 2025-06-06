@@ -25,9 +25,17 @@ type AnthropicPrompt struct {
 	Betas []anthropic.AnthropicBeta `json:"betas,omitempty"`
 }
 
+type anthropicMessage struct {
+	message     *anthropic.BetaMessageParam   // nil if not applicable
+	systemBlock *anthropic.BetaTextBlockParam // nil if not applicable
+	betas       []anthropic.AnthropicBeta
+}
+
 // EncodePrompt converts an AI SDK prompt into Anthropic's message format
 func EncodePrompt(prompt []api.Message) (*AnthropicPrompt, error) {
 	// Pre-process the prompt to merge messages of the same type together.
+	// TODO: maybe this should move out of the provider, and be done by the framework
+	// for all providers?
 	prompt = mergeMessages(prompt)
 
 	messages := make([]anthropic.BetaMessageParam, 0, len(prompt))
@@ -36,45 +44,22 @@ func EncodePrompt(prompt []api.Message) (*AnthropicPrompt, error) {
 	var betas []anthropic.AnthropicBeta
 
 	for _, msg := range prompt {
-		switch m := msg.(type) {
-		case *api.SystemMessage:
+		result, err := processMessage(msg)
+		if err != nil {
+			return nil, err
+		}
+
+		if result.message != nil {
+			messages = append(messages, *result.message)
+			hasSeenNonSystem = true
+		}
+		if result.systemBlock != nil {
 			if hasSeenNonSystem && len(systemBlocks) > 0 {
 				return nil, fmt.Errorf("multiple system messages separated by user/assistant messages are not supported")
 			}
-			block, err := EncodeSystemMessage(m)
-			if err != nil {
-				return nil, err
-			}
-			systemBlocks = append(systemBlocks, block)
-
-		case *api.UserMessage:
-			hasSeenNonSystem = true
-			msg, msgBetas, err := EncodeUserMessage(m)
-			if err != nil {
-				return nil, err
-			}
-			messages = append(messages, msg)
-			betas = append(betas, msgBetas...)
-
-		case *api.AssistantMessage:
-			hasSeenNonSystem = true
-			msg, err := EncodeAssistantMessage(m)
-			if err != nil {
-				return nil, err
-			}
-			messages = append(messages, msg)
-
-		case *api.ToolMessage:
-			hasSeenNonSystem = true
-			msg, err := EncodeToolMessage(m)
-			if err != nil {
-				return nil, err
-			}
-			messages = append(messages, msg)
-
-		default:
-			return nil, fmt.Errorf("unsupported message type: %T", msg)
+			systemBlocks = append(systemBlocks, *result.systemBlock)
 		}
+		betas = append(betas, result.betas...)
 	}
 
 	return &AnthropicPrompt{
@@ -82,6 +67,88 @@ func EncodePrompt(prompt []api.Message) (*AnthropicPrompt, error) {
 		Messages: messages,
 		Betas:    betas,
 	}, nil
+}
+
+// processMessage handles a single message and returns the result
+func processMessage(msg api.Message) (*anthropicMessage, error) {
+	switch typedMsg := msg.(type) {
+	case *api.SystemMessage:
+		block, err := EncodeSystemMessage(typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			systemBlock: &block,
+		}, nil
+
+	case api.SystemMessage:
+		block, err := EncodeSystemMessage(&typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			systemBlock: &block,
+		}, nil
+
+	case *api.UserMessage:
+		msgParam, msgBetas, err := EncodeUserMessage(typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+			betas:   msgBetas,
+		}, nil
+
+	case api.UserMessage:
+		msgParam, msgBetas, err := EncodeUserMessage(&typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+			betas:   msgBetas,
+		}, nil
+
+	case *api.AssistantMessage:
+		msgParam, err := EncodeAssistantMessage(typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+		}, nil
+
+	case api.AssistantMessage:
+		msgParam, err := EncodeAssistantMessage(&typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+		}, nil
+
+	case *api.ToolMessage:
+		msgParam, err := EncodeToolMessage(typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+		}, nil
+
+	case api.ToolMessage:
+		msgParam, err := EncodeToolMessage(&typedMsg)
+		if err != nil {
+			return nil, err
+		}
+		return &anthropicMessage{
+			message: &msgParam,
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported message type: %T", msg)
+	}
 }
 
 // TODO
@@ -240,14 +307,32 @@ func EncodeUserContentBlock(block api.ContentBlock) (anthropic.BetaContentBlockP
 			return nil, nil, err
 		}
 		return param, nil, nil
+	case api.TextBlock:
+		param, err := EncodeTextBlock(&block)
+		if err != nil {
+			return nil, nil, err
+		}
+		return param, nil, nil
 	case *api.ImageBlock:
 		param, err := EncodeImageBlock(block)
 		if err != nil {
 			return nil, nil, err
 		}
 		return param, nil, nil
+	case api.ImageBlock:
+		param, err := EncodeImageBlock(&block)
+		if err != nil {
+			return nil, nil, err
+		}
+		return param, nil, nil
 	case *api.FileBlock:
 		param, betas, err := EncodeFileBlock(block)
+		if err != nil {
+			return nil, nil, err
+		}
+		return param, betas, nil
+	case api.FileBlock:
+		param, betas, err := EncodeFileBlock(&block)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -282,8 +367,16 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 		switch block := block.(type) {
 		case *api.TextBlock:
 			param, err = EncodeTextBlock(block)
+		case api.TextBlock:
+			param, err = EncodeTextBlock(&block)
 		case *api.ToolCallBlock:
 			toolParam, err := EncodeToolCallBlock(block)
+			if err != nil {
+				return anthropic.BetaMessageParam{}, err
+			}
+			param = toolParam
+		case api.ToolCallBlock:
+			toolParam, err := EncodeToolCallBlock(&block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
@@ -298,8 +391,20 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 				return anthropic.BetaMessageParam{}, err
 			}
 			param = reasoningParam
+		case api.ReasoningBlock:
+			reasoningParam, err := EncodeReasoningBlock(&block)
+			if err != nil {
+				return anthropic.BetaMessageParam{}, err
+			}
+			param = reasoningParam
 		case *api.RedactedReasoningBlock:
 			redactedParam, err := EncodeRedactedReasoningBlock(block)
+			if err != nil {
+				return anthropic.BetaMessageParam{}, err
+			}
+			param = redactedParam
+		case api.RedactedReasoningBlock:
+			redactedParam, err := EncodeRedactedReasoningBlock(&block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
@@ -354,8 +459,12 @@ func EncodeToolMessage(msg *api.ToolMessage) (anthropic.BetaMessageParam, error)
 				switch block := part.(type) {
 				case *api.TextBlock:
 					param, err = EncodeTextBlock(block)
+				case api.TextBlock:
+					param, err = EncodeTextBlock(&block)
 				case *api.ImageBlock:
 					param, err = EncodeImageBlock(block)
+				case api.ImageBlock:
+					param, err = EncodeImageBlock(&block)
 				default:
 					return anthropic.BetaMessageParam{}, fmt.Errorf("unsupported tool result content type: %T", block)
 				}

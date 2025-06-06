@@ -276,6 +276,169 @@ func TestEncodePrompt(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "user message with value type (not pointer)",
+			prompt: []api.Message{
+				api.UserMessage{Content: api.ContentFromText("Hello from value type")},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewUserMessage(NewTextBlock("Hello from value type")),
+				},
+			},
+		},
+		{
+			name: "system message with value type (not pointer)",
+			prompt: []api.Message{
+				api.SystemMessage{Content: "System from value type"},
+				api.UserMessage{Content: api.ContentFromText("Hello")},
+			},
+			want: &AnthropicPrompt{
+				System: []anthropic.BetaTextBlockParam{
+					NewTextBlock("System from value type"),
+				},
+				Messages: []anthropic.BetaMessageParam{
+					NewUserMessage(NewTextBlock("Hello")),
+				},
+			},
+		},
+		{
+			name: "assistant message with value type (not pointer)",
+			prompt: []api.Message{
+				api.AssistantMessage{Content: api.ContentFromText("Assistant from value type")},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewAssistantMessage(NewTextBlock("Assistant from value type")),
+				},
+			},
+		},
+		{
+			name: "tool message with value type (not pointer)",
+			prompt: []api.Message{
+				api.ToolMessage{
+					Content: []api.ToolResultBlock{
+						{
+							ToolCallID: "tool-123",
+							ToolName:   "test_tool",
+							Result:     json.RawMessage(`"result from value type"`),
+							IsError:    false,
+						},
+					},
+				},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewUserMessage(
+						NewToolResultBlock("tool-123", `"result from value type"`, false),
+					),
+				},
+			},
+		},
+		{
+			name: "user message with value type content blocks",
+			prompt: []api.Message{
+				&api.UserMessage{
+					Content: []api.ContentBlock{
+						api.TextBlock{
+							Text: "Text as value",
+						},
+						api.ImageBlock{
+							URL: "https://example.com/img.jpg",
+						},
+						api.FileBlock{
+							Data:      []byte("test pdf data"),
+							MediaType: "application/pdf",
+						},
+					},
+				},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewUserMessage(
+						NewTextBlock("Text as value"),
+						anthropic.BetaImageBlockParam{
+							Type: anthropic.F(anthropic.BetaImageBlockParamTypeImage),
+							Source: anthropic.F[anthropic.BetaImageBlockParamSourceUnion](anthropic.BetaURLImageSourceParam{
+								Type: anthropic.F(anthropic.BetaURLImageSourceTypeURL),
+								URL:  anthropic.F("https://example.com/img.jpg"),
+							}),
+						},
+						anthropic.BetaBase64PDFBlockParam{
+							Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
+							Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaBase64PDFSourceParam{
+								Type:      anthropic.F(anthropic.BetaBase64PDFSourceTypeBase64),
+								Data:      anthropic.F(base64.StdEncoding.EncodeToString([]byte("test pdf data"))),
+								MediaType: anthropic.F(anthropic.BetaBase64PDFSourceMediaTypeApplicationPDF),
+							}),
+						},
+					),
+				},
+				Betas: []anthropic.AnthropicBeta{"pdfs-2024-09-25"},
+			},
+		},
+		{
+			name: "assistant message with value type content blocks",
+			prompt: []api.Message{
+				&api.AssistantMessage{
+					Content: []api.ContentBlock{
+						api.TextBlock{
+							Text: "Assistant text as value",
+						},
+						api.ToolCallBlock{
+							ToolCallID: "tool-456",
+							ToolName:   "search_tool",
+							Args:       json.RawMessage(`{"query":"test"}`),
+						},
+					},
+				},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewAssistantMessage(
+						NewTextBlock("Assistant text as value"),
+						NewToolUseBlockParam("tool-456", "search_tool", map[string]any{"query": "test"}),
+					),
+				},
+			},
+		},
+		{
+			name: "tool message with value type content blocks in result",
+			prompt: []api.Message{
+				&api.ToolMessage{
+					Content: []api.ToolResultBlock{
+						{
+							ToolCallID: "tool-789",
+							ToolName:   "image_tool",
+							Content: []api.ContentBlock{
+								api.TextBlock{
+									Text: "Tool result text",
+								},
+								api.ImageBlock{
+									Data:      []byte{1, 2, 3, 4},
+									MediaType: "image/png",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &AnthropicPrompt{
+				Messages: []anthropic.BetaMessageParam{
+					NewUserMessage(
+						anthropic.BetaToolResultBlockParam{
+							Type:      anthropic.F(anthropic.BetaToolResultBlockParamTypeToolResult),
+							ToolUseID: anthropic.F("tool-789"),
+							Content: anthropic.F([]anthropic.BetaToolResultBlockParamContentUnion{
+								NewTextBlock("Tool result text"),
+								NewImageBlockBase64("image/png", base64.StdEncoding.EncodeToString([]byte{1, 2, 3, 4})),
+							}),
+							IsError: anthropic.F(false),
+						},
+					),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

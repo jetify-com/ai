@@ -94,7 +94,7 @@ func main() {
     model := openai.NewLanguageModel("gpt-4o")
 
     // Generate text
-    response, err := ai.GenerateText(
+    response, err := ai.GenerateTextStr(
         context.Background(),
         "Explain quantum computing in simple terms",
         ai.WithModel(model),
@@ -104,7 +104,7 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println(response.Text)
+    // Do whatever you want with the response...
 }
 ```
 

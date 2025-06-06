@@ -146,6 +146,23 @@ var systemMessageTests = []testCase{
 			},
 		},
 	},
+	{
+		name: "system message value type (not pointer)",
+		input: []api.Message{
+			api.SystemMessage{
+				Content: "Hello from value type",
+			},
+		},
+		modelConfig: modelConfig{
+			SystemMessageMode: "system",
+		},
+		expectedMessages: []string{
+			`{
+				"role": "system",
+				"content": "Hello from value type"
+			}`,
+		},
+	},
 }
 
 // User message test cases
@@ -545,6 +562,29 @@ var userMessageTests = []testCase{
 		},
 		expectedError: "failed to encode content block: text block cannot be nil",
 	},
+	{
+		name: "user message value type (not pointer)",
+		input: []api.Message{
+			api.UserMessage{
+				Content: []api.ContentBlock{
+					&api.TextBlock{
+						Text: "Hello from value type",
+					},
+				},
+			},
+		},
+		expectedMessages: []string{
+			`{
+				"role": "user",
+				"content": [
+					{
+						"type": "input_text",
+						"text": "Hello from value type"
+					}
+				]
+			}`,
+		},
+	},
 }
 
 // Assistant message test cases
@@ -746,6 +786,30 @@ var assistantMessageTests = []testCase{
 			},
 		},
 		expectedError: "unsupported content block type in assistant message: *api.ImageBlock",
+	},
+	{
+		name: "assistant message value type (not pointer)",
+		input: []api.Message{
+			api.AssistantMessage{
+				Content: []api.ContentBlock{
+					&api.TextBlock{
+						Text: "Hello from value type",
+					},
+				},
+			},
+		},
+		expectedMessages: []string{
+			`{
+				"role": "assistant",
+				"content": [
+					{
+						"type": "output_text",
+						"text": "Hello from value type"
+					}
+				],
+				"type": "message"
+			}`,
+		},
 	},
 }
 
@@ -1002,6 +1066,27 @@ var toolMessageTests = []testCase{
 		},
 		expectedError: "expected image block for computer use tool result",
 	},
+	{
+		name: "tool message value type (not pointer)",
+		input: []api.Message{
+			api.ToolMessage{
+				Content: []api.ToolResultBlock{
+					{
+						ToolCallID: "call_123",
+						ToolName:   "search",
+						Result:     json.RawMessage(`{"result":"success"}`),
+					},
+				},
+			},
+		},
+		expectedMessages: []string{
+			`{
+				"type": "function_call_output",
+				"call_id": "call_123",
+				"output": "{\"result\":\"success\"}"
+			}`,
+		},
+	},
 }
 
 func TestEncodePrompt(t *testing.T) {
@@ -1019,5 +1104,113 @@ func TestEncodePrompt(t *testing.T) {
 
 	t.Run("ToolMessages", func(t *testing.T) {
 		runTestCases(t, toolMessageTests)
+	})
+
+	t.Run("ValueTypeContentBlocks", func(t *testing.T) {
+		valueTypeTests := []testCase{
+			{
+				name: "user message with value type content blocks",
+				input: []api.Message{
+					&api.UserMessage{
+						Content: []api.ContentBlock{
+							api.TextBlock{
+								Text: "Text block as value",
+							},
+							api.ImageBlock{
+								URL: "https://example.com/image.jpg",
+							},
+							api.FileBlock{
+								Data:      []byte{1, 2, 3, 4, 5},
+								MediaType: "application/pdf",
+							},
+						},
+					},
+				},
+				expectedMessages: []string{
+					`{
+						"role": "user",
+						"content": [
+							{
+								"type": "input_text",
+								"text": "Text block as value"
+							},
+							{
+								"type": "input_image",
+								"image_url": "https://example.com/image.jpg"
+							},
+							{
+								"type": "input_file",
+								"filename": "file.pdf",
+								"file_data": "data:application/pdf;base64,AQIDBAU="
+							}
+						]
+					}`,
+				},
+			},
+			{
+				name: "assistant message with value type content blocks",
+				input: []api.Message{
+					&api.AssistantMessage{
+						Content: []api.ContentBlock{
+							api.TextBlock{
+								Text: "Text block as value",
+							},
+							api.ToolCallBlock{
+								ToolCallID: "call_789",
+								ToolName:   "test_tool",
+								Args:       json.RawMessage(`{"param":"value"}`),
+							},
+						},
+					},
+				},
+				expectedMessages: []string{
+					`{
+						"role": "assistant",
+						"content": [
+							{
+								"type": "output_text",
+								"text": "Text block as value"
+							}
+						],
+						"type": "message"
+					}`,
+					`{
+						"type": "function_call",
+						"call_id": "call_789",
+						"name": "test_tool",
+						"arguments": "{\"param\":\"value\"}"
+					}`,
+				},
+			},
+			{
+				name: "computer tool result with value type image block",
+				input: []api.Message{
+					&api.ToolMessage{
+						Content: []api.ToolResultBlock{
+							{
+								ToolCallID: "openai.computer_use_preview",
+								Content: []api.ContentBlock{
+									api.ImageBlock{
+										Data:      []byte("test-image-data"),
+										MediaType: "image/png",
+									},
+								},
+							},
+						},
+					},
+				},
+				expectedMessages: []string{
+					`{
+						"type": "computer_call_output",
+						"call_id": "openai.computer_use_preview",
+						"output": {
+							"type": "computer_screenshot",
+							"image_url": "data:image/png;base64,dGVzdC1pbWFnZS1kYXRh"
+						}
+					}`,
+				},
+			},
+		}
+		runTestCases(t, valueTypeTests)
 	})
 }

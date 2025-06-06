@@ -226,7 +226,7 @@ type ImageBlock struct {
 	// Data contains the image data as raw bytes.
 	// If this is set, also set the MimeType so that the AI SDK knows
 	// how to interpret the data.
-	Data []byte `json:"data,omitzero"`
+	Data []byte `json:"data,omitempty"`
 
 	// MediaType is the IANA media type (mime type) of the image
 	MediaType string `json:"media_type,omitzero"`
@@ -270,7 +270,7 @@ type FileBlock struct {
 	// Data contains the file data as raw bytes.
 	// If this is set, also set the MimeType so that the AI SDK knows
 	// how to interpret the data.
-	Data []byte `json:"data,omitzero"`
+	Data []byte `json:"data,omitempty"`
 
 	// MediaType is the IANA media type (mime type) of the file.
 	// It can support wildcards, e.g. `image/*` (in which case the provider needs to take appropriate action).
@@ -349,7 +349,7 @@ type ToolResultBlock struct {
 	// This enables advanced tool results including images.
 	// When this is used, the Result field should be ignored
 	// (if the provider supports content).
-	Content []ContentBlock `json:"content,omitzero"`
+	Content []ContentBlock `json:"content,omitempty"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// They are passed through to the provider from the AI SDK and enable

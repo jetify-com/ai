@@ -26,47 +26,87 @@ func EncodePrompt(prompt []api.Message, modelConfig modelConfig) (*OpenAIPrompt,
 	warnings := []api.CallWarning{}
 
 	for _, message := range prompt {
-		switch m := message.(type) {
-		case *api.SystemMessage:
-			item, itemWarnings, err := EncodeSystemMessage(m, modelConfig)
-			if err != nil {
-				return nil, fmt.Errorf("encoding system message: %w", err)
-			}
-			if item != nil {
-				messages = append(messages, *item)
-			}
-			warnings = append(warnings, itemWarnings...)
-
-		case *api.UserMessage:
-			item, err := EncodeUserMessage(m)
-			if err != nil {
-				return nil, fmt.Errorf("encoding user message: %w", err)
-			}
-			messages = append(messages, item)
-
-		case *api.AssistantMessage:
-			items, err := EncodeAssistantMessage(m)
-			if err != nil {
-				return nil, fmt.Errorf("encoding assistant message: %w", err)
-			}
-			messages = append(messages, items...)
-
-		case *api.ToolMessage:
-			items, err := EncodeToolMessage(m)
-			if err != nil {
-				return nil, fmt.Errorf("encoding tool message: %w", err)
-			}
-			messages = append(messages, items...)
-
-		default:
-			return nil, fmt.Errorf("unsupported message type: %T", message)
+		encodedMessages, messageWarnings, err := encodeMessage(message, modelConfig)
+		if err != nil {
+			return nil, err
 		}
+		messages = append(messages, encodedMessages...)
+		warnings = append(warnings, messageWarnings...)
 	}
 
 	return &OpenAIPrompt{
 		Messages: messages,
 		Warnings: warnings,
 	}, nil
+}
+
+func encodeMessage(message api.Message, modelConfig modelConfig) ([]responses.ResponseInputItemUnionParam, []api.CallWarning, error) {
+	switch msg := message.(type) {
+	case *api.SystemMessage:
+		item, itemWarnings, err := EncodeSystemMessage(msg, modelConfig)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding system message: %w", err)
+		}
+		if item != nil {
+			return []responses.ResponseInputItemUnionParam{*item}, itemWarnings, nil
+		}
+		return []responses.ResponseInputItemUnionParam{}, itemWarnings, nil
+
+	case api.SystemMessage:
+		item, itemWarnings, err := EncodeSystemMessage(&msg, modelConfig)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding system message: %w", err)
+		}
+		if item != nil {
+			return []responses.ResponseInputItemUnionParam{*item}, itemWarnings, nil
+		}
+		return []responses.ResponseInputItemUnionParam{}, itemWarnings, nil
+
+	case *api.UserMessage:
+		item, err := EncodeUserMessage(msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding user message: %w", err)
+		}
+		return []responses.ResponseInputItemUnionParam{item}, nil, nil
+
+	case api.UserMessage:
+		item, err := EncodeUserMessage(&msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding user message: %w", err)
+		}
+		return []responses.ResponseInputItemUnionParam{item}, nil, nil
+
+	case *api.AssistantMessage:
+		items, err := EncodeAssistantMessage(msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding assistant message: %w", err)
+		}
+		return items, nil, nil
+
+	case api.AssistantMessage:
+		items, err := EncodeAssistantMessage(&msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding assistant message: %w", err)
+		}
+		return items, nil, nil
+
+	case *api.ToolMessage:
+		items, err := EncodeToolMessage(msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding tool message: %w", err)
+		}
+		return items, nil, nil
+
+	case api.ToolMessage:
+		items, err := EncodeToolMessage(&msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("encoding tool message: %w", err)
+		}
+		return items, nil, nil
+
+	default:
+		return nil, nil, fmt.Errorf("unsupported message type: %T", message)
+	}
 }
 
 // EncodeSystemMessage converts a system message to OpenAI format
@@ -120,11 +160,20 @@ func EncodeUserContentBlock(block api.ContentBlock) (*responses.ResponseInputCon
 	case *api.TextBlock:
 		return EncodeInputTextBlock(b)
 
+	case api.TextBlock:
+		return EncodeInputTextBlock(&b)
+
 	case *api.ImageBlock:
 		return EncodeImageBlock(b)
 
+	case api.ImageBlock:
+		return EncodeImageBlock(&b)
+
 	case *api.FileBlock:
 		return EncodeFileBlock(b)
+
+	case api.FileBlock:
+		return EncodeFileBlock(&b)
 
 	default:
 		return nil, fmt.Errorf("unsupported content block type: %T", block)
@@ -310,9 +359,24 @@ func EncodeAssistantMessage(message *api.AssistantMessage) ([]responses.Response
 				return nil, fmt.Errorf("encoding text block: %w", err)
 			}
 			items = append(items, *item)
+		case api.TextBlock:
+			item, err := EncodeOutputTextBlock(&b)
+			if err != nil {
+				return nil, fmt.Errorf("encoding text block: %w", err)
+			}
+			items = append(items, *item)
 		case *api.ToolCallBlock:
 			// Handle the tool call as a separate item
 			item, err := EncodeToolCallBlock(b)
+			if err != nil {
+				return nil, fmt.Errorf("encoding tool call block: %w", err)
+			}
+			if item != nil {
+				items = append(items, *item)
+			}
+		case api.ToolCallBlock:
+			// Handle the tool call as a separate item
+			item, err := EncodeToolCallBlock(&b)
 			if err != nil {
 				return nil, fmt.Errorf("encoding tool call block: %w", err)
 			}
@@ -350,8 +414,13 @@ func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseIn
 	}
 
 	content := result.Content[0]
-	imageBlock, ok := content.(api.ImageBlock)
-	if !ok {
+	var imageBlock *api.ImageBlock
+	switch b := content.(type) {
+	case *api.ImageBlock:
+		imageBlock = b
+	case api.ImageBlock:
+		imageBlock = &b
+	default:
 		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("expected image block for computer use tool result, got %T", content)
 	}
 
