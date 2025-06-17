@@ -20,11 +20,11 @@ Get your API keys from:
 | Example | Description |
 |---------|-------------|
 | [**simple-text**](basic/simple-text/) | Generate text from a simple string prompt |
+| [**streaming-text**](basic/streaming-text/) | Stream text responses in real-time |
 
 ### More Examples Coming Soon
 
 - **Conversation** - Multi-message conversations with context
-- **Streaming** - Stream responses in real-time
 - **Multi-modal** - Working with images and files
 - **Tools** - Function calling and tool usage
 - **Advanced** - Production patterns and error handling
