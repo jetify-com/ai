@@ -6,6 +6,13 @@ import (
 	"go.jetify.com/ai/api"
 )
 
+// Default versions and recommended settings for Anthropic tools
+const (
+	DefaultToolVersion       = "20250124"
+	RecommendedDisplayWidth  = 1280
+	RecommendedDisplayHeight = 800
+)
+
 // ComputerAction is a ComputerToolCall action.
 type ComputerAction string
 
@@ -94,7 +101,7 @@ const (
 // 	- use ints instead of json.Number while still being flexible about
 // 	  accepting ints, floats, or number strings
 
-// ComputerToolCall contains the parameters of a call to [ComputerUseTool].
+// ComputerToolCall contains the parameters of a call to [ComputerTool].
 type ComputerToolCall struct {
 	// Action is the action to perform. It is the only mandatory field.
 	Action ComputerAction `json:"action"`
@@ -130,10 +137,9 @@ type ComputerToolCall struct {
 	ScrollDirection ScrollDirection `json:"scroll_direction,omitzero"`
 }
 
-// ComputerUseTool is a built-in tool that can be used to control a computer.
-// It allows the model to use a mouse and keyboard and to take screenshots.
+// ComputerToolArgs contains the configuration arguments for the computer use tool.
 // See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
-type ComputerUseTool struct {
+type ComputerToolArgs struct {
 	// The version of the computer tool to use.
 	// Optional field, defaults to the latest version. Possible values are: "20250124", "20241022".
 	Version string `json:"version"`
@@ -150,50 +156,118 @@ type ComputerUseTool struct {
 	DisplayNumber int `json:"display_number,omitzero"`
 }
 
-var _ api.ProviderDefinedTool = &ComputerUseTool{}
+// ComputerToolOption allows customizing computer tool configuration.
+type ComputerToolOption func(*ComputerToolArgs)
 
-func (t *ComputerUseTool) ToolType() string { return "provider-defined" }
-
-func (t *ComputerUseTool) ID() string {
-	return "anthropic.computer"
+// WithComputerVersion sets the computer tool version.
+func WithComputerVersion(version string) ComputerToolOption {
+	return func(args *ComputerToolArgs) {
+		args.Version = version
+	}
 }
 
-func (t *ComputerUseTool) Name() string { return "computer" }
+// WithDisplayNumber sets the display number for X11 environments.
+func WithDisplayNumber(displayNum int) ComputerToolOption {
+	return func(args *ComputerToolArgs) {
+		args.DisplayNumber = displayNum
+	}
+}
 
-// BashTool is a built-in tool that can be used to run shell commands.
+// ComputerTool creates a new computer use tool with the specified configuration.
+// ComputerTool is a built-in tool that can be used to control a computer.
+// It allows the model to use a mouse and keyboard and to take screenshots.
 // See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
-type BashTool struct {
+func ComputerTool(displayWidth, displayHeight int, options ...ComputerToolOption) api.ProviderDefinedTool {
+	args := &ComputerToolArgs{
+		DisplayWidthPx:  displayWidth,
+		DisplayHeightPx: displayHeight,
+		Version:         DefaultToolVersion,
+	}
+
+	// Apply options
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "anthropic.computer",
+		Name: "computer",
+		Args: args,
+	}
+}
+
+// BashToolArgs contains the configuration arguments for the bash tool.
+// See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
+type BashToolArgs struct {
 	// The version of the bash tool to use.
 	// Optional field, defaults to the latest version. Possible values are: "20250124", "20241022".
 	Version string `json:"version"`
 }
 
-var _ api.ProviderDefinedTool = &BashTool{}
+// BashToolOption allows customizing bash tool configuration.
+type BashToolOption func(*BashToolArgs)
 
-func (t *BashTool) ToolType() string { return "provider-defined" }
-
-func (t *BashTool) ID() string {
-	return "anthropic.bash"
+// WithBashVersion sets the bash tool version.
+func WithBashVersion(version string) BashToolOption {
+	return func(args *BashToolArgs) {
+		args.Version = version
+	}
 }
 
-func (t *BashTool) Name() string { return "bash" }
+// BashTool creates a new bash tool with the specified configuration.
+// BashTool is a built-in tool that can be used to run shell commands.
+// See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
+func BashTool(options ...BashToolOption) api.ProviderDefinedTool {
+	args := &BashToolArgs{
+		Version: DefaultToolVersion,
+	}
 
-// TextEditorTool is a built-in tool that can be used to view, create and edit text files.
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "anthropic.bash",
+		Name: "bash",
+		Args: args,
+	}
+}
+
+// TextEditorToolArgs contains the configuration arguments for the text editor tool.
 // See the [text editor guide](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/text-editor-tool) for more details.
-type TextEditorTool struct {
+type TextEditorToolArgs struct {
 	// The version of the text editor tool to use.
 	// Optional field, defaults to the latest version. Possible values are: "20250124", "20241022".
 	Version string `json:"version"`
 }
 
-var _ api.ProviderDefinedTool = &TextEditorTool{}
+// TextEditorToolOption allows customizing text editor tool configuration.
+type TextEditorToolOption func(*TextEditorToolArgs)
 
-func (t *TextEditorTool) ToolType() string { return "provider-defined" }
-
-func (t *TextEditorTool) ID() string {
-	return "anthropic.text_editor"
+// WithTextEditorVersion sets the text editor tool version.
+func WithTextEditorVersion(version string) TextEditorToolOption {
+	return func(args *TextEditorToolArgs) {
+		args.Version = version
+	}
 }
 
-func (t *TextEditorTool) Name() string { return "str_replace_editor" }
+// TextEditorTool creates a new text editor tool with the specified configuration.
+// TextEditorTool is a built-in tool that can be used to view, create and edit text files.
+// See the [text editor guide](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/text-editor-tool) for more details.
+func TextEditorTool(options ...TextEditorToolOption) api.ProviderDefinedTool {
+	args := &TextEditorToolArgs{
+		Version: DefaultToolVersion,
+	}
+
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "anthropic.text_editor",
+		Name: "str_replace_editor",
+		Args: args,
+	}
+}
 
 // TODO: Add predefined tool call blocks for the different built-in tools.

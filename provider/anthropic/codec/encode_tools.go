@@ -16,6 +16,31 @@ type AnthropicTools struct {
 	Warnings   []api.CallWarning
 }
 
+// convertArgs is a generic helper function that converts tool.Args to the expected struct type.
+// It handles both cases where Args is already the correct struct type or a map[string]any.
+func convertArgs[T any](args any) (*T, error) {
+	// Try direct type assertion first
+	if typedArgs, ok := args.(*T); ok {
+		return typedArgs, nil
+	}
+	if typedArgs, ok := args.(T); ok {
+		return &typedArgs, nil
+	}
+
+	// If that fails, try converting from map[string]any via JSON marshaling/unmarshaling
+	data, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal args: %w", err)
+	}
+
+	var result T
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal args to target type: %w", err)
+	}
+
+	return &result, nil
+}
+
 // encodeInputSchema converts the JSON schema definition to Anthropic's schema format
 func encodeInputSchema(schema *jsonschema.Definition) (anthropic.BetaToolInputSchemaParam, error) {
 	// Verify the schema type is "object"
@@ -82,80 +107,80 @@ func EncodeProviderDefinedTool(
 	// TODO: Instead of specifying the tool version as part of the tool definition,
 	// should we automatically figure it out based on the on the version of Sonnet selected?
 
-	switch tool.ID() {
+	switch tool.ID {
 	case "anthropic.computer":
-		computerTool, ok := tool.(*ComputerUseTool)
-		if !ok {
-			return nil, betas, warnings, fmt.Errorf("computer tool must be of type ComputerUseTool, got %T", tool)
+		computerArgs, err := convertArgs[ComputerToolArgs](tool.Args)
+		if err != nil {
+			return nil, betas, warnings, fmt.Errorf("failed to convert computer tool args: %w", err)
 		}
-		switch computerTool.Version {
+		switch computerArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
 			return anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name(computerTool.Name())),
+				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name(tool.Name)),
 				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(int64(computerTool.DisplayWidthPx)),
-				DisplayHeightPx: anthropic.Int(int64(computerTool.DisplayHeightPx)),
-				DisplayNumber:   anthropic.Int(int64(computerTool.DisplayNumber)),
+				DisplayWidthPx:  anthropic.Int(int64(computerArgs.DisplayWidthPx)),
+				DisplayHeightPx: anthropic.Int(int64(computerArgs.DisplayHeightPx)),
+				DisplayNumber:   anthropic.Int(int64(computerArgs.DisplayNumber)),
 			}, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
 			return anthropic.BetaToolComputerUse20241022Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name(computerTool.Name())),
+				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name(tool.Name)),
 				Type:            anthropic.F(anthropic.BetaToolComputerUse20241022TypeComputer20241022),
-				DisplayWidthPx:  anthropic.Int(int64(computerTool.DisplayWidthPx)),
-				DisplayHeightPx: anthropic.Int(int64(computerTool.DisplayHeightPx)),
-				DisplayNumber:   anthropic.Int(int64(computerTool.DisplayNumber)),
+				DisplayWidthPx:  anthropic.Int(int64(computerArgs.DisplayWidthPx)),
+				DisplayHeightPx: anthropic.Int(int64(computerArgs.DisplayHeightPx)),
+				DisplayNumber:   anthropic.Int(int64(computerArgs.DisplayNumber)),
 			}, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported computer tool version: %s", computerTool.Version)
+			return nil, betas, warnings, fmt.Errorf("unsupported computer tool version: %s", computerArgs.Version)
 		}
 
 	case "anthropic.text_editor":
-		textEditorTool, ok := tool.(*TextEditorTool)
-		if !ok {
-			return nil, betas, warnings, fmt.Errorf("text editor tool must be of type TextEditorTool, got %T", tool)
+		textEditorArgs, err := convertArgs[TextEditorToolArgs](tool.Args)
+		if err != nil {
+			return nil, betas, warnings, fmt.Errorf("failed to convert text editor tool args: %w", err)
 		}
-		switch textEditorTool.Version {
+		switch textEditorArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
 			return anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name(textEditorTool.Name())),
+				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name(tool.Name)),
 				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
 			}, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
 			return anthropic.BetaToolTextEditor20241022Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name(textEditorTool.Name())),
+				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name(tool.Name)),
 				Type: anthropic.F(anthropic.BetaToolTextEditor20241022TypeTextEditor20241022),
 			}, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported text editor tool version: %s", textEditorTool.Version)
+			return nil, betas, warnings, fmt.Errorf("unsupported text editor tool version: %s", textEditorArgs.Version)
 		}
 
 	case "anthropic.bash":
-		bashTool, ok := tool.(*BashTool)
-		if !ok {
-			return nil, betas, warnings, fmt.Errorf("bash tool must be of type BashTool, got %T", tool)
+		bashArgs, err := convertArgs[BashToolArgs](tool.Args)
+		if err != nil {
+			return nil, betas, warnings, fmt.Errorf("failed to convert bash tool args: %w", err)
 		}
-		switch bashTool.Version {
+		switch bashArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
 			return anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name(bashTool.Name())),
+				Name: anthropic.F(anthropic.BetaToolBash20250124Name(tool.Name)),
 				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
 			}, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
 			return anthropic.BetaToolBash20241022Param{
-				Name: anthropic.F(anthropic.BetaToolBash20241022Name(bashTool.Name())),
+				Name: anthropic.F(anthropic.BetaToolBash20241022Name(tool.Name)),
 				Type: anthropic.F(anthropic.BetaToolBash20241022TypeBash20241022),
 			}, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported bash tool version: %s", bashTool.Version)
+			return nil, betas, warnings, fmt.Errorf("unsupported bash tool version: %s", bashArgs.Version)
 		}
 
 	default:

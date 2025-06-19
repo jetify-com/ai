@@ -1,6 +1,12 @@
 package api
 
-import jsonschema "github.com/sashabaranov/go-openai/jsonschema"
+import (
+	"encoding/json"
+	"fmt"
+
+	jsonschema "github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/tidwall/gjson"
+)
 
 // TODO: should we call it Config? Settings?
 // We should think about the field name if it was being sent as JSON in a request.
@@ -62,6 +68,61 @@ type CallOptions struct {
 }
 
 func (o CallOptions) GetProviderMetadata() *ProviderMetadata { return o.ProviderMetadata }
+
+// UnmarshalJSON implements custom JSON unmarshaling for CallOptions
+// to handle the polymorphic ToolDefinition interface
+func (o *CallOptions) UnmarshalJSON(data []byte) error {
+	// Use a temporary struct to unmarshal everything except tools
+	type CallOptionsAlias CallOptions
+	temp := struct {
+		*CallOptionsAlias
+		Tools []json.RawMessage `json:"tools,omitempty"`
+	}{
+		CallOptionsAlias: &CallOptionsAlias{}, // Create new zero-value instance
+	}
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Copy back all fields except Tools (which we handle separately)
+	*o = CallOptions(*temp.CallOptionsAlias)
+
+	// Now handle tools with type discrimination using gjson for better performance
+	if temp.Tools != nil {
+		tools := make([]ToolDefinition, len(temp.Tools))
+		for i, toolData := range temp.Tools {
+			// Use gjson to extract type without full unmarshaling
+			typeResult := gjson.GetBytes(toolData, "type")
+			if !typeResult.Exists() {
+				return fmt.Errorf("tool at index %d missing required 'type' field", i)
+			}
+
+			toolType := typeResult.String()
+
+			// Based on type, unmarshal into appropriate concrete type
+			switch toolType {
+			case "function":
+				var functionTool FunctionTool
+				if err := json.Unmarshal(toolData, &functionTool); err != nil {
+					return fmt.Errorf("failed to unmarshal function tool at index %d: %w", i, err)
+				}
+				tools[i] = &functionTool
+			case "provider-defined":
+				var providerTool ProviderDefinedTool
+				if err := json.Unmarshal(toolData, &providerTool); err != nil {
+					return fmt.Errorf("failed to unmarshal provider-defined tool at index %d: %w", i, err)
+				}
+				tools[i] = &providerTool
+			default:
+				return fmt.Errorf("unknown tool type '%s' at index %d", toolType, i)
+			}
+		}
+		o.Tools = tools
+	}
+
+	return nil
+}
 
 // ResponseFormat specifies the format of the model's response.
 type ResponseFormat struct {

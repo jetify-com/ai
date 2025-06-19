@@ -107,10 +107,26 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "file search tool",
+			name: "file search tool (constructor)",
 			tools: []api.ToolDefinition{
-				&FileSearchTool{
-					VectorStoreIDs: []string{"store1", "store2"},
+				FileSearchTool(WithVectorStoreIDs("store1", "store2")),
+			},
+			expectedTools: []string{
+				`{
+					"type": "file_search",
+					"vector_store_ids": ["store1", "store2"]
+				}`,
+			},
+		},
+		{
+			name: "file search tool (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.file_search",
+					Name: "file_search",
+					Args: map[string]any{
+						"vector_store_ids": []string{"store1", "store2"},
+					},
 				},
 			},
 			expectedTools: []string{
@@ -132,9 +148,7 @@ func TestEncodeTools(t *testing.T) {
 						},
 					},
 				},
-				&FileSearchTool{
-					VectorStoreIDs: []string{"store3"},
-				},
+				FileSearchTool(WithVectorStoreIDs("store3")),
 			},
 			expectedTools: []string{
 				`{
@@ -159,12 +173,20 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "unsupported tool type with warning",
 			tools: []api.ToolDefinition{
-				&mockUnsupportedTool{id: "unsupported_tool"},
+				api.ProviderDefinedTool{
+					ID:   "unsupported_tool",
+					Name: "unsupported",
+					Args: &mockUnsupportedTool{id: "unsupported_tool"},
+				},
 			},
 			expectedWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: &mockUnsupportedTool{id: "unsupported_tool"},
+					Tool: api.ProviderDefinedTool{
+						ID:   "unsupported_tool",
+						Name: "unsupported",
+						Args: &mockUnsupportedTool{id: "unsupported_tool"},
+					},
 				},
 			},
 		},
@@ -291,10 +313,31 @@ func TestEncodeTools(t *testing.T) {
 			expectedToolChoice: `{"type":"function","name":"function2"}`,
 		},
 		{
-			name: "tool choice provider-defined tool",
+			name: "tool choice provider-defined tool (constructor)",
 			tools: []api.ToolDefinition{
-				&FileSearchTool{
-					VectorStoreIDs: []string{"store1"},
+				FileSearchTool(WithVectorStoreIDs("store1")),
+			},
+			toolChoice: &api.ToolChoice{
+				Type:     "tool",
+				ToolName: "file_search",
+			},
+			expectedTools: []string{
+				`{
+					"type": "file_search",
+					"vector_store_ids": ["store1"]
+				}`,
+			},
+			expectedToolChoice: `{"type":"file_search"}`,
+		},
+		{
+			name: "tool choice provider-defined tool (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.file_search",
+					Name: "file_search",
+					Args: map[string]any{
+						"vector_store_ids": []string{"store1"},
+					},
 				},
 			},
 			toolChoice: &api.ToolChoice{
@@ -310,9 +353,9 @@ func TestEncodeTools(t *testing.T) {
 			expectedToolChoice: `{"type":"file_search"}`,
 		},
 		{
-			name: "web search tool with minimal settings",
+			name: "web search tool with minimal settings (constructor)",
 			tools: []api.ToolDefinition{
-				&WebSearchTool{},
+				WebSearchTool(),
 			},
 			expectedTools: []string{
 				`{
@@ -321,10 +364,41 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "web search tool with search context size",
+			name: "web search tool with minimal settings (map args)",
 			tools: []api.ToolDefinition{
-				&WebSearchTool{
-					SearchContextSize: "large",
+				api.ProviderDefinedTool{
+					ID:   "openai.web_search_preview",
+					Name: "web_search_preview",
+					Args: map[string]any{},
+				},
+			},
+			expectedTools: []string{
+				`{
+					"type": "web_search_preview"
+				}`,
+			},
+		},
+		{
+			name: "web search tool with search context size (constructor)",
+			tools: []api.ToolDefinition{
+				WebSearchTool(WithSearchContextSize("large")),
+			},
+			expectedTools: []string{
+				`{
+					"type": "web_search_preview",
+					"search_context_size": "large"
+				}`,
+			},
+		},
+		{
+			name: "web search tool with search context size (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.web_search_preview",
+					Name: "web_search_preview",
+					Args: map[string]any{
+						"search_context_size": "large",
+					},
 				},
 			},
 			expectedTools: []string{
@@ -335,14 +409,41 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "web search tool with user location",
+			name: "web search tool with user location (constructor)",
 			tools: []api.ToolDefinition{
-				&WebSearchTool{
-					UserLocation: &WebSearchUserLocation{
-						City:     "San Francisco",
-						Country:  "US",
-						Region:   "CA",
-						Timezone: "America/Los_Angeles",
+				WebSearchTool(WithUserLocation(&WebSearchUserLocation{
+					City:     "San Francisco",
+					Country:  "US",
+					Region:   "CA",
+					Timezone: "America/Los_Angeles",
+				})),
+			},
+			expectedTools: []string{
+				`{
+					"type": "web_search_preview",
+					"user_location": {
+						"city": "San Francisco",
+						"country": "US",
+						"region": "CA",
+						"timezone": "America/Los_Angeles",
+						"type": "approximate"
+					}
+				}`,
+			},
+		},
+		{
+			name: "web search tool with user location (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.web_search_preview",
+					Name: "web_search_preview",
+					Args: map[string]any{
+						"user_location": map[string]any{
+							"city":     "San Francisco",
+							"country":  "US",
+							"region":   "CA",
+							"timezone": "America/Los_Angeles",
+						},
 					},
 				},
 			},
@@ -360,12 +461,30 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "computer use tool",
+			name: "computer use tool (constructor)",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayHeight: 768,
-					DisplayWidth:  1366,
-					Environment:   "windows",
+				ComputerUseTool(1366, 768, "windows"),
+			},
+			expectedTools: []string{
+				`{
+					"type": "computer_use_preview",
+					"display_height": 768,
+					"display_width": 1366,
+					"environment": "windows"
+				}`,
+			},
+		},
+		{
+			name: "computer use tool (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_height": 768,
+						"display_width":  1366,
+						"environment":    "windows",
+					},
 				},
 			},
 			expectedTools: []string{
@@ -380,9 +499,13 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool missing required display width",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayHeight: 768,
-					Environment:   "windows",
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_height": 768,
+						"environment":    "windows",
+					},
 				},
 			},
 			expectedError: "displayWidth is required and must be positive",
@@ -390,21 +513,52 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool missing required display height",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayWidth: 1366,
-					Environment:  "windows",
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_width": 1366,
+						"environment":   "windows",
+					},
 				},
 			},
 			expectedError: "displayHeight is required and must be positive",
 		},
 		{
-			name: "web search tool with partial user location",
+			name: "web search tool with partial user location (constructor)",
 			tools: []api.ToolDefinition{
-				&WebSearchTool{
-					SearchContextSize: "medium",
-					UserLocation: &WebSearchUserLocation{
+				WebSearchTool(
+					WithSearchContextSize("medium"),
+					WithUserLocation(&WebSearchUserLocation{
 						City:    "London",
 						Country: "UK",
+					}),
+				),
+			},
+			expectedTools: []string{
+				`{
+					"type": "web_search_preview",
+					"search_context_size": "medium",
+					"user_location": {
+						"city": "London",
+						"country": "UK",
+						"type": "approximate"
+					}
+				}`,
+			},
+		},
+		{
+			name: "web search tool with partial user location (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.web_search_preview",
+					Name: "web_search_preview",
+					Args: map[string]any{
+						"search_context_size": "medium",
+						"user_location": map[string]any{
+							"city":    "London",
+							"country": "UK",
+						},
 					},
 				},
 			},
@@ -421,12 +575,30 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "computer use tool with mac environment",
+			name: "computer use tool with mac environment (constructor)",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayHeight: 800,
-					DisplayWidth:  1200,
-					Environment:   "mac",
+				ComputerUseTool(1200, 800, "mac"),
+			},
+			expectedTools: []string{
+				`{
+					"type": "computer_use_preview",
+					"display_height": 800,
+					"display_width": 1200,
+					"environment": "mac"
+				}`,
+			},
+		},
+		{
+			name: "computer use tool with mac environment (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_height": 800,
+						"display_width":  1200,
+						"environment":    "mac",
+					},
 				},
 			},
 			expectedTools: []string{
@@ -439,12 +611,30 @@ func TestEncodeTools(t *testing.T) {
 			},
 		},
 		{
-			name: "computer use tool with browser environment",
+			name: "computer use tool with browser environment (constructor)",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayHeight: 1080,
-					DisplayWidth:  1920,
-					Environment:   "browser",
+				ComputerUseTool(1920, 1080, "browser"),
+			},
+			expectedTools: []string{
+				`{
+					"type": "computer_use_preview",
+					"display_height": 1080,
+					"display_width": 1920,
+					"environment": "browser"
+				}`,
+			},
+		},
+		{
+			name: "computer use tool with browser environment (map args)",
+			tools: []api.ToolDefinition{
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_height": 1080,
+						"display_width":  1920,
+						"environment":    "browser",
+					},
 				},
 			},
 			expectedTools: []string{
@@ -459,10 +649,14 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool with invalid environment",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{
-					DisplayHeight: 768,
-					DisplayWidth:  1366,
-					Environment:   "invalid_env",
+				api.ProviderDefinedTool{
+					ID:   "openai.computer_use_preview",
+					Name: "computer_use_preview",
+					Args: map[string]any{
+						"display_height": 768,
+						"display_width":  1366,
+						"environment":    "invalid_env",
+					},
 				},
 			},
 			expectedError: "environment must be one of: mac, windows, ubuntu, browser",
@@ -663,8 +857,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		expectedError    string
 	}{
 		{
-			name:  "file search tool",
-			input: &FileSearchTool{VectorStoreIDs: []string{"store1", "store2"}},
+			name:  "file search tool (constructor)",
+			input: FileSearchTool(WithVectorStoreIDs("store1", "store2")),
 			expected: `{
 				"type": "file_search",
 				"vector_store_ids": ["store1", "store2"]
@@ -672,13 +866,36 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			expectedWarnings: nil,
 		},
 		{
-			name:     "unsupported provider tool",
-			input:    &mockUnsupportedTool{id: "unsupported_tool"},
+			name: "file search tool (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "openai.file_search",
+				Name: "file_search",
+				Args: map[string]any{
+					"vector_store_ids": []string{"store1", "store2"},
+				},
+			},
+			expected: `{
+				"type": "file_search",
+				"vector_store_ids": ["store1", "store2"]
+			}`,
+			expectedWarnings: nil,
+		},
+		{
+			name: "unsupported provider tool",
+			input: api.ProviderDefinedTool{
+				ID:   "unsupported_tool",
+				Name: "unsupported",
+				Args: &mockUnsupportedTool{id: "unsupported_tool"},
+			},
 			expected: `null`,
 			expectedWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: &mockUnsupportedTool{id: "unsupported_tool"},
+					Tool: api.ProviderDefinedTool{
+						ID:   "unsupported_tool",
+						Name: "unsupported",
+						Args: &mockUnsupportedTool{id: "unsupported_tool"},
+					},
 				},
 			},
 		},
@@ -714,20 +931,4 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 // Mock unsupported tool for testing
 type mockUnsupportedTool struct {
 	id string
-}
-
-func (m *mockUnsupportedTool) ID() string {
-	return m.id
-}
-
-func (m *mockUnsupportedTool) ProviderID() string {
-	return "openai"
-}
-
-func (m *mockUnsupportedTool) Name() string {
-	return "Mock Unsupported Tool"
-}
-
-func (m *mockUnsupportedTool) ToolType() string {
-	return "provider-defined"
 }

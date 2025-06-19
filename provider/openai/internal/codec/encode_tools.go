@@ -113,12 +113,41 @@ func encodeFunctionTool(tool api.FunctionTool) (*responses.ToolUnionParam, []api
 	return &result, nil, nil
 }
 
+// convertArgs is a generic helper function that converts tool.Args to the expected struct type.
+// It handles both cases where Args is already the correct struct type or a map[string]any.
+func convertArgs[T any](args any) (*T, error) {
+	// Check if args is nil
+	if args == nil {
+		return nil, fmt.Errorf("args cannot be nil")
+	}
+	// Try direct type assertion first
+	if typedArgs, ok := args.(*T); ok {
+		return typedArgs, nil
+	}
+	if typedArgs, ok := args.(T); ok {
+		return &typedArgs, nil
+	}
+
+	// If that fails, try converting from map[string]any via JSON marshaling/unmarshaling
+	data, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal args: %w", err)
+	}
+
+	var result T
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal args to target type: %w", err)
+	}
+
+	return &result, nil
+}
+
 // encodeProviderDefinedTool encodes a provider-defined tool
 func encodeProviderDefinedTool(tool api.ProviderDefinedTool) (*responses.ToolUnionParam, []api.CallWarning, error) {
 	var result responses.ToolUnionParam
 	var err error
 
-	switch tool.ID() {
+	switch tool.ID {
 	case "openai.file_search":
 		result, err = encodeFileSearchTool(tool)
 		if err != nil {
@@ -165,19 +194,19 @@ func encodeProviderDefinedTool(tool api.ProviderDefinedTool) (*responses.ToolUni
 
 // encodeFileSearchTool creates a file search tool parameter
 func encodeFileSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
-	fileSearchTool, ok := tool.(*FileSearchTool)
-	if !ok {
-		return responses.ToolUnionParam{}, fmt.Errorf("expected FileSearchTool but got %T", tool)
+	fileSearchArgs, err := convertArgs[FileSearchToolArgs](tool.Args)
+	if err != nil {
+		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert file search tool args: %w", err)
 	}
 
-	return responses.ToolParamOfFileSearch(fileSearchTool.VectorStoreIDs), nil
+	return responses.ToolParamOfFileSearch(fileSearchArgs.VectorStoreIDs), nil
 }
 
 // encodeWebSearchTool creates a web search tool parameter
 func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
-	webSearchTool, ok := tool.(*WebSearchTool)
-	if !ok {
-		return responses.ToolUnionParam{}, fmt.Errorf("expected WebSearchTool but got %T", tool)
+	webSearchArgs, err := convertArgs[WebSearchToolArgs](tool.Args)
+	if err != nil {
+		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert web search tool args: %w", err)
 	}
 
 	// Create a web search tool param directly instead of using the helper function
@@ -185,28 +214,28 @@ func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam
 	webSearchParam.Type = responses.WebSearchToolTypeWebSearchPreview
 
 	// Set search context size if provided
-	if webSearchTool.SearchContextSize != "" {
-		webSearchParam.SearchContextSize = responses.WebSearchToolSearchContextSize(webSearchTool.SearchContextSize)
+	if webSearchArgs.SearchContextSize != "" {
+		webSearchParam.SearchContextSize = responses.WebSearchToolSearchContextSize(webSearchArgs.SearchContextSize)
 	}
 
 	// Set user location if provided
-	if webSearchTool.UserLocation != nil {
+	if webSearchArgs.UserLocation != nil {
 		userLocation := responses.WebSearchToolUserLocationParam{}
 
-		if webSearchTool.UserLocation.City != "" {
-			userLocation.City = openai.String(webSearchTool.UserLocation.City)
+		if webSearchArgs.UserLocation.City != "" {
+			userLocation.City = openai.String(webSearchArgs.UserLocation.City)
 		}
 
-		if webSearchTool.UserLocation.Country != "" {
-			userLocation.Country = openai.String(webSearchTool.UserLocation.Country)
+		if webSearchArgs.UserLocation.Country != "" {
+			userLocation.Country = openai.String(webSearchArgs.UserLocation.Country)
 		}
 
-		if webSearchTool.UserLocation.Region != "" {
-			userLocation.Region = openai.String(webSearchTool.UserLocation.Region)
+		if webSearchArgs.UserLocation.Region != "" {
+			userLocation.Region = openai.String(webSearchArgs.UserLocation.Region)
 		}
 
-		if webSearchTool.UserLocation.Timezone != "" {
-			userLocation.Timezone = openai.String(webSearchTool.UserLocation.Timezone)
+		if webSearchArgs.UserLocation.Timezone != "" {
+			userLocation.Timezone = openai.String(webSearchArgs.UserLocation.Timezone)
 		}
 
 		// Only set the UserLocation if at least one field was set
@@ -221,34 +250,34 @@ func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam
 
 // encodeComputerUseTool creates a computer use tool parameter
 func encodeComputerUseTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
-	computerUseTool, ok := tool.(*ComputerUseTool)
-	if !ok {
-		return responses.ToolUnionParam{}, fmt.Errorf("expected ComputerUseTool but got %T", tool)
+	computerArgs, err := convertArgs[ComputerUseToolArgs](tool.Args)
+	if err != nil {
+		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert computer use tool args: %w", err)
 	}
 
 	// Validate required parameters
-	if computerUseTool.DisplayHeight <= 0 {
+	if computerArgs.DisplayHeight <= 0 {
 		return responses.ToolUnionParam{}, fmt.Errorf("displayHeight is required and must be positive")
 	}
 
-	if computerUseTool.DisplayWidth <= 0 {
+	if computerArgs.DisplayWidth <= 0 {
 		return responses.ToolUnionParam{}, fmt.Errorf("displayWidth is required and must be positive")
 	}
 
-	if computerUseTool.Environment == "" {
+	if computerArgs.Environment == "" {
 		return responses.ToolUnionParam{}, fmt.Errorf("environment is required")
 	}
 
 	// Validate that environment is one of the allowed values
-	env := computerUseTool.Environment
+	env := computerArgs.Environment
 	if env != "mac" && env != "windows" && env != "ubuntu" && env != "browser" {
 		return responses.ToolUnionParam{}, fmt.Errorf("environment must be one of: mac, windows, ubuntu, browser; got %q", env)
 	}
 
 	return responses.ToolParamOfComputerUsePreview(
-		int64(computerUseTool.DisplayHeight),
-		int64(computerUseTool.DisplayWidth),
-		responses.ComputerToolEnvironment(computerUseTool.Environment),
+		int64(computerArgs.DisplayHeight),
+		int64(computerArgs.DisplayWidth),
+		responses.ComputerToolEnvironment(computerArgs.Environment),
 	), nil
 }
 

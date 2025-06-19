@@ -56,6 +56,15 @@ func (p *ProviderMetadata) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.data)
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// It deserializes JSON into the underlying data map.
+func (p *ProviderMetadata) UnmarshalJSON(data []byte) error {
+	if p.data == nil {
+		p.data = make(map[string]any)
+	}
+	return json.Unmarshal(data, &p.data)
+}
+
 // IsZero returns true if this ProviderMetadata is a zero value or contains no data.
 func (p *ProviderMetadata) IsZero() bool {
 	return p == nil || len(p.data) == 0

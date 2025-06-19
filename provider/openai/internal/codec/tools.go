@@ -2,9 +2,9 @@ package codec
 
 import "go.jetify.com/ai/api"
 
-// FileSearchTool is a built-in tool that searches for relevant content from uploaded files.
+// FileSearchToolArgs is a built-in tool that searches for relevant content from uploaded files.
 // Learn more about the [file search tool](https://platform.openai.com/docs/guides/tools-file-search).
-type FileSearchTool struct {
+type FileSearchToolArgs struct {
 	// The IDs of the vector stores to search.
 	VectorStoreIDs []string `json:"vector_store_ids,omitzero"`
 
@@ -18,16 +18,6 @@ type FileSearchTool struct {
 	// // Ranking options for search.
 	// RankingOptions X `json:"ranking_options,omitzero"`
 }
-
-var _ api.ProviderDefinedTool = &FileSearchTool{}
-
-func (t *FileSearchTool) ToolType() string { return "provider-defined" }
-
-func (t *FileSearchTool) ID() string {
-	return "openai.file_search"
-}
-
-func (t *FileSearchTool) Name() string { return "file_search" }
 
 // FileSearchToolCall represents the results of a file search operation.
 // See the [file search guide](https://platform.openai.com/docs/guides/tools-file-search)
@@ -51,25 +41,50 @@ type FileSearchResult struct {
 	Text string `json:"text"`
 }
 
-// WebSearchTool is a built-in tool that searches the web for relevant results to use in a response.
+// FileSearchToolOption allows customizing file search tool configuration.
+type FileSearchToolOption func(*FileSearchToolArgs)
+
+// WithVectorStoreIDs sets the vector store IDs to search.
+func WithVectorStoreIDs(ids ...string) FileSearchToolOption {
+	return func(args *FileSearchToolArgs) {
+		args.VectorStoreIDs = ids
+	}
+}
+
+// WithMaxNumResults sets the maximum number of results to return.
+func WithMaxNumResults(maxResults int) FileSearchToolOption {
+	return func(args *FileSearchToolArgs) {
+		args.MaxNumResults = maxResults
+	}
+}
+
+// FileSearchTool creates a new file search tool with the specified configuration.
+// FileSearchTool is a built-in tool that searches for relevant content from uploaded files.
+// Learn more about the [file search tool](https://platform.openai.com/docs/guides/tools-file-search).
+func FileSearchTool(options ...FileSearchToolOption) api.ProviderDefinedTool {
+	args := &FileSearchToolArgs{}
+
+	// Apply options
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "openai.file_search",
+		Name: "file_search",
+		Args: args,
+	}
+}
+
+// WebSearchToolArgs is a built-in tool that searches the web for relevant results to use in a response.
 // Learn more about the [web search tool](https://platform.openai.com/docs/guides/tools-web-search).
-type WebSearchTool struct {
+type WebSearchToolArgs struct {
 	// High level guidance for the amount of context window space to use for the
 	// search. One of `low`, `medium`, or `high`. `medium` is the default.
 	SearchContextSize string `json:"search_context_size,omitempty"`
 	// User location information for geographically relevant results
 	UserLocation *WebSearchUserLocation `json:"user_location,omitempty"`
 }
-
-var _ api.ProviderDefinedTool = &WebSearchTool{}
-
-func (t *WebSearchTool) ToolType() string { return "provider-defined" }
-
-func (t *WebSearchTool) ID() string {
-	return "openai.web_search_preview"
-}
-
-func (t *WebSearchTool) Name() string { return "web_search_preview" }
 
 // WebSearchUserLocation represents the user location information for a web search
 type WebSearchUserLocation struct {
@@ -85,11 +100,46 @@ type WebSearchUserLocation struct {
 	Timezone string `json:"timezone,omitzero"`
 }
 
-// ComputerUseTool is a built-in tool that controls a virtual computer. Learn more about the
+// WebSearchToolOption allows customizing web search tool configuration.
+type WebSearchToolOption func(*WebSearchToolArgs)
+
+// WithSearchContextSize sets the search context size.
+func WithSearchContextSize(size string) WebSearchToolOption {
+	return func(args *WebSearchToolArgs) {
+		args.SearchContextSize = size
+	}
+}
+
+// WithUserLocation sets the user location for geographically relevant results.
+func WithUserLocation(location *WebSearchUserLocation) WebSearchToolOption {
+	return func(args *WebSearchToolArgs) {
+		args.UserLocation = location
+	}
+}
+
+// WebSearchTool creates a new web search tool with the specified configuration.
+// WebSearchTool is a built-in tool that searches the web for relevant results to use in a response.
+// Learn more about the [web search tool](https://platform.openai.com/docs/guides/tools-web-search).
+func WebSearchTool(options ...WebSearchToolOption) api.ProviderDefinedTool {
+	args := &WebSearchToolArgs{}
+
+	// Apply options
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "openai.web_search_preview",
+		Name: "web_search_preview",
+		Args: args,
+	}
+}
+
+// ComputerUseToolArgs is a built-in tool that controls a virtual computer. Learn more about the
 // [computer tool](https://platform.openai.com/docs/guides/tools-computer-use).
 //
 // The properties DisplayHeight, DisplayWidth, Environment, Type are required.
-type ComputerUseTool struct {
+type ComputerUseToolArgs struct {
 	// The height of the computer display.
 	DisplayHeight int `json:"display_height,omitempty"`
 	// The width of the computer display.
@@ -99,16 +149,6 @@ type ComputerUseTool struct {
 	// Any of "mac", "windows", "ubuntu", "browser".
 	Environment string `json:"environment,omitempty"`
 }
-
-var _ api.ProviderDefinedTool = &ComputerUseTool{}
-
-func (t *ComputerUseTool) ToolType() string { return "provider-defined" }
-
-func (t *ComputerUseTool) ID() string {
-	return "openai.computer_use_preview"
-}
-
-func (t *ComputerUseTool) Name() string { return "computer_use_preview" }
 
 // ComputerToolCall represents a computer-based tool operation.  See the
 // [computer use guide](https://platform.openai.com/docs/guides/tools-computer-use)
@@ -168,4 +208,44 @@ type ComputerSafetyCheck struct {
 	Code string
 	// Details about the pending safety check.
 	Message string
+}
+
+// ComputerUseToolOption allows customizing computer use tool configuration.
+type ComputerUseToolOption func(*ComputerUseToolArgs)
+
+// WithDisplaySize sets the display dimensions.
+func WithDisplaySize(width, height int) ComputerUseToolOption {
+	return func(args *ComputerUseToolArgs) {
+		args.DisplayWidth = width
+		args.DisplayHeight = height
+	}
+}
+
+// WithEnvironment sets the computer environment to control.
+func WithEnvironment(env string) ComputerUseToolOption {
+	return func(args *ComputerUseToolArgs) {
+		args.Environment = env
+	}
+}
+
+// ComputerUseTool creates a new computer use tool with the specified configuration.
+// ComputerUseTool is a built-in tool that controls a virtual computer. Learn more about the
+// [computer tool](https://platform.openai.com/docs/guides/tools-computer-use).
+func ComputerUseTool(displayWidth, displayHeight int, environment string, options ...ComputerUseToolOption) api.ProviderDefinedTool {
+	args := &ComputerUseToolArgs{
+		DisplayWidth:  displayWidth,
+		DisplayHeight: displayHeight,
+		Environment:   environment,
+	}
+
+	// Apply options
+	for _, opt := range options {
+		opt(args)
+	}
+
+	return api.ProviderDefinedTool{
+		ID:   "openai.computer_use_preview",
+		Name: "computer_use_preview",
+		Args: args,
+	}
 }

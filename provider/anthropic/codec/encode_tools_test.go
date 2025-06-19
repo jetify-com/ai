@@ -168,13 +168,59 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		wantErrMsg   string            // Empty means no error, non-empty means expect error containing this string
 		want         anthropic.BetaToolUnionUnionParam
 	}{
+		// Computer tool tests using constructor functions
 		{
-			name: "computer tool with version 20250124",
-			input: &ComputerUseTool{
-				Version:         "20250124",
-				DisplayWidthPx:  800,
-				DisplayHeightPx: 600,
-				DisplayNumber:   1,
+			name:         "computer tool with version 20250124 (constructor)",
+			input:        ComputerTool(800, 600, WithComputerVersion("20250124"), WithDisplayNumber(1)),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolComputerUse20250124Param{
+				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
+				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
+				DisplayWidthPx:  anthropic.Int(800),
+				DisplayHeightPx: anthropic.Int(600),
+				DisplayNumber:   anthropic.Int(1),
+			},
+		},
+		{
+			name:         "computer tool with version 20241022 (constructor)",
+			input:        ComputerTool(800, 600, WithComputerVersion("20241022"), WithDisplayNumber(1)),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
+			wantWarnings: nil,
+			want: anthropic.BetaToolComputerUse20241022Param{
+				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name("computer")),
+				Type:            anthropic.F(anthropic.BetaToolComputerUse20241022TypeComputer20241022),
+				DisplayWidthPx:  anthropic.Int(800),
+				DisplayHeightPx: anthropic.Int(600),
+				DisplayNumber:   anthropic.Int(1),
+			},
+		},
+		{
+			name:         "computer tool with default version (constructor)",
+			input:        ComputerTool(800, 600, WithDisplayNumber(1)),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolComputerUse20250124Param{
+				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
+				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
+				DisplayWidthPx:  anthropic.Int(800),
+				DisplayHeightPx: anthropic.Int(600),
+				DisplayNumber:   anthropic.Int(1),
+			},
+		},
+
+		// Computer tool tests using map[string]any args
+		{
+			name: "computer tool with version 20250124 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.computer",
+				Name: "computer",
+				Args: map[string]any{
+					"version":           "20250124",
+					"display_width_px":  800,
+					"display_height_px": 600,
+					"display_number":    1,
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
@@ -187,12 +233,16 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name: "computer tool with version 20241022",
-			input: &ComputerUseTool{
-				Version:         "20241022",
-				DisplayWidthPx:  800,
-				DisplayHeightPx: 600,
-				DisplayNumber:   1,
+			name: "computer tool with version 20241022 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.computer",
+				Name: "computer",
+				Args: map[string]any{
+					"version":           "20241022",
+					"display_width_px":  800,
+					"display_height_px": 600,
+					"display_number":    1,
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
@@ -205,11 +255,15 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name: "computer tool with default version",
-			input: &ComputerUseTool{
-				DisplayWidthPx:  800,
-				DisplayHeightPx: 600,
-				DisplayNumber:   1,
+			name: "computer tool with default version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.computer",
+				Name: "computer",
+				Args: map[string]any{
+					"display_width_px":  800,
+					"display_height_px": 600,
+					"display_number":    1,
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
@@ -221,10 +275,48 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 				DisplayNumber:   anthropic.Int(1),
 			},
 		},
+
+		// Text editor tool tests using constructor functions
 		{
-			name: "text editor tool with version 20250124",
-			input: &TextEditorTool{
-				Version: "20250124",
+			name:         "text editor tool with version 20250124 (constructor)",
+			input:        TextEditorTool(WithTextEditorVersion("20250124")),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolTextEditor20250124Param{
+				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
+				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			},
+		},
+		{
+			name:         "text editor tool with version 20241022 (constructor)",
+			input:        TextEditorTool(WithTextEditorVersion("20241022")),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
+			wantWarnings: nil,
+			want: anthropic.BetaToolTextEditor20241022Param{
+				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name("str_replace_editor")),
+				Type: anthropic.F(anthropic.BetaToolTextEditor20241022TypeTextEditor20241022),
+			},
+		},
+		{
+			name:         "text editor tool with default version (constructor)",
+			input:        TextEditorTool(),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolTextEditor20250124Param{
+				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
+				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			},
+		},
+
+		// Text editor tool tests using map[string]any args
+		{
+			name: "text editor tool with version 20250124 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.text_editor",
+				Name: "str_replace_editor",
+				Args: map[string]any{
+					"version": "20250124",
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
@@ -234,9 +326,13 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name: "text editor tool with version 20241022",
-			input: &TextEditorTool{
-				Version: "20241022",
+			name: "text editor tool with version 20241022 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.text_editor",
+				Name: "str_replace_editor",
+				Args: map[string]any{
+					"version": "20241022",
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
@@ -246,8 +342,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name:         "text editor tool with default version",
-			input:        &TextEditorTool{},
+			name: "text editor tool with default version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.text_editor",
+				Name: "str_replace_editor",
+				Args: map[string]any{},
+			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
 			want: anthropic.BetaToolTextEditor20250124Param{
@@ -255,10 +355,48 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
 			},
 		},
+
+		// Bash tool tests using constructor functions
 		{
-			name: "bash tool with version 20250124",
-			input: &BashTool{
-				Version: "20250124",
+			name:         "bash tool with version 20250124 (constructor)",
+			input:        BashTool(WithBashVersion("20250124")),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolBash20250124Param{
+				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
+				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			},
+		},
+		{
+			name:         "bash tool with version 20241022 (constructor)",
+			input:        BashTool(WithBashVersion("20241022")),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
+			wantWarnings: nil,
+			want: anthropic.BetaToolBash20241022Param{
+				Name: anthropic.F(anthropic.BetaToolBash20241022Name("bash")),
+				Type: anthropic.F(anthropic.BetaToolBash20241022TypeBash20241022),
+			},
+		},
+		{
+			name:         "bash tool with default version (constructor)",
+			input:        BashTool(),
+			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
+			wantWarnings: nil,
+			want: anthropic.BetaToolBash20250124Param{
+				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
+				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			},
+		},
+
+		// Bash tool tests using map[string]any args
+		{
+			name: "bash tool with version 20250124 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.bash",
+				Name: "bash",
+				Args: map[string]any{
+					"version": "20250124",
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
@@ -268,9 +406,13 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name: "bash tool with version 20241022",
-			input: &BashTool{
-				Version: "20241022",
+			name: "bash tool with version 20241022 (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.bash",
+				Name: "bash",
+				Args: map[string]any{
+					"version": "20241022",
+				},
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
@@ -280,8 +422,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 		},
 		{
-			name:         "bash tool with default version",
-			input:        &BashTool{},
+			name: "bash tool with default version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.bash",
+				Name: "bash",
+				Args: map[string]any{},
+			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
 			want: anthropic.BetaToolBash20250124Param{
@@ -289,38 +435,62 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
 			},
 		},
+
+		// Error cases using map[string]any args
 		{
-			name: "computer tool with invalid version",
-			input: &ComputerUseTool{
-				Version:         "invalid",
-				DisplayWidthPx:  800,
-				DisplayHeightPx: 600,
+			name: "computer tool with invalid version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.computer",
+				Name: "computer",
+				Args: map[string]any{
+					"version":           "invalid",
+					"display_width_px":  800,
+					"display_height_px": 600,
+				},
 			},
 			wantErrMsg: "unsupported computer tool version",
 		},
 		{
-			name: "text editor tool with invalid version",
-			input: &TextEditorTool{
-				Version: "invalid",
+			name: "text editor tool with invalid version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.text_editor",
+				Name: "str_replace_editor",
+				Args: map[string]any{
+					"version": "invalid",
+				},
 			},
 			wantErrMsg: "unsupported text editor tool version",
 		},
 		{
-			name: "bash tool with invalid version",
-			input: &BashTool{
-				Version: "invalid",
+			name: "bash tool with invalid version (map args)",
+			input: api.ProviderDefinedTool{
+				ID:   "anthropic.bash",
+				Name: "bash",
+				Args: map[string]any{
+					"version": "invalid",
+				},
 			},
 			wantErrMsg: "unsupported bash tool version",
 		},
+
+		// Unsupported tool type
 		{
-			name:        "unsupported tool type",
-			input:       &mockUnsupportedTool{},
+			name: "unsupported tool type",
+			input: api.ProviderDefinedTool{
+				ID:   "mock.unsupported",
+				Name: "unsupported",
+				Args: &unsupportedArgs{},
+			},
 			expectNil:   true,
 			expectBetas: []string{},
 			wantWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: &mockUnsupportedTool{},
+					Tool: api.ProviderDefinedTool{
+						ID:   "mock.unsupported",
+						Name: "unsupported",
+						Args: &unsupportedArgs{},
+					},
 				},
 			},
 		},
@@ -387,14 +557,22 @@ func TestEncodeTools(t *testing.T) {
 		},
 	}
 
-	computerTool := &ComputerUseTool{
-		DisplayWidthPx:  800,
-		DisplayHeightPx: 600,
-		DisplayNumber:   1,
+	computerTool := api.ProviderDefinedTool{
+		ID:   "anthropic.computer",
+		Name: "computer",
+		Args: &ComputerToolArgs{
+			DisplayWidthPx:  800,
+			DisplayHeightPx: 600,
+			DisplayNumber:   1,
+		},
 	}
 
 	// Use a concrete tool type that we know won't be handled correctly
-	unsupportedTool := &mockUnsupportedTool{}
+	unsupportedTool := api.ProviderDefinedTool{
+		ID:   "mock.unsupported",
+		Name: "unsupported",
+		Args: &unsupportedArgs{},
+	}
 
 	// Helper to create expected tool choice
 	autoChoice := []anthropic.BetaToolChoiceUnionParam{
@@ -527,9 +705,21 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "multiple provider tools with same beta",
 			tools: []api.ToolDefinition{
-				&ComputerUseTool{DisplayWidthPx: 800, DisplayHeightPx: 600, DisplayNumber: 1},
-				&TextEditorTool{},
-				&BashTool{},
+				api.ProviderDefinedTool{
+					ID:   "anthropic.computer",
+					Name: "computer",
+					Args: &ComputerToolArgs{DisplayWidthPx: 800, DisplayHeightPx: 600, DisplayNumber: 1},
+				},
+				api.ProviderDefinedTool{
+					ID:   "anthropic.text_editor",
+					Name: "str_replace_editor",
+					Args: &TextEditorToolArgs{},
+				},
+				api.ProviderDefinedTool{
+					ID:   "anthropic.bash",
+					Name: "bash",
+					Args: &BashToolArgs{},
+				},
 			},
 			want: AnthropicTools{
 				Tools: []anthropic.BetaToolUnionUnionParam{
@@ -607,9 +797,5 @@ func mustEncodeBashTool() anthropic.BetaToolUnionUnionParam {
 	}
 }
 
-// mockUnsupportedTool implements the ProviderDefinedTool interface for testing unsupported tools
-type mockUnsupportedTool struct{}
-
-func (t *mockUnsupportedTool) ToolType() string { return "provider-defined" }
-func (t *mockUnsupportedTool) ID() string       { return "mock.unsupported" }
-func (t *mockUnsupportedTool) Name() string     { return "unsupported" }
+// unsupportedArgs is used as Args for testing unsupported tools
+type unsupportedArgs struct{}

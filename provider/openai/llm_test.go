@@ -1083,12 +1083,12 @@ func TestGenerate(t *testing.T) {
 			prompt:  standardPrompt,
 			options: api.CallOptions{
 				Tools: []api.ToolDefinition{
-					&codec.WebSearchTool{
-						SearchContextSize: "high",
-						UserLocation: &codec.WebSearchUserLocation{
+					WebSearchTool(
+						WithSearchContextSize("high"),
+						WithUserLocation(&WebSearchUserLocation{
 							City: "San Francisco",
-						},
-					},
+						}),
+					),
 				},
 			},
 			exchanges: []httpmock.Exchange{
@@ -1144,12 +1144,12 @@ func TestGenerate(t *testing.T) {
 					ToolName: "web_search_preview",
 				},
 				Tools: []api.ToolDefinition{
-					&codec.WebSearchTool{
-						SearchContextSize: "high",
-						UserLocation: &codec.WebSearchUserLocation{
+					WebSearchTool(
+						WithSearchContextSize("high"),
+						WithUserLocation(&WebSearchUserLocation{
 							City: "San Francisco",
-						},
-					},
+						}),
+					),
 				},
 			},
 			exchanges: []httpmock.Exchange{
@@ -1586,12 +1586,12 @@ func TestGenerate_WebSearch(t *testing.T) {
 			exchanges: standardExchange,
 			options: api.CallOptions{
 				Tools: []api.ToolDefinition{
-					&codec.WebSearchTool{
-						SearchContextSize: "medium",
-						UserLocation: &codec.WebSearchUserLocation{
+					WebSearchTool(
+						WithSearchContextSize("medium"),
+						WithUserLocation(&WebSearchUserLocation{
 							Country: "US",
-						},
-					},
+						}),
+					),
 				},
 			},
 			expectedResp: api.Response{
@@ -1611,12 +1611,12 @@ func TestGenerate_WebSearch(t *testing.T) {
 			exchanges: standardExchange,
 			options: api.CallOptions{
 				Tools: []api.ToolDefinition{
-					&codec.WebSearchTool{
-						SearchContextSize: "medium",
-						UserLocation: &codec.WebSearchUserLocation{
+					WebSearchTool(
+						WithSearchContextSize("medium"),
+						WithUserLocation(&WebSearchUserLocation{
 							Country: "US",
-						},
-					},
+						}),
+					),
 				},
 			},
 			expectedResp: api.Response{
@@ -2401,12 +2401,12 @@ func TestStream(t *testing.T) {
 			prompt:  standardPrompt,
 			options: api.CallOptions{
 				Tools: []api.ToolDefinition{
-					&codec.WebSearchTool{
-						SearchContextSize: "medium",
-						UserLocation: &codec.WebSearchUserLocation{
+					WebSearchTool(
+						WithSearchContextSize("medium"),
+						WithUserLocation(&WebSearchUserLocation{
 							Country: "US",
-						},
-					},
+						}),
+					),
 				},
 			},
 			exchanges: []httpmock.Exchange{
