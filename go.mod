@@ -8,6 +8,7 @@ require (
 	github.com/openai/openai-go v1.0.0
 	github.com/sashabaranov/go-openai v1.40.0
 	github.com/stretchr/testify v1.10.0
+	github.com/tidwall/gjson v1.14.4
 	go.jetify.com/pkg v0.0.0-20250602221042-f9c387a74b34
 	go.jetify.com/sse v0.0.0-20250521180548-aeb6bc6de065
 )
@@ -18,7 +19,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
