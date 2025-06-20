@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 )
 
 // Embedding is a vector, i.e. an array of numbers.
@@ -60,5 +61,5 @@ type EmbeddingUsage struct {
 // EmbeddingRawResponse contains raw response information for debugging.
 type EmbeddingRawResponse struct {
 	// Headers are the response headers.
-	Headers map[string]string
+	Headers http.Header
 }

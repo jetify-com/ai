@@ -14,7 +14,7 @@ type OpenRouterProvider struct {
 	baseURL string
 	apiKey  string
 	client  *http.Client
-	headers map[string]string
+	headers http.Header
 }
 
 // NewOpenRouterProvider creates a new OpenRouter provider.
@@ -23,7 +23,7 @@ func NewOpenRouterProvider(baseURL string, apiKey string, opts ...ProviderOption
 		baseURL: baseURL,
 		apiKey:  apiKey,
 		client:  http.DefaultClient,
-		headers: make(map[string]string),
+		headers: make(http.Header),
 	}
 
 	for _, opt := range opts {
@@ -44,16 +44,18 @@ func WithClient(client *http.Client) ProviderOption {
 }
 
 // WithHeaders sets custom headers for API requests.
-func WithHeaders(headers map[string]string) ProviderOption {
+func WithHeaders(headers http.Header) ProviderOption {
 	return func(p *OpenRouterProvider) {
-		for k, v := range headers {
-			p.headers[k] = v
+		for k, values := range headers {
+			for _, v := range values {
+				p.headers.Add(k, v)
+			}
 		}
 	}
 }
 
 // doJSONRequest makes a JSON request to the OpenRouter API.
-func (p *OpenRouterProvider) doJSONRequest(ctx context.Context, method, path string, body any, extraHeaders map[string]string) (*http.Response, error) {
+func (p *OpenRouterProvider) doJSONRequest(ctx context.Context, method, path string, body any, extraHeaders http.Header) (*http.Response, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		jsonBytes, err := json.Marshal(body)
@@ -73,13 +75,17 @@ func (p *OpenRouterProvider) doJSONRequest(ctx context.Context, method, path str
 	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 
 	// Set provider headers
-	for k, v := range p.headers {
-		req.Header.Set(k, v)
+	for k, values := range p.headers {
+		for _, v := range values {
+			req.Header.Add(k, v)
+		}
 	}
 
 	// Set request-specific headers
-	for k, v := range extraHeaders {
-		req.Header.Set(k, v)
+	for k, values := range extraHeaders {
+		for _, v := range values {
+			req.Header.Add(k, v)
+		}
 	}
 
 	resp, err := p.client.Do(req)

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"net/http"
 	"time"
 )
 
@@ -69,5 +70,5 @@ type ImageResponseMetadata struct {
 	ModelID string
 
 	// Headers are the response headers.
-	Headers map[string]string
+	Headers http.Header
 }

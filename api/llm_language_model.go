@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"iter"
 	"net/http"
 	"time"
@@ -86,6 +87,33 @@ type Response struct {
 
 func (r Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
 
+// UnmarshalJSON implements custom JSON unmarshaling for Response
+func (r *Response) UnmarshalJSON(data []byte) error {
+	// Use a temporary struct to unmarshal everything except content
+	type ResponseAlias Response
+	temp := struct {
+		*ResponseAlias
+		Content []json.RawMessage `json:"content,omitempty"`
+	}{
+		ResponseAlias: (*ResponseAlias)(r),
+	}
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Handle content blocks
+	if temp.Content != nil {
+		content, err := unmarshalContentBlocks(temp.Content)
+		if err != nil {
+			return err
+		}
+		r.Content = content
+	}
+
+	return nil
+}
+
 // StreamResponse represents the result of a streaming language model call.
 type StreamResponse struct {
 	// Stream is the sequence of events received from the model.
@@ -150,8 +178,8 @@ type ResponseInfo struct {
 	// ModelID of the model that was used to generate the response, if the provider sends one.
 	ModelID string `json:"model_id,omitzero"`
 
-	// Header contains a map of the HTTP response headers.
-	Header http.Header
+	// Headers contains the HTTP response headers.
+	Headers http.Header `json:"headers,omitzero"`
 
 	// Body is the raw HTTP body that was returned by the provider.
 	// Not provided for streaming responses.

@@ -1,6 +1,10 @@
 package ai
 
-import "go.jetify.com/ai/api"
+import (
+	"net/http"
+
+	"go.jetify.com/ai/api"
+)
 
 type GenerateOptions struct {
 	CallOptions api.CallOptions
@@ -91,7 +95,7 @@ func WithSeed(seed int) GenerateOption {
 
 // WithHeaders specifies additional HTTP headers to send with the request.
 // Only applicable for HTTP-based providers.
-func WithHeaders(headers map[string]string) GenerateOption {
+func WithHeaders(headers http.Header) GenerateOption {
 	return func(o *GenerateOptions) {
 		o.CallOptions.Headers = headers
 	}

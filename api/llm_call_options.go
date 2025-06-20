@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	jsonschema "github.com/sashabaranov/go-openai/jsonschema"
 	"github.com/tidwall/gjson"
@@ -59,7 +60,7 @@ type CallOptions struct {
 
 	// Headers specifies additional HTTP headers to send with the request.
 	// Only applicable for HTTP-based providers.
-	Headers map[string]string `json:"headers,omitempty"`
+	Headers http.Header `json:"headers,omitempty"`
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// The metadata is passed through to the provider from the AI SDK and enables

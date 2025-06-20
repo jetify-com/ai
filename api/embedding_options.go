@@ -1,11 +1,13 @@
 package api
 
+import "net/http"
+
 // EmbeddingOption represent the options for generating embeddings.
 type EmbeddingOption func(*EmbeddingOptions)
 
 // WithEmbeddingHeaders sets HTTP headers to be sent with the request.
 // Only applicable for HTTP-based providers.
-func WithEmbeddingHeaders(headers map[string]string) EmbeddingOption {
+func WithEmbeddingHeaders(headers http.Header) EmbeddingOption {
 	return func(o *EmbeddingOptions) {
 		o.Headers = headers
 	}
@@ -15,5 +17,5 @@ func WithEmbeddingHeaders(headers map[string]string) EmbeddingOption {
 type EmbeddingOptions struct {
 	// Headers are additional HTTP headers to be sent with the request.
 	// Only applicable for HTTP-based providers.
-	Headers map[string]string
+	Headers http.Header
 }

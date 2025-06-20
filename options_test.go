@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/sashabaranov/go-openai/jsonschema"
@@ -100,9 +101,9 @@ func TestCallOptionBuilders(t *testing.T) {
 		},
 		{
 			name:   "WithHeaders",
-			option: WithHeaders(map[string]string{"key": "value"}),
+			option: WithHeaders(http.Header{"key": []string{"value"}}),
 			expected: GenerateOptions{
-				CallOptions: api.CallOptions{Headers: map[string]string{"key": "value"}},
+				CallOptions: api.CallOptions{Headers: http.Header{"key": []string{"value"}}},
 			},
 		},
 		{

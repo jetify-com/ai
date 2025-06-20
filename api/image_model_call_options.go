@@ -1,5 +1,7 @@
 package api
 
+import "net/http"
+
 // ImageCallOptions represents the options for generating images.
 type ImageCallOptions struct {
 	// N is the number of images to generate.
@@ -40,7 +42,7 @@ type ImageCallOptions struct {
 
 	// Headers are additional HTTP headers to be sent with the request.
 	// Only applicable for HTTP-based providers.
-	Headers map[string]string
+	Headers http.Header
 }
 
 // ImageCallOption is a function that modifies ImageCallOptions.
@@ -106,7 +108,7 @@ func WithImageProviderOptions(options map[string]map[string]any) ImageCallOption
 
 // WithImageHeaders sets additional HTTP headers to be sent with the request.
 // Only applicable for HTTP-based providers.
-func WithImageHeaders(headers map[string]string) ImageCallOption {
+func WithImageHeaders(headers http.Header) ImageCallOption {
 	return func(o *ImageCallOptions) {
 		o.Headers = headers
 	}

@@ -14,19 +14,12 @@ func TestCallOptions_JSON(t *testing.T) {
 		jsonStr string
 	}{
 		{
-			name: "basic_options",
+			name: "basic_fields",
 			jsonStr: `{
-				"max_output_tokens": 1000,
+				"max_output_tokens": 1500,
 				"temperature": 0.7,
+				"stop_sequences": ["STOP", "END"],
 				"top_p": 0.9,
-				"stop_sequences": ["STOP", "END"]
-			}`,
-		},
-		{
-			name: "complex_options_with_response_format",
-			jsonStr: `{
-				"max_output_tokens": 2000,
-				"temperature": 0.5,
 				"top_k": 40,
 				"presence_penalty": 0.1,
 				"frequency_penalty": 0.2,
@@ -37,8 +30,8 @@ func TestCallOptions_JSON(t *testing.T) {
 					"description": "A structured response"
 				},
 				"headers": {
-					"X-Custom-Header": "custom-value",
-					"Authorization": "Bearer token"
+					"X-Custom-Header": ["custom-value"],
+					"Authorization": ["Bearer token"]
 				}
 			}`,
 		},
@@ -97,9 +90,9 @@ func TestCallOptions_JSON(t *testing.T) {
 					"tool_name": "get_weather"
 				},
 				"headers": {
-					"X-API-Key": "test-key",
-					"User-Agent": "test-agent",
-					"Content-Type": "application/json"
+					"X-API-Key": ["test-key"],
+					"User-Agent": ["test-agent"],
+					"Content-Type": ["application/json"]
 				},
 				"provider_metadata": {
 					"openai": {
@@ -187,9 +180,9 @@ func BenchmarkCallOptionsUnmarshal(b *testing.B) {
 			"tool_name": "get_weather"
 		},
 		"headers": {
-			"X-API-Key": "test-key",
-			"User-Agent": "test-agent",
-			"Content-Type": "application/json"
+			"X-API-Key": ["test-key"],
+			"User-Agent": ["test-agent"],
+			"Content-Type": ["application/json"]
 		},
 		"provider_metadata": {
 			"openai": {
