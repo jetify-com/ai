@@ -154,6 +154,29 @@ func TestCallOptionBuilders(t *testing.T) {
 				Model: &mockLanguageModel{name: "test-model"},
 			},
 		},
+		{
+			name: "WithCallOptions",
+			option: WithCallOptions(api.CallOptions{
+				MaxOutputTokens:  500,
+				Temperature:      pointer.Float64(0.5),
+				TopP:             0.8,
+				StopSequences:    []string{"END"},
+				Seed:             123,
+				PresencePenalty:  0.1,
+				FrequencyPenalty: 0.2,
+			}),
+			expected: GenerateOptions{
+				CallOptions: api.CallOptions{
+					MaxOutputTokens:  500,
+					Temperature:      pointer.Float64(0.5),
+					TopP:             0.8,
+					StopSequences:    []string{"END"},
+					Seed:             123,
+					PresencePenalty:  0.1,
+					FrequencyPenalty: 0.2,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -127,6 +127,14 @@ func WithProviderMetadata(providerName string, metadata any) GenerateOption {
 	}
 }
 
+// WithCallOptions sets the entire CallOptions struct.
+// This allows passing a pre-configured CallOptions instance.
+func WithCallOptions(callOptions api.CallOptions) GenerateOption {
+	return func(o *GenerateOptions) {
+		o.CallOptions = callOptions
+	}
+}
+
 // buildGenerateConfig combines multiple generate options into a single GenerateConfig struct.
 func buildGenerateConfig(opts []GenerateOption) GenerateOptions {
 	config := GenerateOptions{
