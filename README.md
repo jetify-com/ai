@@ -98,13 +98,13 @@ func main() {
         context.Background(),
         "Explain quantum computing in simple terms",
         ai.WithModel(model),
-        ai.WithMaxTokens(200),
+        ai.WithMaxOutputTokens(200),
     )
     if err != nil {
         log.Fatal(err)
     }
-
     // Do whatever you want with the response...
+    fmt.Println(response)
 }
 ```
 
