@@ -156,8 +156,6 @@ func (d *streamDecoder) decodeEvent(event responses.ResponseStreamEventUnion) ap
 		return d.decodeReasoningSummaryTextDelta(event)
 	case "response.output_text.annotation.added":
 		return d.decodeOutputTextAnnotationAdded(event)
-	case "response.text_annotation.delta":
-		return d.decodeTextAnnotationDelta(event)
 	case "error":
 		return d.decodeError(event)
 	// Event types that we're aware of but don't yet expose to clients:
@@ -181,11 +179,32 @@ func (d *streamDecoder) decodeEvent(event responses.ResponseStreamEventUnion) ap
 		"response.audio.done",
 		"response.audio.transcript.delta",
 		"response.audio.transcript.done",
-		"response.code_interpreter_call.code.delta",
-		"response.code_interpreter_call.code.done",
+		"response.code_interpreter_call_code.delta",
+		"response.code_interpreter_call_code.done",
 		"response.code_interpreter_call.completed",
 		"response.code_interpreter_call.in_progress",
-		"response.code_interpreter_call.interpreting":
+		"response.code_interpreter_call.interpreting",
+		// Image generation events
+		"response.image_generation_call.completed",
+		"response.image_generation_call.generating",
+		"response.image_generation_call.in_progress",
+		"response.image_generation_call.partial_image",
+		// MCP (Model Context Protocol) events
+		"response.mcp_call_arguments.delta",
+		"response.mcp_call_arguments.done",
+		"response.mcp_call.completed",
+		"response.mcp_call.failed",
+		"response.mcp_call.in_progress",
+		"response.mcp_list_tools.completed",
+		"response.mcp_list_tools.failed",
+		"response.mcp_list_tools.in_progress",
+		// Additional reasoning events
+		"response.reasoning.delta",
+		"response.reasoning.done",
+		"response.reasoning_summary.delta",
+		"response.reasoning_summary.done",
+		// Other events
+		"response.queued":
 		// We're aware these events exist but we don't expose them to clients yet.
 		return nil
 	default:
@@ -335,40 +354,44 @@ func (d *streamDecoder) decodeResponseFailedOrIncomplete(event responses.Respons
 
 // decodeReasoningSummaryTextDelta handles reasoning summary text delta events
 func (d *streamDecoder) decodeReasoningSummaryTextDelta(event responses.ResponseStreamEventUnion) api.StreamEvent {
+	// Need to use the specific As method to get the event data
+	reasoningDelta := event.AsResponseReasoningSummaryTextDelta()
 	return &api.ReasoningEvent{
-		TextDelta: event.Delta,
+		TextDelta: reasoningDelta.Delta,
 	}
 }
 
 // decodeOutputTextAnnotationAdded handles response.output_text.annotation.added events
 func (d *streamDecoder) decodeOutputTextAnnotationAdded(event responses.ResponseStreamEventUnion) api.StreamEvent {
 	addedEvent := event.AsResponseOutputTextAnnotationAdded()
-	if addedEvent.Annotation.Type == "url_citation" {
-		citation := addedEvent.Annotation.AsURLCitation()
-		sourceEvent := &api.SourceEvent{
-			Source: api.Source{
-				SourceType: "url",
-				ID:         fmt.Sprintf("source-%d", d.annotationCounter),
-				URL:        citation.URL,
-				Title:      citation.Title,
-			},
-		}
-		d.annotationCounter++
-		return sourceEvent
-	}
-	return nil
-}
 
-// decodeTextAnnotationDelta handles response.text_annotation.delta events
-func (d *streamDecoder) decodeTextAnnotationDelta(event responses.ResponseStreamEventUnion) api.StreamEvent {
-	if event.Annotation.Type == "url_citation" {
-		citation := event.Annotation.AsURLCitation()
+	// Since Annotation is type 'any', we need to type assert it
+	annotationMap, ok := addedEvent.Annotation.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	annotationType, ok := annotationMap["type"].(string)
+	if !ok {
+		return nil
+	}
+
+	if annotationType == "url_citation" {
+		// Extract URL and Title from the annotation map
+		url, urlOk := annotationMap["url"].(string)
+		title, _ := annotationMap["title"].(string)
+
+		// Only create source event if we have at least a URL
+		if !urlOk || url == "" {
+			return nil
+		}
+
 		sourceEvent := &api.SourceEvent{
 			Source: api.Source{
 				SourceType: "url",
 				ID:         fmt.Sprintf("source-%d", d.annotationCounter),
-				URL:        citation.URL,
-				Title:      citation.Title,
+				URL:        url,
+				Title:      title, // Title can be empty, that's ok
 			},
 		}
 		d.annotationCounter++

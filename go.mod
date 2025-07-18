@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.13
-	github.com/k0kubun/pp/v3 v3.4.1
-	github.com/openai/openai-go v1.0.0
-	github.com/sashabaranov/go-openai v1.40.0
+	github.com/k0kubun/pp/v3 v3.5.0
+	github.com/openai/openai-go v1.11.0
+	github.com/sashabaranov/go-openai v1.40.5
 	github.com/stretchr/testify v1.10.0
-	github.com/tidwall/gjson v1.14.4
+	github.com/tidwall/gjson v1.18.0
 	go.jetify.com/pkg v0.0.0-20250717231756-146bdaf5a718
-	go.jetify.com/sse v0.0.0-20250521180548-aeb6bc6de065
+	go.jetify.com/sse v0.1.0
 )
 
 require (
