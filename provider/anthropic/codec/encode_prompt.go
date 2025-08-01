@@ -174,11 +174,11 @@ func EncodeTextBlock(block *api.TextBlock) (anthropic.BetaTextBlockParam, error)
 		return anthropic.BetaTextBlockParam{}, fmt.Errorf("text block cannot be nil")
 	}
 	param := anthropic.BetaTextBlockParam{
-		Type: anthropic.F(anthropic.BetaTextBlockParamTypeText),
-		Text: anthropic.F(block.Text),
+		Type: "text",
+		Text: block.Text,
 	}
 	if cacheControl := getCacheControl(block); cacheControl != nil {
-		param.CacheControl = anthropic.F(*cacheControl)
+		param.CacheControl = *cacheControl
 	}
 	return param, nil
 }
@@ -190,12 +190,14 @@ func EncodeImageBlock(block *api.ImageBlock) (anthropic.BetaImageBlockParam, err
 	var param anthropic.BetaImageBlockParam
 	if block.URL != "" {
 		urlSource := anthropic.BetaURLImageSourceParam{
-			Type: anthropic.F(anthropic.BetaURLImageSourceTypeURL),
-			URL:  anthropic.F(block.URL),
+			Type: "url",
+			URL:  block.URL,
 		}
 		param = anthropic.BetaImageBlockParam{
-			Type:   anthropic.F(anthropic.BetaImageBlockParamTypeImage),
-			Source: anthropic.F[anthropic.BetaImageBlockParamSourceUnion](urlSource),
+			Type: "image",
+			Source: anthropic.BetaImageBlockParamSourceUnion{
+				OfURL: &urlSource,
+			},
 		}
 	} else if block.Data != nil {
 		mimeType := block.MediaType
@@ -208,18 +210,18 @@ func EncodeImageBlock(block *api.ImageBlock) (anthropic.BetaImageBlockParam, err
 		return anthropic.BetaImageBlockParam{}, fmt.Errorf("image block must have either URL or Data")
 	}
 	if cacheControl := getCacheControl(block); cacheControl != nil {
-		param.CacheControl = anthropic.F(*cacheControl)
+		param.CacheControl = *cacheControl
 	}
 	return param, nil
 }
 
-func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, []anthropic.AnthropicBeta, error) {
+func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaRequestDocumentBlockParam, []anthropic.AnthropicBeta, error) {
 	if block == nil {
-		return anthropic.BetaBase64PDFBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("file block cannot be nil")
+		return anthropic.BetaRequestDocumentBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("file block cannot be nil")
 	}
 
-	var param anthropic.BetaBase64PDFBlockParam
-	param.Type = anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument)
+	var param anthropic.BetaRequestDocumentBlockParam
+	param.Type = "document"
 	var betas []anthropic.AnthropicBeta
 	var isPDF bool
 
@@ -240,18 +242,22 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, [
 		if isPDF {
 			// PDF URL source
 			urlSource := anthropic.BetaURLPDFSourceParam{
-				Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-				URL:  anthropic.F(block.URL),
+				Type: "url",
+				URL:  block.URL,
 			}
-			param.Source = anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](urlSource)
+			param.Source = anthropic.BetaRequestDocumentBlockSourceUnionParam{
+				OfURL: &urlSource,
+			}
 		} else {
 			// Plain text URL handling for non-PDFs
 			textSource := anthropic.BetaPlainTextSourceParam{
-				Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-				Data:      anthropic.F(block.URL),
-				MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
+				Type:      "text",
+				Data:      block.URL,
+				MediaType: "text/plain",
 			}
-			param.Source = anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](textSource)
+			param.Source = anthropic.BetaRequestDocumentBlockSourceUnionParam{
+				OfText: &textSource,
+			}
 		}
 	} else if block.Data != nil {
 		mimeType := block.MediaType
@@ -259,28 +265,32 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, [
 			// Base64 PDF source
 			base64Data := base64.StdEncoding.EncodeToString(block.Data)
 			base64Source := anthropic.BetaBase64PDFSourceParam{
-				Type:      anthropic.F(anthropic.BetaBase64PDFSourceTypeBase64),
-				Data:      anthropic.F(base64Data),
-				MediaType: anthropic.F(anthropic.BetaBase64PDFSourceMediaTypeApplicationPDF),
+				Type:      "base64",
+				Data:      base64Data,
+				MediaType: "application/pdf",
 			}
-			param.Source = anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](base64Source)
+			param.Source = anthropic.BetaRequestDocumentBlockSourceUnionParam{
+				OfBase64: &base64Source,
+			}
 			isPDF = true
 		} else if mimeType == "text/plain" || mimeType == "" {
 			// Plain text source
 			textData := string(block.Data)
 			textSource := anthropic.BetaPlainTextSourceParam{
-				Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-				Data:      anthropic.F(textData),
-				MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
+				Type:      "text",
+				Data:      textData,
+				MediaType: "text/plain",
 			}
-			param.Source = anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](textSource)
+			param.Source = anthropic.BetaRequestDocumentBlockSourceUnionParam{
+				OfText: &textSource,
+			}
 		} else {
 			// Unsupported mime type
-			return anthropic.BetaBase64PDFBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("unsupported mime type for file block: %s", mimeType)
+			return anthropic.BetaRequestDocumentBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("unsupported mime type for file block: %s", mimeType)
 		}
 	} else {
 		// Handle empty file block (no URL or Data)
-		return anthropic.BetaBase64PDFBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("file block must have either URL or Data")
+		return anthropic.BetaRequestDocumentBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("file block must have either URL or Data")
 	}
 
 	// TODO: Add support for content-type source which would allow structured content blocks
@@ -288,7 +298,7 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaBase64PDFBlockParam, [
 
 	// Handle cache control if present
 	if cacheControl := getCacheControl(block); cacheControl != nil {
-		param.CacheControl = anthropic.F(*cacheControl)
+		param.CacheControl = *cacheControl
 	}
 
 	// Add PDF beta if needed
@@ -304,41 +314,53 @@ func EncodeUserContentBlock(block api.ContentBlock) (anthropic.BetaContentBlockP
 	case *api.TextBlock:
 		param, err := EncodeTextBlock(block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, nil, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfText: &param,
+		}, nil, nil
 	case api.TextBlock:
 		param, err := EncodeTextBlock(&block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, nil, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfText: &param,
+		}, nil, nil
 	case *api.ImageBlock:
 		param, err := EncodeImageBlock(block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, nil, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfImage: &param,
+		}, nil, nil
 	case api.ImageBlock:
 		param, err := EncodeImageBlock(&block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, nil, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfImage: &param,
+		}, nil, nil
 	case *api.FileBlock:
 		param, betas, err := EncodeFileBlock(block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, betas, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfDocument: &param,
+		}, betas, nil
 	case api.FileBlock:
 		param, betas, err := EncodeFileBlock(&block)
 		if err != nil {
-			return nil, nil, err
+			return anthropic.BetaContentBlockParamUnion{}, nil, err
 		}
-		return param, betas, nil
+		return anthropic.BetaContentBlockParamUnion{
+			OfDocument: &param,
+		}, betas, nil
 	default:
-		return nil, nil, fmt.Errorf("unsupported content block type: %T", block)
+		return anthropic.BetaContentBlockParamUnion{}, nil, fmt.Errorf("unsupported content block type: %T", block)
 	}
 }
 
@@ -348,13 +370,13 @@ func EncodeToolCallBlock(block *api.ToolCallBlock) (anthropic.BetaToolUseBlockPa
 	}
 
 	param := anthropic.BetaToolUseBlockParam{
-		Type:  anthropic.F(anthropic.BetaToolUseBlockParamTypeToolUse),
-		ID:    anthropic.F(block.ToolCallID),
-		Name:  anthropic.F(block.ToolName),
-		Input: anthropic.F[any](block.Args),
+		Type:  "tool_use",
+		ID:    block.ToolCallID,
+		Name:  block.ToolName,
+		Input: block.Args,
 	}
 	if cacheControl := getCacheControl(block); cacheControl != nil {
-		param.CacheControl = anthropic.F(*cacheControl)
+		param.CacheControl = *cacheControl
 	}
 	return param, nil
 }
@@ -363,24 +385,39 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 	params := make([]anthropic.BetaContentBlockParamUnion, 0, len(msg.Content))
 	for _, block := range msg.Content {
 		var param anthropic.BetaContentBlockParamUnion
-		var err error
 		switch block := block.(type) {
 		case *api.TextBlock:
-			param, err = EncodeTextBlock(block)
+			textParam, err := EncodeTextBlock(block)
+			if err != nil {
+				return anthropic.BetaMessageParam{}, err
+			}
+			param = anthropic.BetaContentBlockParamUnion{
+				OfText: &textParam,
+			}
 		case api.TextBlock:
-			param, err = EncodeTextBlock(&block)
+			textParam, err := EncodeTextBlock(&block)
+			if err != nil {
+				return anthropic.BetaMessageParam{}, err
+			}
+			param = anthropic.BetaContentBlockParamUnion{
+				OfText: &textParam,
+			}
 		case *api.ToolCallBlock:
 			toolParam, err := EncodeToolCallBlock(block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = toolParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfToolUse: &toolParam,
+			}
 		case api.ToolCallBlock:
 			toolParam, err := EncodeToolCallBlock(&block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = toolParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfToolUse: &toolParam,
+			}
 		case *api.ReasoningBlock:
 			// TODO: in the Vercel API there is a "sendReasoning" option that needs to
 			// be enabled for reasoning blocks to be sent. Do we want to add a similar
@@ -390,30 +427,35 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = reasoningParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfThinking: &reasoningParam,
+			}
 		case api.ReasoningBlock:
 			reasoningParam, err := EncodeReasoningBlock(&block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = reasoningParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfThinking: &reasoningParam,
+			}
 		case *api.RedactedReasoningBlock:
 			redactedParam, err := EncodeRedactedReasoningBlock(block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = redactedParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfRedactedThinking: &redactedParam,
+			}
 		case api.RedactedReasoningBlock:
 			redactedParam, err := EncodeRedactedReasoningBlock(&block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
 			}
-			param = redactedParam
+			param = anthropic.BetaContentBlockParamUnion{
+				OfRedactedThinking: &redactedParam,
+			}
 		default:
 			return anthropic.BetaMessageParam{}, fmt.Errorf("unsupported assistant content block type: %T", block)
-		}
-		if err != nil {
-			return anthropic.BetaMessageParam{}, err
 		}
 		params = append(params, param)
 	}
@@ -425,9 +467,9 @@ func EncodeReasoningBlock(block *api.ReasoningBlock) (anthropic.BetaThinkingBloc
 		return anthropic.BetaThinkingBlockParam{}, fmt.Errorf("reasoning block cannot be nil")
 	}
 	return anthropic.BetaThinkingBlockParam{
-		Type:      anthropic.F(anthropic.BetaThinkingBlockParamTypeThinking),
-		Thinking:  anthropic.F(block.Text),
-		Signature: anthropic.F(block.Signature),
+		Type:      "thinking",
+		Thinking:  block.Text,
+		Signature: block.Signature,
 	}, nil
 }
 
@@ -436,8 +478,8 @@ func EncodeRedactedReasoningBlock(block *api.RedactedReasoningBlock) (anthropic.
 		return anthropic.BetaRedactedThinkingBlockParam{}, fmt.Errorf("redacted reasoning block cannot be nil")
 	}
 	return anthropic.BetaRedactedThinkingBlockParam{
-		Type: anthropic.F(anthropic.BetaRedactedThinkingBlockParamTypeRedactedThinking),
-		Data: anthropic.F(block.Data),
+		Type: "redacted_thinking",
+		Data: block.Data,
 	}, nil
 }
 
@@ -448,67 +490,102 @@ func EncodeToolMessage(msg *api.ToolMessage) (anthropic.BetaMessageParam, error)
 			return anthropic.BetaMessageParam{}, fmt.Errorf("tool call ID cannot be empty")
 		}
 
-		var block anthropic.BetaContentBlockParamUnion
-		if result.Content != nil {
-			// Handle rich content if present
-			content := make([]anthropic.BetaToolResultBlockParamContentUnion, 0, len(result.Content))
-			for _, part := range result.Content {
-				var param anthropic.BetaToolResultBlockParamContentUnion
-				var err error
-
-				switch block := part.(type) {
-				case *api.TextBlock:
-					param, err = EncodeTextBlock(block)
-				case api.TextBlock:
-					param, err = EncodeTextBlock(&block)
-				case *api.ImageBlock:
-					param, err = EncodeImageBlock(block)
-				case api.ImageBlock:
-					param, err = EncodeImageBlock(&block)
-				default:
-					return anthropic.BetaMessageParam{}, fmt.Errorf("unsupported tool result content type: %T", block)
-				}
-				if err != nil {
-					return anthropic.BetaMessageParam{}, fmt.Errorf("failed to encode %T block: %v", part, err)
-				}
-				content = append(content, param)
-			}
-
-			param := anthropic.BetaToolResultBlockParam{
-				Type:      anthropic.F(anthropic.BetaToolResultBlockParamTypeToolResult),
-				ToolUseID: anthropic.F(result.ToolCallID),
-				Content:   anthropic.F(content),
-				IsError:   anthropic.F(result.IsError),
-			}
-			if cacheControl := getCacheControl(result); cacheControl != nil {
-				param.CacheControl = anthropic.F(*cacheControl)
-			}
-			block = param
-		} else {
-			// Fallback to JSON encoding the Result field
-			resultJSON, err := json.Marshal(result.Result)
-			if err != nil {
-				return anthropic.BetaMessageParam{}, fmt.Errorf("failed to marshal tool result: %v", err)
-			}
-			block = NewToolResultBlock(result.ToolCallID, string(resultJSON), result.IsError)
-			if cacheControl := getCacheControl(result); cacheControl != nil {
-				param := block.(anthropic.BetaToolResultBlockParam)
-				param.CacheControl = anthropic.F(*cacheControl)
-				block = param
-			}
+		block, err := encodeToolResult(result)
+		if err != nil {
+			return anthropic.BetaMessageParam{}, err
 		}
 		blocks = append(blocks, block)
 	}
 	return NewUserMessage(blocks...), nil
 }
 
+func encodeToolResult(result api.ToolResultBlock) (anthropic.BetaContentBlockParamUnion, error) {
+	if result.Content != nil {
+		return encodeToolResultContent(result)
+	}
+	return encodeToolResultJSON(result)
+}
+
+func encodeToolResultContent(result api.ToolResultBlock) (anthropic.BetaContentBlockParamUnion, error) {
+	content := make([]anthropic.BetaToolResultBlockParamContentUnion, 0, len(result.Content))
+	for _, part := range result.Content {
+		param, err := encodeToolResultPart(part)
+		if err != nil {
+			return anthropic.BetaContentBlockParamUnion{}, err
+		}
+		content = append(content, param)
+	}
+
+	param := anthropic.BetaToolResultBlockParam{
+		Type:      "tool_result",
+		ToolUseID: result.ToolCallID,
+		Content:   content,
+		IsError:   anthropic.Bool(result.IsError),
+	}
+	if cacheControl := getCacheControl(result); cacheControl != nil {
+		param.CacheControl = *cacheControl
+	}
+	return anthropic.BetaContentBlockParamUnion{
+		OfToolResult: &param,
+	}, nil
+}
+
+func encodeToolResultJSON(result api.ToolResultBlock) (anthropic.BetaContentBlockParamUnion, error) {
+	resultJSON, err := json.Marshal(result.Result)
+	if err != nil {
+		return anthropic.BetaContentBlockParamUnion{}, fmt.Errorf("failed to marshal tool result: %v", err)
+	}
+	toolResultParam := NewToolResultBlock(result.ToolCallID, string(resultJSON), result.IsError)
+	if cacheControl := getCacheControl(result); cacheControl != nil {
+		toolResultParam.CacheControl = *cacheControl
+	}
+	return anthropic.BetaContentBlockParamUnion{
+		OfToolResult: &toolResultParam,
+	}, nil
+}
+
+func encodeToolResultPart(part api.ContentBlock) (anthropic.BetaToolResultBlockParamContentUnion, error) {
+	switch block := part.(type) {
+	case *api.TextBlock:
+		return encodeToolResultTextPart(block)
+	case api.TextBlock:
+		return encodeToolResultTextPart(&block)
+	case *api.ImageBlock:
+		return encodeToolResultImagePart(block)
+	case api.ImageBlock:
+		return encodeToolResultImagePart(&block)
+	default:
+		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("unsupported tool result content type: %T", block)
+	}
+}
+
+func encodeToolResultTextPart(block *api.TextBlock) (anthropic.BetaToolResultBlockParamContentUnion, error) {
+	textParam, err := EncodeTextBlock(block)
+	if err != nil {
+		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode text block: %v", err)
+	}
+	return anthropic.BetaToolResultBlockParamContentUnion{
+		OfText: &textParam,
+	}, nil
+}
+
+func encodeToolResultImagePart(block *api.ImageBlock) (anthropic.BetaToolResultBlockParamContentUnion, error) {
+	imageParam, err := EncodeImageBlock(block)
+	if err != nil {
+		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode image block: %v", err)
+	}
+	return anthropic.BetaToolResultBlockParamContentUnion{
+		OfImage: &imageParam,
+	}, nil
+}
+
 func EncodeSystemMessage(msg *api.SystemMessage) (anthropic.BetaTextBlockParam, error) {
 	block := anthropic.BetaTextBlockParam{
-		Type: anthropic.F(anthropic.BetaTextBlockParamTypeText),
-		Text: anthropic.F(msg.Content),
+		Type: "text",
+		Text: msg.Content,
 	}
 	if cacheControl := getCacheControl(msg); cacheControl != nil {
-		block.CacheControl = anthropic.F(*cacheControl)
+		block.CacheControl = *cacheControl
 	}
 	return block, nil
 }
@@ -522,58 +599,68 @@ func getCacheControl(source api.MetadataSource) *anthropic.BetaCacheControlEphem
 
 	if metadata.CacheControl == "ephemeral" {
 		return &anthropic.BetaCacheControlEphemeralParam{
-			Type: anthropic.F(anthropic.BetaCacheControlEphemeralTypeEphemeral),
+			Type: "ephemeral",
 		}
 	}
 	return nil
 }
 
 func NewImageBlockBase64(mediaType string, encodedData string) anthropic.BetaImageBlockParam {
+	base64Source := anthropic.BetaBase64ImageSourceParam{
+		Type:      "base64",
+		Data:      encodedData,
+		MediaType: anthropic.BetaBase64ImageSourceMediaType(mediaType),
+	}
 	return anthropic.BetaImageBlockParam{
-		Type: anthropic.F(anthropic.BetaImageBlockParamTypeImage),
-		Source: anthropic.F(anthropic.BetaImageBlockParamSourceUnion(anthropic.BetaImageBlockParamSource{
-			Type:      anthropic.F(anthropic.BetaImageBlockParamSourceTypeBase64),
-			Data:      anthropic.F(encodedData),
-			MediaType: anthropic.F(anthropic.BetaImageBlockParamSourceMediaType(mediaType)),
-		})),
+		Type: "image",
+		Source: anthropic.BetaImageBlockParamSourceUnion{
+			OfBase64: &base64Source,
+		},
 	}
 }
 
 func NewToolResultBlock(toolUseID string, content string, isError bool) anthropic.BetaToolResultBlockParam {
 	return anthropic.BetaToolResultBlockParam{
-		Type:      anthropic.F(anthropic.BetaToolResultBlockParamTypeToolResult),
-		ToolUseID: anthropic.F(toolUseID),
-		Content:   anthropic.F([]anthropic.BetaToolResultBlockParamContentUnion{NewTextBlock(content)}),
-		IsError:   anthropic.F(isError),
+		Type:      "tool_result",
+		ToolUseID: toolUseID,
+		Content: []anthropic.BetaToolResultBlockParamContentUnion{
+			{
+				OfText: &anthropic.BetaTextBlockParam{
+					Text: content,
+					Type: "text",
+				},
+			},
+		},
+		IsError: anthropic.Bool(isError),
 	}
 }
 
 func NewToolUseBlockParam(id string, name string, input interface{}) anthropic.BetaToolUseBlockParam {
 	return anthropic.BetaToolUseBlockParam{
-		ID:    anthropic.F(id),
-		Input: anthropic.F(input),
-		Name:  anthropic.F(name),
-		Type:  anthropic.F(anthropic.BetaToolUseBlockParamTypeToolUse),
+		ID:    id,
+		Input: input,
+		Name:  name,
+		Type:  "tool_use",
 	}
 }
 
 func NewTextBlock(text string) anthropic.BetaTextBlockParam {
 	return anthropic.BetaTextBlockParam{
-		Text: anthropic.F(text),
-		Type: anthropic.F(anthropic.BetaTextBlockParamTypeText),
+		Text: text,
+		Type: "text",
 	}
 }
 
 func NewUserMessage(blocks ...anthropic.BetaContentBlockParamUnion) anthropic.BetaMessageParam {
 	return anthropic.BetaMessageParam{
-		Role:    anthropic.F(anthropic.BetaMessageParamRoleUser),
-		Content: anthropic.F(blocks),
+		Role:    "user",
+		Content: blocks,
 	}
 }
 
 func NewAssistantMessage(blocks ...anthropic.BetaContentBlockParamUnion) anthropic.BetaMessageParam {
 	return anthropic.BetaMessageParam{
-		Role:    anthropic.F(anthropic.BetaMessageParamRoleAssistant),
-		Content: anthropic.F(blocks),
+		Role:    "assistant",
+		Content: blocks,
 	}
 }

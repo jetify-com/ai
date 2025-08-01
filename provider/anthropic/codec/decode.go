@@ -30,7 +30,7 @@ func DecodeResponse(msg *anthropic.BetaMessage) (api.Response, error) {
 func decodeResponseInfo(msg *anthropic.BetaMessage) *api.ResponseInfo {
 	return &api.ResponseInfo{
 		ID:      msg.ID,
-		ModelID: msg.Model,
+		ModelID: string(msg.Model),
 	}
 }
 
@@ -50,7 +50,7 @@ func decodeProviderMetadata(msg *anthropic.BetaMessage) *api.ProviderMetadata {
 
 // decodeContent processes the content blocks from an Anthropic message
 // and returns an ordered slice of content blocks
-func decodeContent(blocks []anthropic.BetaContentBlock) []api.ContentBlock {
+func decodeContent(blocks []anthropic.BetaContentBlockUnion) []api.ContentBlock {
 	content := make([]api.ContentBlock, 0)
 
 	if blocks == nil {
@@ -59,16 +59,16 @@ func decodeContent(blocks []anthropic.BetaContentBlock) []api.ContentBlock {
 
 	for _, block := range blocks {
 		switch block.Type {
-		case anthropic.BetaContentBlockTypeText:
+		case "text":
 			// Only add text block if it has content
 			if block.Text != "" {
 				content = append(content, &api.TextBlock{
 					Text: block.Text,
 				})
 			}
-		case anthropic.BetaContentBlockTypeToolUse:
+		case "tool_use":
 			content = append(content, decodeToolUse(block))
-		case anthropic.BetaContentBlockTypeThinking, anthropic.BetaContentBlockTypeRedactedThinking:
+		case "thinking", "redacted_thinking":
 			if reasoningBlock := decodeReasoning(block); reasoningBlock != nil {
 				content = append(content, reasoningBlock)
 			}
@@ -79,7 +79,7 @@ func decodeContent(blocks []anthropic.BetaContentBlock) []api.ContentBlock {
 }
 
 // decodeToolUse converts an Anthropic tool use block to an AI SDK ToolCallBlock
-func decodeToolUse(block anthropic.BetaContentBlock) *api.ToolCallBlock {
+func decodeToolUse(block anthropic.BetaContentBlockUnion) *api.ToolCallBlock {
 	var args string
 	if block.Input != nil {
 		rawArgs, err := json.Marshal(block.Input)
@@ -101,8 +101,8 @@ func decodeToolUse(block anthropic.BetaContentBlock) *api.ToolCallBlock {
 }
 
 // decodeReasoning converts an Anthropic thinking block to an AI SDK ReasoningBlock
-func decodeReasoning(block anthropic.BetaContentBlock) api.Reasoning {
-	if block.Type == anthropic.BetaContentBlockTypeThinking {
+func decodeReasoning(block anthropic.BetaContentBlockUnion) api.Reasoning {
+	if block.Type == "thinking" {
 		// Check for nil or empty thinking text
 		if block.Thinking == "" {
 			return nil
@@ -111,7 +111,7 @@ func decodeReasoning(block anthropic.BetaContentBlock) api.Reasoning {
 			Text:      block.Thinking,
 			Signature: block.Signature,
 		}
-	} else if block.Type == anthropic.BetaContentBlockTypeRedactedThinking {
+	} else if block.Type == "redacted_thinking" {
 		// Check for nil or empty data
 		if block.Data == "" {
 			return nil
@@ -135,13 +135,13 @@ func decodeUsage(usage anthropic.BetaUsage) api.Usage {
 
 // decodeFinishReason converts an Anthropic stop reason to an AI SDK FinishReason type.
 // It handles nil/empty values by returning FinishReasonUnknown.
-func decodeFinishReason(finishReason anthropic.BetaMessageStopReason) api.FinishReason {
+func decodeFinishReason(finishReason anthropic.BetaStopReason) api.FinishReason {
 	switch finishReason {
-	case anthropic.BetaMessageStopReasonEndTurn, anthropic.BetaMessageStopReasonStopSequence:
+	case anthropic.BetaStopReasonEndTurn, anthropic.BetaStopReasonStopSequence:
 		return api.FinishReasonStop
-	case anthropic.BetaMessageStopReasonToolUse:
+	case anthropic.BetaStopReasonToolUse:
 		return api.FinishReasonToolCalls
-	case anthropic.BetaMessageStopReasonMaxTokens:
+	case anthropic.BetaStopReasonMaxTokens:
 		return api.FinishReasonLength
 	default:
 		return api.FinishReasonUnknown

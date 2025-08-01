@@ -10,8 +10,8 @@ import (
 )
 
 type AnthropicTools struct {
-	Tools      []anthropic.BetaToolUnionUnionParam
-	ToolChoice []anthropic.BetaToolChoiceUnionParam
+	Tools      []anthropic.BetaToolUnionParam
+	ToolChoice anthropic.BetaToolChoiceUnionParam
 	Betas      []anthropic.AnthropicBeta
 	Warnings   []api.CallWarning
 }
@@ -50,7 +50,7 @@ func encodeInputSchema(schema *jsonschema.Definition) (anthropic.BetaToolInputSc
 
 	// Create the input schema with the type field
 	inputSchema := anthropic.BetaToolInputSchemaParam{
-		Type: anthropic.F(anthropic.BetaToolInputSchemaTypeObject),
+		Type: "object",
 	}
 
 	// Add properties only if they exist
@@ -69,30 +69,31 @@ func encodeInputSchema(schema *jsonschema.Definition) (anthropic.BetaToolInputSc
 		}
 
 		// Set the properties field
-		inputSchema.Properties = anthropic.F[interface{}](properties)
+		inputSchema.Properties = properties
 	}
 
 	// Add the required field if it's present in the original schema
 	if len(schema.Required) > 0 {
-		inputSchema.ExtraFields = map[string]interface{}{
-			"required": schema.Required,
-		}
+		inputSchema.Required = schema.Required
 	}
 
 	return inputSchema, nil
 }
 
 // EncodeFunctionTool converts an API FunctionTool to Anthropic's tool format
-func EncodeFunctionTool(tool api.FunctionTool) (anthropic.BetaToolUnionUnionParam, error) {
+func EncodeFunctionTool(tool api.FunctionTool) (anthropic.BetaToolUnionParam, error) {
 	inputSchema, err := encodeInputSchema(tool.InputSchema)
 	if err != nil {
-		return nil, fmt.Errorf("error encoding input schema: %w", err)
+		return anthropic.BetaToolUnionParam{}, fmt.Errorf("error encoding input schema: %w", err)
 	}
 
-	return anthropic.BetaToolParam{
-		Name:        anthropic.String(tool.Name),
-		Description: anthropic.String(tool.Description),
-		InputSchema: anthropic.F(inputSchema),
+	return anthropic.BetaToolUnionParam{
+		OfTool: &anthropic.BetaToolParam{
+			Type:        "tool",
+			Name:        tool.Name,
+			Description: anthropic.String(tool.Description),
+			InputSchema: inputSchema,
+		},
 	}, nil
 }
 
@@ -100,7 +101,7 @@ func EncodeFunctionTool(tool api.FunctionTool) (anthropic.BetaToolUnionUnionPara
 // Returns the tool, required betas, and any warnings
 func EncodeProviderDefinedTool(
 	tool api.ProviderDefinedTool,
-) (anthropic.BetaToolUnionUnionParam, []anthropic.AnthropicBeta, []api.CallWarning, error) {
+) (anthropic.BetaToolUnionParam, []anthropic.AnthropicBeta, []api.CallWarning, error) {
 	var warnings []api.CallWarning
 	var betas []anthropic.AnthropicBeta
 
@@ -111,76 +112,88 @@ func EncodeProviderDefinedTool(
 	case "anthropic.computer":
 		computerArgs, err := convertArgs[ComputerToolArgs](tool.Args)
 		if err != nil {
-			return nil, betas, warnings, fmt.Errorf("failed to convert computer tool args: %w", err)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("failed to convert computer tool args: %w", err)
 		}
 		switch computerArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
-			return anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name(tool.Name)),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(int64(computerArgs.DisplayWidthPx)),
-				DisplayHeightPx: anthropic.Int(int64(computerArgs.DisplayHeightPx)),
-				DisplayNumber:   anthropic.Int(int64(computerArgs.DisplayNumber)),
-			}, betas, warnings, nil
+			toolParam := anthropic.BetaToolUnionParam{
+				OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+					Type:            "computer_20250124",
+					DisplayHeightPx: int64(computerArgs.DisplayHeightPx),
+					DisplayWidthPx:  int64(computerArgs.DisplayWidthPx),
+				},
+			}
+			if computerArgs.DisplayNumber != 0 {
+				toolParam.OfComputerUseTool20250124.DisplayNumber = anthropic.Int(int64(computerArgs.DisplayNumber))
+			}
+			return toolParam, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
-			return anthropic.BetaToolComputerUse20241022Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name(tool.Name)),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20241022TypeComputer20241022),
-				DisplayWidthPx:  anthropic.Int(int64(computerArgs.DisplayWidthPx)),
-				DisplayHeightPx: anthropic.Int(int64(computerArgs.DisplayHeightPx)),
-				DisplayNumber:   anthropic.Int(int64(computerArgs.DisplayNumber)),
-			}, betas, warnings, nil
+			toolParam := anthropic.BetaToolUnionParam{
+				OfComputerUseTool20241022: &anthropic.BetaToolComputerUse20241022Param{
+					Type:            "computer_20241022",
+					DisplayHeightPx: int64(computerArgs.DisplayHeightPx),
+					DisplayWidthPx:  int64(computerArgs.DisplayWidthPx),
+				},
+			}
+			if computerArgs.DisplayNumber != 0 {
+				toolParam.OfComputerUseTool20241022.DisplayNumber = anthropic.Int(int64(computerArgs.DisplayNumber))
+			}
+			return toolParam, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported computer tool version: %s", computerArgs.Version)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("unsupported computer tool version: %s", computerArgs.Version)
 		}
 
 	case "anthropic.text_editor":
 		textEditorArgs, err := convertArgs[TextEditorToolArgs](tool.Args)
 		if err != nil {
-			return nil, betas, warnings, fmt.Errorf("failed to convert text editor tool args: %w", err)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("failed to convert text editor tool args: %w", err)
 		}
 		switch textEditorArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
-			return anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name(tool.Name)),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			return anthropic.BetaToolUnionParam{
+				OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{
+					Type: "text_editor_20250124",
+				},
 			}, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
-			return anthropic.BetaToolTextEditor20241022Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name(tool.Name)),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20241022TypeTextEditor20241022),
+			return anthropic.BetaToolUnionParam{
+				OfTextEditor20241022: &anthropic.BetaToolTextEditor20241022Param{
+					Type: "text_editor_20241022",
+				},
 			}, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported text editor tool version: %s", textEditorArgs.Version)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("unsupported text editor tool version: %s", textEditorArgs.Version)
 		}
 
 	case "anthropic.bash":
 		bashArgs, err := convertArgs[BashToolArgs](tool.Args)
 		if err != nil {
-			return nil, betas, warnings, fmt.Errorf("failed to convert bash tool args: %w", err)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("failed to convert bash tool args: %w", err)
 		}
 		switch bashArgs.Version {
 		case "", "20250124": // default to 20250124
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2025_01_24)
-			return anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name(tool.Name)),
-				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			return anthropic.BetaToolUnionParam{
+				OfBashTool20250124: &anthropic.BetaToolBash20250124Param{
+					Type: "bash_20250124",
+				},
 			}, betas, warnings, nil
 
 		case "20241022":
 			betas = append(betas, anthropic.AnthropicBetaComputerUse2024_10_22)
-			return anthropic.BetaToolBash20241022Param{
-				Name: anthropic.F(anthropic.BetaToolBash20241022Name(tool.Name)),
-				Type: anthropic.F(anthropic.BetaToolBash20241022TypeBash20241022),
+			return anthropic.BetaToolUnionParam{
+				OfBashTool20241022: &anthropic.BetaToolBash20241022Param{
+					Type: "bash_20241022",
+				},
 			}, betas, warnings, nil
 		default:
-			return nil, betas, warnings, fmt.Errorf("unsupported bash tool version: %s", bashArgs.Version)
+			return anthropic.BetaToolUnionParam{}, betas, warnings, fmt.Errorf("unsupported bash tool version: %s", bashArgs.Version)
 		}
 
 	default:
@@ -188,43 +201,39 @@ func EncodeProviderDefinedTool(
 			Type: "unsupported-tool",
 			Tool: tool,
 		})
-		return nil, betas, warnings, nil
+		return anthropic.BetaToolUnionParam{}, betas, warnings, nil
 	}
 }
 
 // EncodeToolChoice converts API ToolChoice to Anthropic's format
 func EncodeToolChoice(
 	toolChoice *api.ToolChoice,
-) ([]anthropic.BetaToolChoiceUnionParam, error) {
+) (anthropic.BetaToolChoiceUnionParam, error) {
 	if toolChoice == nil {
-		return nil, nil
+		return anthropic.BetaToolChoiceUnionParam{}, nil
 	}
 
 	switch toolChoice.Type {
 	case "auto":
-		return []anthropic.BetaToolChoiceUnionParam{
-			anthropic.BetaToolChoiceAutoParam{
-				Type: anthropic.F(anthropic.BetaToolChoiceAutoTypeAuto),
+		return anthropic.BetaToolChoiceUnionParam{
+			OfAuto: &anthropic.BetaToolChoiceAutoParam{
+				Type: "auto",
 			},
 		}, nil
 	case "required":
-		return []anthropic.BetaToolChoiceUnionParam{
-			anthropic.BetaToolChoiceAnyParam{
-				Type: anthropic.F(anthropic.BetaToolChoiceAnyTypeAny),
+		return anthropic.BetaToolChoiceUnionParam{
+			OfAny: &anthropic.BetaToolChoiceAnyParam{
+				Type: "any",
 			},
 		}, nil
 	case "none":
 		// Handled in EncodeTools
-		return nil, nil
+		return anthropic.BetaToolChoiceUnionParam{}, nil
 	case "tool":
-		return []anthropic.BetaToolChoiceUnionParam{
-			anthropic.BetaToolChoiceToolParam{
-				Type: anthropic.F(anthropic.BetaToolChoiceToolTypeTool),
-				Name: anthropic.String(toolChoice.ToolName),
-			},
-		}, nil
+		// Use the constructor function
+		return anthropic.BetaToolChoiceParamOfTool(toolChoice.ToolName), nil
 	default:
-		return nil, fmt.Errorf("unsupported tool choice type: %s", toolChoice.Type)
+		return anthropic.BetaToolChoiceUnionParam{}, fmt.Errorf("unsupported tool choice type: %s", toolChoice.Type)
 	}
 }
 
@@ -238,7 +247,7 @@ func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice) (Anthro
 		return AnthropicTools{}, nil
 	}
 
-	anthropicTools := make([]anthropic.BetaToolUnionUnionParam, 0, len(tools))
+	anthropicTools := make([]anthropic.BetaToolUnionParam, 0, len(tools))
 	betasMap := make(map[anthropic.AnthropicBeta]bool)
 
 	// Process each tool
@@ -262,8 +271,8 @@ func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice) (Anthro
 				return AnthropicTools{}, err
 			}
 
-			// Add tool if it's not nil (some tools might be unsupported)
-			if providerTool != nil {
+			// Add tool if it's not empty (some tools might be unsupported)
+			if providerTool.GetType() != nil {
 				anthropicTools = append(anthropicTools, providerTool)
 			}
 
@@ -300,7 +309,7 @@ func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice) (Anthro
 		// but still return warnings and betas
 		return AnthropicTools{
 			Tools:      nil,
-			ToolChoice: nil,
+			ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 			Betas:      betas,
 			Warnings:   warnings,
 		}, nil

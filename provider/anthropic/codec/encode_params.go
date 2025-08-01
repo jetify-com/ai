@@ -8,7 +8,7 @@ import (
 )
 
 func EncodeParams(
-	prompt []api.Message, opts api.CallOptions,
+	modelID string, prompt []api.Message, opts api.CallOptions,
 ) (anthropic.BetaMessageNewParams, []api.CallWarning, error) {
 	anthropicPrompt, err := EncodePrompt(prompt)
 	if err != nil {
@@ -20,38 +20,41 @@ func EncodeParams(
 		return anthropic.BetaMessageNewParams{}, warnings, err
 	}
 
+	// Set the model ID
+	params.Model = anthropic.Model(modelID)
+
 	if len(anthropicPrompt.System) > 0 {
-		params.System = anthropic.F(anthropicPrompt.System)
+		params.System = anthropicPrompt.System
 	}
 	if len(anthropicPrompt.Messages) > 0 {
-		params.Messages = anthropic.F(anthropicPrompt.Messages)
+		params.Messages = anthropicPrompt.Messages
 	}
 
-	params.Betas = anthropic.F(append(params.Betas.Value, anthropicPrompt.Betas...))
+	params.Betas = append(params.Betas, anthropicPrompt.Betas...)
 
 	return params, warnings, nil
 }
 
 func encodeCallOptions(opts api.CallOptions) (anthropic.BetaMessageNewParams, []api.CallWarning, error) {
 	params := anthropic.BetaMessageNewParams{
-		MaxTokens: anthropic.F(int64(4096)), // Default max tokens
+		MaxTokens: int64(4096), // Default max tokens
 	}
 
 	// Set basic parameters
 	if opts.MaxOutputTokens > 0 {
-		params.MaxTokens = anthropic.F(int64(opts.MaxOutputTokens))
+		params.MaxTokens = int64(opts.MaxOutputTokens)
 	}
 	if opts.Temperature != nil {
-		params.Temperature = anthropic.F(*opts.Temperature)
+		params.Temperature = anthropic.Float(*opts.Temperature)
 	}
 	if opts.TopP > 0 {
-		params.TopP = anthropic.F(opts.TopP)
+		params.TopP = anthropic.Float(opts.TopP)
 	}
 	if opts.TopK > 0 {
-		params.TopK = anthropic.F(int64(opts.TopK))
+		params.TopK = anthropic.Int(int64(opts.TopK))
 	}
 	if len(opts.StopSequences) > 0 {
-		params.StopSequences = anthropic.F(opts.StopSequences)
+		params.StopSequences = opts.StopSequences
 	}
 
 	// Handle unsupported settings
@@ -71,14 +74,15 @@ func encodeCallOptions(opts api.CallOptions) (anthropic.BetaMessageNewParams, []
 	}
 
 	// Apply tool configuration to params
-	params.Betas = anthropic.F(append(params.Betas.Value, tools.Betas...))
+	params.Betas = append(params.Betas, tools.Betas...)
 	warnings = append(warnings, tools.Warnings...)
 
 	if len(tools.Tools) > 0 {
-		params.Tools = anthropic.F(tools.Tools)
+		params.Tools = tools.Tools
 	}
-	if len(tools.ToolChoice) > 0 {
-		params.ToolChoice = anthropic.F(tools.ToolChoice[0])
+
+	if tools.ToolChoice.GetType() != nil {
+		params.ToolChoice = tools.ToolChoice
 	}
 	return params, warnings, nil
 }
@@ -133,14 +137,10 @@ func encodeThinking(params *anthropic.BetaMessageNewParams, opts api.CallOptions
 	}
 
 	// Configure thinking parameters
-	params.Thinking = anthropic.F[anthropic.BetaThinkingConfigParamUnion](
-		anthropic.BetaThinkingConfigEnabledParam{
-			Type:         anthropic.F(anthropic.BetaThinkingConfigEnabledTypeEnabled),
-			BudgetTokens: anthropic.F(int64(metadata.Thinking.BudgetTokens)),
-		})
+	params.Thinking = anthropic.BetaThinkingConfigParamOfEnabled(int64(metadata.Thinking.BudgetTokens))
 
 	// Adjust max tokens to account for thinking budget
-	params.MaxTokens = anthropic.F(params.MaxTokens.Value + int64(metadata.Thinking.BudgetTokens))
+	params.MaxTokens = params.MaxTokens + int64(metadata.Thinking.BudgetTokens)
 
 	// Add warnings for unsupported settings when thinking is enabled
 	if opts.Temperature != nil {

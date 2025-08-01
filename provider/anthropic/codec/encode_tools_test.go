@@ -35,6 +35,7 @@ func TestEncodeFunctionTool(t *testing.T) {
 				},
 			},
 			want: `{
+				"type": "tool",
 				"name": "test_function",
 				"description": "A test function",
 				"input_schema": {
@@ -58,6 +59,7 @@ func TestEncodeFunctionTool(t *testing.T) {
 				},
 			},
 			want: `{
+				"type": "tool",
 				"name": "minimal_function",
 				"description": "",
 				"input_schema": {
@@ -101,14 +103,14 @@ func TestEncodeToolChoice(t *testing.T) {
 			input: &api.ToolChoice{
 				Type: "auto",
 			},
-			wantJSON: `[{"type": "auto"}]`,
+			wantJSON: `{"type": "auto"}`,
 		},
 		{
 			name: "required choice",
 			input: &api.ToolChoice{
 				Type: "required",
 			},
-			wantJSON: `[{"type": "any"}]`,
+			wantJSON: `{"type": "any"}`,
 		},
 		{
 			name: "none choice",
@@ -123,7 +125,7 @@ func TestEncodeToolChoice(t *testing.T) {
 				Type:     "tool",
 				ToolName: "test_tool",
 			},
-			wantJSON: `[{"type": "tool", "name": "test_tool"}]`,
+			wantJSON: `{"type": "tool", "name": "test_tool"}`,
 		},
 		{
 			name: "unsupported choice type",
@@ -146,11 +148,11 @@ func TestEncodeToolChoice(t *testing.T) {
 			require.NoError(t, err)
 
 			if tc.expectNil {
-				assert.Nil(t, result)
+				assert.Zero(t, result)
 				return
 			}
 
-			require.NotNil(t, result)
+			assert.NotZero(t, result)
 			resultJSON, err := json.Marshal(result)
 			require.NoError(t, err)
 			assert.JSONEq(t, tc.wantJSON, string(resultJSON))
@@ -166,7 +168,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		expectBetas  []string
 		wantWarnings []api.CallWarning // Expected warnings (empty means no warnings)
 		wantErrMsg   string            // Empty means no error, non-empty means expect error containing this string
-		want         anthropic.BetaToolUnionUnionParam
+		want         anthropic.BetaToolUnionParam
 	}{
 		// Computer tool tests using constructor functions
 		{
@@ -174,12 +176,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        ComputerTool(800, 600, WithComputerVersion("20250124"), WithDisplayNumber(1)),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 		{
@@ -187,12 +189,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        ComputerTool(800, 600, WithComputerVersion("20241022"), WithDisplayNumber(1)),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20241022Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20241022TypeComputer20241022),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20241022: &anthropic.BetaToolComputerUse20241022Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 		{
@@ -200,12 +202,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        ComputerTool(800, 600, WithDisplayNumber(1)),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 
@@ -224,12 +226,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 		{
@@ -246,12 +248,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20241022Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20241022Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20241022TypeComputer20241022),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20241022: &anthropic.BetaToolComputerUse20241022Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 		{
@@ -267,12 +269,12 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolComputerUse20250124Param{
-				Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-				Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-				DisplayWidthPx:  anthropic.Int(800),
-				DisplayHeightPx: anthropic.Int(600),
-				DisplayNumber:   anthropic.Int(1),
+			want: anthropic.BetaToolUnionParam{
+				OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+					DisplayWidthPx:  800,
+					DisplayHeightPx: 600,
+					DisplayNumber:   anthropic.Int(1),
+				},
 			},
 		},
 
@@ -282,9 +284,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        TextEditorTool(WithTextEditorVersion("20250124")),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{},
 			},
 		},
 		{
@@ -292,9 +293,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        TextEditorTool(WithTextEditorVersion("20241022")),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20241022Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20241022TypeTextEditor20241022),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20241022: &anthropic.BetaToolTextEditor20241022Param{},
 			},
 		},
 		{
@@ -302,9 +302,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        TextEditorTool(),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{},
 			},
 		},
 
@@ -320,9 +319,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{},
 			},
 		},
 		{
@@ -336,9 +334,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20241022Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20241022Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20241022TypeTextEditor20241022),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20241022: &anthropic.BetaToolTextEditor20241022Param{},
 			},
 		},
 		{
@@ -350,9 +347,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolTextEditor20250124Param{
-				Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
-				Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{},
 			},
 		},
 
@@ -362,9 +358,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        BashTool(WithBashVersion("20250124")),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20250124: &anthropic.BetaToolBash20250124Param{},
 			},
 		},
 		{
@@ -372,9 +367,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        BashTool(WithBashVersion("20241022")),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20241022Param{
-				Name: anthropic.F(anthropic.BetaToolBash20241022Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20241022TypeBash20241022),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20241022: &anthropic.BetaToolBash20241022Param{},
 			},
 		},
 		{
@@ -382,9 +376,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			input:        BashTool(),
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20250124: &anthropic.BetaToolBash20250124Param{},
 			},
 		},
 
@@ -400,9 +393,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20250124: &anthropic.BetaToolBash20250124Param{},
 			},
 		},
 		{
@@ -416,9 +408,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2024_10_22},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20241022Param{
-				Name: anthropic.F(anthropic.BetaToolBash20241022Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20241022TypeBash20241022),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20241022: &anthropic.BetaToolBash20241022Param{},
 			},
 		},
 		{
@@ -430,9 +421,8 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			},
 			expectBetas:  []string{anthropic.AnthropicBetaComputerUse2025_01_24},
 			wantWarnings: nil,
-			want: anthropic.BetaToolBash20250124Param{
-				Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
-				Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+			want: anthropic.BetaToolUnionParam{
+				OfBashTool20250124: &anthropic.BetaToolBash20250124Param{},
 			},
 		},
 
@@ -496,47 +486,50 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			tool, betas, warnings, err := EncodeProviderDefinedTool(tc.input)
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			tool, betas, warnings, err := EncodeProviderDefinedTool(testCase.input)
 
-			if tc.wantErrMsg != "" {
+			if testCase.wantErrMsg != "" {
 				assert.Error(t, err, "Expected an error")
-				assert.Contains(t, err.Error(), tc.wantErrMsg, "Error message should contain expected substring")
+				assert.Contains(t, err.Error(), testCase.wantErrMsg, "Error message should contain expected substring")
 				return
 			}
 
 			require.NoError(t, err)
 
 			// Check warnings
-			if len(tc.wantWarnings) == 0 {
+			if len(testCase.wantWarnings) == 0 {
 				assert.Empty(t, warnings, "No warnings should be returned")
 			} else {
-				assert.ElementsMatch(t, tc.wantWarnings, warnings, "Warnings mismatch")
+				assert.ElementsMatch(t, testCase.wantWarnings, warnings, "Warnings mismatch")
 			}
 
 			// Check betas
-			assert.ElementsMatch(t, tc.expectBetas, betas, "Betas mismatch")
+			assert.ElementsMatch(t, testCase.expectBetas, betas, "Betas mismatch")
 
-			// Check if tool should be nil
-			if tc.expectNil {
-				assert.Nil(t, tool, "Tool should be nil")
+			// Check if tool should be empty (empty union)
+			if testCase.expectNil {
+				// Check that the tool is empty using GetType()
+				assert.Nil(t, tool.GetType(), "Tool should be empty")
 				return
 			}
 
 			require.NotNil(t, tool, "Tool should not be nil")
 
-			// Validate the returned type matches the expected type
-			assert.IsType(t, tc.want, tool, "Tool type mismatch")
+			// Validate that GetType() returns a non-empty value (implementation sets it correctly)
+			require.NotNil(t, tool.GetType(), "Tool type should not be nil")
+			require.NotEmpty(t, *tool.GetType(), "Tool type should not be empty")
 
 			// Validate the JSON representation matches
-			expectedJSON, err := json.Marshal(tc.want)
+			// This will verify our type matches the SDK's default when marshaled
+			expectedJSON, err := json.Marshal(testCase.want)
 			require.NoError(t, err, "Failed to marshal expected tool to JSON")
 
 			actualJSON, err := json.Marshal(tool)
 			require.NoError(t, err, "Failed to marshal actual tool to JSON")
 
-			assert.JSONEq(t, string(expectedJSON), string(actualJSON), "Tool JSON content mismatch for %s", tc.name)
+			assert.JSONEq(t, string(expectedJSON), string(actualJSON), "Tool JSON content mismatch for %s", testCase.name)
 		})
 	}
 }
@@ -575,23 +568,18 @@ func TestEncodeTools(t *testing.T) {
 	}
 
 	// Helper to create expected tool choice
-	autoChoice := []anthropic.BetaToolChoiceUnionParam{
-		anthropic.BetaToolChoiceAutoParam{
-			Type: anthropic.F(anthropic.BetaToolChoiceAutoTypeAuto),
+	autoChoice := anthropic.BetaToolChoiceUnionParam{
+		OfAuto: &anthropic.BetaToolChoiceAutoParam{
+			Type: "auto",
 		},
 	}
-	anyChoice := []anthropic.BetaToolChoiceUnionParam{
-		anthropic.BetaToolChoiceAnyParam{
-			Type: anthropic.F(anthropic.BetaToolChoiceAnyTypeAny),
+	anyChoice := anthropic.BetaToolChoiceUnionParam{
+		OfAny: &anthropic.BetaToolChoiceAnyParam{
+			Type: "any",
 		},
 	}
-	specificChoice := func(toolName string) []anthropic.BetaToolChoiceUnionParam {
-		return []anthropic.BetaToolChoiceUnionParam{
-			anthropic.BetaToolChoiceToolParam{
-				Type: anthropic.F(anthropic.BetaToolChoiceToolTypeTool),
-				Name: anthropic.String(toolName),
-			},
-		}
+	specificChoice := func(toolName string) anthropic.BetaToolChoiceUnionParam {
+		return anthropic.BetaToolChoiceParamOfTool(toolName)
 	}
 
 	tests := []struct {
@@ -611,8 +599,8 @@ func TestEncodeTools(t *testing.T) {
 			name:  "function tool",
 			tools: []api.ToolDefinition{functionTool},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool)},
-				ToolChoice: nil,
+				Tools:      []anthropic.BetaToolUnionParam{mustEncodeFunctionTool(functionTool)},
+				ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 				Betas:      []anthropic.AnthropicBeta{},
 				Warnings:   []api.CallWarning{},
 			},
@@ -622,7 +610,7 @@ func TestEncodeTools(t *testing.T) {
 			tools:  []api.ToolDefinition{computerTool},
 			choice: &api.ToolChoice{Type: "auto"},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeComputerTool()},
+				Tools:      []anthropic.BetaToolUnionParam{mustEncodeComputerTool()},
 				ToolChoice: autoChoice,
 				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
 				Warnings:   []api.CallWarning{},
@@ -633,7 +621,7 @@ func TestEncodeTools(t *testing.T) {
 			tools:  []api.ToolDefinition{functionTool, computerTool},
 			choice: &api.ToolChoice{Type: "required"},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
+				Tools:      []anthropic.BetaToolUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
 				ToolChoice: anyChoice,
 				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
 				Warnings:   []api.CallWarning{},
@@ -643,8 +631,8 @@ func TestEncodeTools(t *testing.T) {
 			name:  "unsupported tool",
 			tools: []api.ToolDefinition{unsupportedTool},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{},
-				ToolChoice: nil,
+				Tools:      []anthropic.BetaToolUnionParam{},
+				ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 				Betas:      []anthropic.AnthropicBeta{},
 				Warnings: []api.CallWarning{
 					{Type: "unsupported-tool", Tool: unsupportedTool},
@@ -663,7 +651,7 @@ func TestEncodeTools(t *testing.T) {
 			choice: &api.ToolChoice{Type: "none"},
 			want: AnthropicTools{
 				Tools:      nil,
-				ToolChoice: nil,
+				ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
 				Warnings:   []api.CallWarning{},
 			},
@@ -673,7 +661,7 @@ func TestEncodeTools(t *testing.T) {
 			tools:  []api.ToolDefinition{functionTool},
 			choice: &api.ToolChoice{Type: "tool", ToolName: "test_function"},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool)},
+				Tools:      []anthropic.BetaToolUnionParam{mustEncodeFunctionTool(functionTool)},
 				ToolChoice: specificChoice("test_function"),
 				Betas:      []anthropic.AnthropicBeta{},
 				Warnings:   []api.CallWarning{},
@@ -690,7 +678,7 @@ func TestEncodeTools(t *testing.T) {
 			},
 			choice: &api.ToolChoice{Type: "tool", ToolName: "test_tool"},
 			want: AnthropicTools{
-				Tools: []anthropic.BetaToolUnionUnionParam{
+				Tools: []anthropic.BetaToolUnionParam{
 					mustEncodeFunctionTool(api.FunctionTool{
 						Name:        "test_tool",
 						Description: "A test tool",
@@ -722,12 +710,12 @@ func TestEncodeTools(t *testing.T) {
 				},
 			},
 			want: AnthropicTools{
-				Tools: []anthropic.BetaToolUnionUnionParam{
+				Tools: []anthropic.BetaToolUnionParam{
 					mustEncodeComputerTool(),
 					mustEncodeTextEditorTool(),
 					mustEncodeBashTool(),
 				},
-				ToolChoice: nil,
+				ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
 				Warnings:   []api.CallWarning{},
 			},
@@ -736,8 +724,8 @@ func TestEncodeTools(t *testing.T) {
 			name:  "mixed supported and unsupported tools",
 			tools: []api.ToolDefinition{functionTool, unsupportedTool, computerTool},
 			want: AnthropicTools{
-				Tools:      []anthropic.BetaToolUnionUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
-				ToolChoice: nil,
+				Tools:      []anthropic.BetaToolUnionParam{mustEncodeFunctionTool(functionTool), mustEncodeComputerTool()},
+				ToolChoice: anthropic.BetaToolChoiceUnionParam{},
 				Betas:      []anthropic.AnthropicBeta{anthropic.AnthropicBetaComputerUse2025_01_24},
 				Warnings: []api.CallWarning{
 					{Type: "unsupported-tool", Tool: unsupportedTool},
@@ -765,7 +753,7 @@ func TestEncodeTools(t *testing.T) {
 }
 
 // Helper functions to create expected tool encodings
-func mustEncodeFunctionTool(tool api.FunctionTool) anthropic.BetaToolUnionUnionParam {
+func mustEncodeFunctionTool(tool api.FunctionTool) anthropic.BetaToolUnionParam {
 	result, err := EncodeFunctionTool(tool)
 	if err != nil {
 		panic(err)
@@ -773,27 +761,30 @@ func mustEncodeFunctionTool(tool api.FunctionTool) anthropic.BetaToolUnionUnionP
 	return result
 }
 
-func mustEncodeComputerTool() anthropic.BetaToolUnionUnionParam {
-	return anthropic.BetaToolComputerUse20250124Param{
-		Name:            anthropic.F(anthropic.BetaToolComputerUse20250124Name("computer")),
-		Type:            anthropic.F(anthropic.BetaToolComputerUse20250124TypeComputer20250124),
-		DisplayWidthPx:  anthropic.Int(800),
-		DisplayHeightPx: anthropic.Int(600),
-		DisplayNumber:   anthropic.Int(1),
+func mustEncodeComputerTool() anthropic.BetaToolUnionParam {
+	return anthropic.BetaToolUnionParam{
+		OfComputerUseTool20250124: &anthropic.BetaToolComputerUse20250124Param{
+			Type:            "computer_20250124",
+			DisplayWidthPx:  800,
+			DisplayHeightPx: 600,
+			DisplayNumber:   anthropic.Int(1),
+		},
 	}
 }
 
-func mustEncodeTextEditorTool() anthropic.BetaToolUnionUnionParam {
-	return anthropic.BetaToolTextEditor20250124Param{
-		Name: anthropic.F(anthropic.BetaToolTextEditor20250124Name("str_replace_editor")),
-		Type: anthropic.F(anthropic.BetaToolTextEditor20250124TypeTextEditor20250124),
+func mustEncodeTextEditorTool() anthropic.BetaToolUnionParam {
+	return anthropic.BetaToolUnionParam{
+		OfTextEditor20250124: &anthropic.BetaToolTextEditor20250124Param{
+			Type: "text_editor_20250124",
+		},
 	}
 }
 
-func mustEncodeBashTool() anthropic.BetaToolUnionUnionParam {
-	return anthropic.BetaToolBash20250124Param{
-		Name: anthropic.F(anthropic.BetaToolBash20250124Name("bash")),
-		Type: anthropic.F(anthropic.BetaToolBash20250124TypeBash20250124),
+func mustEncodeBashTool() anthropic.BetaToolUnionParam {
+	return anthropic.BetaToolUnionParam{
+		OfBashTool20250124: &anthropic.BetaToolBash20250124Param{
+			Type: "bash_20250124",
+		},
 	}
 }
 

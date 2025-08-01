@@ -12,7 +12,7 @@ import (
 type ModelOption func(*LanguageModel)
 
 // WithClient returns a ModelOption that sets the client.
-func WithClient(client *anthropic.Client) ModelOption {
+func WithClient(client anthropic.Client) ModelOption {
 	// TODO: Instead of only supporting an anthropic.Client, we can "flatten"
 	// the options supported by the Anthropic SDK.
 	return func(m *LanguageModel) {
@@ -23,7 +23,7 @@ func WithClient(client *anthropic.Client) ModelOption {
 // LanguageModel represents an Anthropic language model.
 type LanguageModel struct {
 	modelID string
-	client  *anthropic.Client
+	client  anthropic.Client
 }
 
 var _ api.LanguageModel = &LanguageModel{}
@@ -67,7 +67,7 @@ func (m *LanguageModel) SupportedUrls() []api.SupportedURL {
 func (m *LanguageModel) Generate(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
 ) (api.Response, error) {
-	params, warnings, err := codec.EncodeParams(prompt, opts)
+	params, warnings, err := codec.EncodeParams(m.modelID, prompt, opts)
 	if err != nil {
 		return api.Response{}, err
 	}

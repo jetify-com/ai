@@ -12,27 +12,27 @@ import (
 func TestDecodeFinishReason(t *testing.T) {
 	tests := []struct {
 		name         string
-		finishReason anthropic.BetaMessageStopReason
+		finishReason anthropic.BetaStopReason
 		want         api.FinishReason
 	}{
 		{
 			name:         "end_turn maps to stop",
-			finishReason: anthropic.BetaMessageStopReasonEndTurn,
+			finishReason: anthropic.BetaStopReasonEndTurn,
 			want:         api.FinishReasonStop,
 		},
 		{
 			name:         "stop_sequence maps to stop",
-			finishReason: anthropic.BetaMessageStopReasonStopSequence,
+			finishReason: anthropic.BetaStopReasonStopSequence,
 			want:         api.FinishReasonStop,
 		},
 		{
 			name:         "tool_use maps to tool-calls",
-			finishReason: anthropic.BetaMessageStopReasonToolUse,
+			finishReason: anthropic.BetaStopReasonToolUse,
 			want:         api.FinishReasonToolCalls,
 		},
 		{
 			name:         "max_tokens maps to length",
-			finishReason: anthropic.BetaMessageStopReasonMaxTokens,
+			finishReason: anthropic.BetaStopReasonMaxTokens,
 			want:         api.FinishReasonLength,
 		},
 		{
@@ -171,13 +171,13 @@ func TestDecodeProviderMetadata(t *testing.T) {
 func TestDecodeReasoning(t *testing.T) {
 	tests := []struct {
 		name  string
-		block anthropic.BetaContentBlock
+		block anthropic.BetaContentBlockUnion
 		want  api.Reasoning
 	}{
 		{
 			name: "thinking block",
-			block: anthropic.BetaContentBlock{
-				Type:      anthropic.BetaContentBlockTypeThinking,
+			block: anthropic.BetaContentBlockUnion{
+				Type:      "thinking",
 				Thinking:  "This is my reasoning",
 				Signature: "sig123",
 			},
@@ -188,8 +188,8 @@ func TestDecodeReasoning(t *testing.T) {
 		},
 		{
 			name: "redacted thinking block",
-			block: anthropic.BetaContentBlock{
-				Type: anthropic.BetaContentBlockTypeRedactedThinking,
+			block: anthropic.BetaContentBlockUnion{
+				Type: "redacted_thinking",
 				Data: "redacted-data",
 			},
 			want: &api.RedactedReasoningBlock{
@@ -198,22 +198,22 @@ func TestDecodeReasoning(t *testing.T) {
 		},
 		{
 			name: "empty thinking block",
-			block: anthropic.BetaContentBlock{
-				Type: anthropic.BetaContentBlockTypeThinking,
+			block: anthropic.BetaContentBlockUnion{
+				Type: "thinking",
 			},
 			want: nil,
 		},
 		{
 			name: "empty redacted thinking block",
-			block: anthropic.BetaContentBlock{
-				Type: anthropic.BetaContentBlockTypeRedactedThinking,
+			block: anthropic.BetaContentBlockUnion{
+				Type: "redacted_thinking",
 			},
 			want: nil,
 		},
 		{
 			name: "non-reasoning block",
-			block: anthropic.BetaContentBlock{
-				Type: anthropic.BetaContentBlockTypeText,
+			block: anthropic.BetaContentBlockUnion{
+				Type: "text",
 			},
 			want: nil,
 		},
@@ -230,15 +230,15 @@ func TestDecodeReasoning(t *testing.T) {
 func TestDecodeToolUse(t *testing.T) {
 	tests := []struct {
 		name  string
-		block anthropic.BetaContentBlock
+		block anthropic.BetaContentBlockUnion
 		want  *api.ToolCallBlock
 	}{
 		{
 			name: "block with input",
-			block: anthropic.BetaContentBlock{
+			block: anthropic.BetaContentBlockUnion{
 				ID:    "call_123",
 				Name:  "search",
-				Type:  anthropic.BetaContentBlockTypeToolUse,
+				Type:  "tool_use",
 				Input: json.RawMessage(`{"query":"test"}`),
 			},
 			want: &api.ToolCallBlock{
@@ -249,10 +249,10 @@ func TestDecodeToolUse(t *testing.T) {
 		},
 		{
 			name: "block without input",
-			block: anthropic.BetaContentBlock{
+			block: anthropic.BetaContentBlockUnion{
 				ID:   "call_456",
 				Name: "get_time",
-				Type: anthropic.BetaContentBlockTypeToolUse,
+				Type: "tool_use",
 			},
 			want: &api.ToolCallBlock{
 				ToolCallID: "call_456",
@@ -275,10 +275,10 @@ func TestDecodeToolUse(t *testing.T) {
 // TestDecodeToolUseWithMarshalError tests the decodeToolUse function when JSON marshaling fails
 func TestDecodeToolUseWithMarshalError(t *testing.T) {
 	// Test with malformed JSON to trigger the marshal error path
-	block := anthropic.BetaContentBlock{
+	block := anthropic.BetaContentBlockUnion{
 		ID:    "call_789",
 		Name:  "error_call",
-		Type:  anthropic.BetaContentBlockTypeToolUse,
+		Type:  "tool_use",
 		Input: json.RawMessage(`{malformed json`), // Invalid JSON
 	}
 
@@ -297,22 +297,22 @@ func TestDecodeToolUseWithMarshalError(t *testing.T) {
 func TestDecodeContent(t *testing.T) {
 	tests := []struct {
 		name   string
-		blocks []anthropic.BetaContentBlock
+		blocks []anthropic.BetaContentBlockUnion
 		want   []api.ContentBlock
 	}{
 		{
 			name: "multiple block types",
-			blocks: []anthropic.BetaContentBlock{
+			blocks: []anthropic.BetaContentBlockUnion{
 				{
-					Type: anthropic.BetaContentBlockTypeText,
+					Type: "text",
 					Text: "Hello world",
 				},
 				{
-					Type:     anthropic.BetaContentBlockTypeThinking,
+					Type:     "thinking",
 					Thinking: "Thinking process",
 				},
 				{
-					Type:  anthropic.BetaContentBlockTypeToolUse,
+					Type:  "tool_use",
 					ID:    "call_789",
 					Name:  "get_weather",
 					Input: json.RawMessage(`{"location":"New York"}`),
@@ -339,14 +339,14 @@ func TestDecodeContent(t *testing.T) {
 		},
 		{
 			name:   "empty blocks",
-			blocks: []anthropic.BetaContentBlock{},
+			blocks: []anthropic.BetaContentBlockUnion{},
 			want:   []api.ContentBlock{},
 		},
 		{
 			name: "empty text block should be skipped",
-			blocks: []anthropic.BetaContentBlock{
+			blocks: []anthropic.BetaContentBlockUnion{
 				{
-					Type: anthropic.BetaContentBlockTypeText,
+					Type: "text",
 					Text: "", // Empty text should be skipped
 				},
 			},
@@ -354,7 +354,7 @@ func TestDecodeContent(t *testing.T) {
 		},
 		{
 			name: "unknown block type should be skipped",
-			blocks: []anthropic.BetaContentBlock{
+			blocks: []anthropic.BetaContentBlockUnion{
 				{
 					Type: "", // Unknown type
 					Text: "Should be skipped",
@@ -384,14 +384,14 @@ func TestDecodeResponse(t *testing.T) {
 			msg: &anthropic.BetaMessage{
 				ID:         "msg_123",
 				Model:      "claude-3",
-				StopReason: anthropic.BetaMessageStopReasonEndTurn,
+				StopReason: anthropic.BetaStopReasonEndTurn,
 				Usage: anthropic.BetaUsage{
 					InputTokens:  150,
 					OutputTokens: 250,
 				},
-				Content: []anthropic.BetaContentBlock{
+				Content: []anthropic.BetaContentBlockUnion{
 					{
-						Type: anthropic.BetaContentBlockTypeText,
+						Type: "text",
 						Text: "Hello, I am Claude",
 					},
 				},

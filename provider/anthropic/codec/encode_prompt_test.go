@@ -31,8 +31,18 @@ func TestEncodePrompt(t *testing.T) {
 					NewTextBlock("You are a helpful assistant"),
 				},
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(NewTextBlock("Hello")),
-					NewAssistantMessage(NewTextBlock("Hi there!")),
+					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hello",
+						},
+					}),
+					NewAssistantMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hi there!",
+						},
+					}),
 				},
 			},
 		},
@@ -48,7 +58,12 @@ func TestEncodePrompt(t *testing.T) {
 					NewTextBlock("First system message\nSecond system message"),
 				},
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(NewTextBlock("Hello")),
+					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hello",
+						},
+					}),
 				},
 			},
 		},
@@ -69,8 +84,18 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(NewTextBlock("Hello")),
-					NewAssistantMessage(NewTextBlock("Hi there!")),
+					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hello",
+						},
+					}),
+					NewAssistantMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hi there!",
+						},
+					}),
 				},
 			},
 		},
@@ -87,16 +112,36 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewTextBlock("hello"),
-						NewImageBlockBase64("image/png", "AAECAw=="),
-						anthropic.BetaBase64PDFBlockParam{
-							Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-							Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-								Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-								Data:      anthropic.F("http://example.com/file.txt"),
-								MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-							}),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "hello",
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfImage: &anthropic.BetaImageBlockParam{
+								Type: "image",
+								Source: anthropic.BetaImageBlockParamSourceUnion{
+									OfBase64: &anthropic.BetaBase64ImageSourceParam{
+										Type:      "base64",
+										Data:      "AAECAw==",
+										MediaType: "image/png",
+									},
+								},
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+								Type: "document",
+								Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+									OfText: &anthropic.BetaPlainTextSourceParam{
+										Type:      "text",
+										Data:      "http://example.com/file.txt",
+										MediaType: "text/plain",
+									},
+								},
+							},
 						},
 					),
 				},
@@ -129,11 +174,37 @@ func TestEncodePrompt(t *testing.T) {
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
 					NewAssistantMessage(
-						NewTextBlock("Let me check the weather"),
-						NewToolUseBlockParam("weather-1", "get_weather", map[string]any{"location": "London"}),
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "Let me check the weather",
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfToolUse: &anthropic.BetaToolUseBlockParam{
+								Type:  "tool_use",
+								ID:    "weather-1",
+								Name:  "get_weather",
+								Input: json.RawMessage(`{"location":"London"}`),
+							},
+						},
 					),
-					NewUserMessage(
-						NewToolResultBlock("weather-1", `{"temperature":20,"condition":"sunny"}`, false),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfToolResult: &anthropic.BetaToolResultBlockParam{
+								Type:      "tool_result",
+								ToolUseID: "weather-1",
+								Content: []anthropic.BetaToolResultBlockParamContentUnion{
+									{
+										OfText: &anthropic.BetaTextBlockParam{
+											Type: "text",
+											Text: `{"temperature":20,"condition":"sunny"}`,
+										},
+									},
+								},
+								IsError: anthropic.Bool(false),
+							},
+						},
 					),
 				},
 			},
@@ -153,14 +224,23 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewTextBlock("Here's a PDF"),
-						anthropic.BetaBase64PDFBlockParam{
-							Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-							Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaURLPDFSourceParam{
-								Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-								URL:  anthropic.F("http://example.com/doc.pdf"),
-							}),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "Here's a PDF",
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+								Type: "document",
+								Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+									OfURL: &anthropic.BetaURLPDFSourceParam{
+										Type: "url",
+										URL:  "http://example.com/doc.pdf",
+									},
+								},
+							},
 						},
 					),
 				},
@@ -182,15 +262,24 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewTextBlock("Here's a text file"),
-						anthropic.BetaBase64PDFBlockParam{
-							Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-							Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-								Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-								Data:      anthropic.F("http://example.com/file.txt"),
-								MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-							}),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "Here's a text file",
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+								Type: "document",
+								Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+									OfText: &anthropic.BetaPlainTextSourceParam{
+										Type:      "text",
+										Data:      "http://example.com/file.txt",
+										MediaType: "text/plain",
+									},
+								},
+							},
 						},
 					),
 				},
@@ -270,8 +359,22 @@ func TestEncodePrompt(t *testing.T) {
 					NewTextBlock("System message"),
 				},
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewToolResultBlock("tool-1", `"simple string result"`, false),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfToolResult: &anthropic.BetaToolResultBlockParam{
+								Type:      "tool_result",
+								ToolUseID: "tool-1",
+								Content: []anthropic.BetaToolResultBlockParamContentUnion{
+									{
+										OfText: &anthropic.BetaTextBlockParam{
+											Type: "text",
+											Text: `"simple string result"`,
+										},
+									},
+								},
+								IsError: anthropic.Bool(false),
+							},
+						},
 					),
 				},
 			},
@@ -283,7 +386,12 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(NewTextBlock("Hello from value type")),
+					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hello from value type",
+						},
+					}),
 				},
 			},
 		},
@@ -298,7 +406,12 @@ func TestEncodePrompt(t *testing.T) {
 					NewTextBlock("System from value type"),
 				},
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(NewTextBlock("Hello")),
+					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Hello",
+						},
+					}),
 				},
 			},
 		},
@@ -309,7 +422,12 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewAssistantMessage(NewTextBlock("Assistant from value type")),
+					NewAssistantMessage(anthropic.BetaContentBlockParamUnion{
+						OfText: &anthropic.BetaTextBlockParam{
+							Type: "text",
+							Text: "Assistant from value type",
+						},
+					}),
 				},
 			},
 		},
@@ -329,8 +447,22 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewToolResultBlock("tool-123", `"result from value type"`, false),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfToolResult: &anthropic.BetaToolResultBlockParam{
+								Type:      "tool_result",
+								ToolUseID: "tool-123",
+								Content: []anthropic.BetaToolResultBlockParamContentUnion{
+									{
+										OfText: &anthropic.BetaTextBlockParam{
+											Type: "text",
+											Text: `"result from value type"`,
+										},
+									},
+								},
+								IsError: anthropic.Bool(false),
+							},
+						},
 					),
 				},
 			},
@@ -355,22 +487,35 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						NewTextBlock("Text as value"),
-						anthropic.BetaImageBlockParam{
-							Type: anthropic.F(anthropic.BetaImageBlockParamTypeImage),
-							Source: anthropic.F[anthropic.BetaImageBlockParamSourceUnion](anthropic.BetaURLImageSourceParam{
-								Type: anthropic.F(anthropic.BetaURLImageSourceTypeURL),
-								URL:  anthropic.F("https://example.com/img.jpg"),
-							}),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "Text as value",
+							},
 						},
-						anthropic.BetaBase64PDFBlockParam{
-							Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-							Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaBase64PDFSourceParam{
-								Type:      anthropic.F(anthropic.BetaBase64PDFSourceTypeBase64),
-								Data:      anthropic.F(base64.StdEncoding.EncodeToString([]byte("test pdf data"))),
-								MediaType: anthropic.F(anthropic.BetaBase64PDFSourceMediaTypeApplicationPDF),
-							}),
+						anthropic.BetaContentBlockParamUnion{
+							OfImage: &anthropic.BetaImageBlockParam{
+								Type: "image",
+								Source: anthropic.BetaImageBlockParamSourceUnion{
+									OfURL: &anthropic.BetaURLImageSourceParam{
+										Type: "url",
+										URL:  "https://example.com/img.jpg",
+									},
+								},
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+								Type: "document",
+								Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+									OfBase64: &anthropic.BetaBase64PDFSourceParam{
+										Type:      "base64",
+										Data:      base64.StdEncoding.EncodeToString([]byte("test pdf data")),
+										MediaType: "application/pdf",
+									},
+								},
+							},
 						},
 					),
 				},
@@ -396,8 +541,20 @@ func TestEncodePrompt(t *testing.T) {
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
 					NewAssistantMessage(
-						NewTextBlock("Assistant text as value"),
-						NewToolUseBlockParam("tool-456", "search_tool", map[string]any{"query": "test"}),
+						anthropic.BetaContentBlockParamUnion{
+							OfText: &anthropic.BetaTextBlockParam{
+								Type: "text",
+								Text: "Assistant text as value",
+							},
+						},
+						anthropic.BetaContentBlockParamUnion{
+							OfToolUse: &anthropic.BetaToolUseBlockParam{
+								Type:  "tool_use",
+								ID:    "tool-456",
+								Name:  "search_tool",
+								Input: json.RawMessage(`{"query":"test"}`),
+							},
+						},
 					),
 				},
 			},
@@ -425,15 +582,33 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
-					NewUserMessage(
-						anthropic.BetaToolResultBlockParam{
-							Type:      anthropic.F(anthropic.BetaToolResultBlockParamTypeToolResult),
-							ToolUseID: anthropic.F("tool-789"),
-							Content: anthropic.F([]anthropic.BetaToolResultBlockParamContentUnion{
-								NewTextBlock("Tool result text"),
-								NewImageBlockBase64("image/png", base64.StdEncoding.EncodeToString([]byte{1, 2, 3, 4})),
-							}),
-							IsError: anthropic.F(false),
+					anthropic.NewBetaUserMessage(
+						anthropic.BetaContentBlockParamUnion{
+							OfToolResult: &anthropic.BetaToolResultBlockParam{
+								Type:      "tool_result",
+								ToolUseID: "tool-789",
+								Content: []anthropic.BetaToolResultBlockParamContentUnion{
+									{
+										OfText: &anthropic.BetaTextBlockParam{
+											Type: "text",
+											Text: "Tool result text",
+										},
+									},
+									{
+										OfImage: &anthropic.BetaImageBlockParam{
+											Type: "image",
+											Source: anthropic.BetaImageBlockParamSourceUnion{
+												OfBase64: &anthropic.BetaBase64ImageSourceParam{
+													Type:      "base64",
+													Data:      base64.StdEncoding.EncodeToString([]byte{1, 2, 3, 4}),
+													MediaType: "image/png",
+												},
+											},
+										},
+									},
+								},
+								IsError: anthropic.Bool(false),
+							},
 						},
 					),
 				},
@@ -563,17 +738,26 @@ func TestEncodeUserContentPart(t *testing.T) {
 		{
 			name:  "text block",
 			block: &api.TextBlock{Text: "Hello, world!"},
-			want:  NewTextBlock("Hello, world!"),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfText: &anthropic.BetaTextBlockParam{
+					Type: "text",
+					Text: "Hello, world!",
+				},
+			},
 		},
 		{
 			name:  "image block with URL",
 			block: &api.ImageBlock{URL: "https://example.com/image.jpg"},
-			want: anthropic.BetaImageBlockParam{
-				Type: anthropic.F(anthropic.BetaImageBlockParamTypeImage),
-				Source: anthropic.F[anthropic.BetaImageBlockParamSourceUnion](anthropic.BetaURLImageSourceParam{
-					Type: anthropic.F(anthropic.BetaURLImageSourceTypeURL),
-					URL:  anthropic.F("https://example.com/image.jpg"),
-				}),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfImage: &anthropic.BetaImageBlockParam{
+					Type: "image",
+					Source: anthropic.BetaImageBlockParamSourceUnion{
+						OfURL: &anthropic.BetaURLImageSourceParam{
+							Type: "url",
+							URL:  "https://example.com/image.jpg",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -582,37 +766,67 @@ func TestEncodeUserContentPart(t *testing.T) {
 				Data:      []byte("fake-image-data"),
 				MediaType: "image/jpeg",
 			},
-			want: NewImageBlockBase64("image/jpeg", "ZmFrZS1pbWFnZS1kYXRh"),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfImage: &anthropic.BetaImageBlockParam{
+					Type: "image",
+					Source: anthropic.BetaImageBlockParamSourceUnion{
+						OfBase64: &anthropic.BetaBase64ImageSourceParam{
+							Type:      "base64",
+							Data:      "ZmFrZS1pbWFnZS1kYXRh",
+							MediaType: "image/jpeg",
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "image block with data and missing mime type",
 			block: &api.ImageBlock{
 				Data: []byte("fake-image-data"),
 			},
-			want: NewImageBlockBase64("image/jpeg", "ZmFrZS1pbWFnZS1kYXRh"),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfImage: &anthropic.BetaImageBlockParam{
+					Type: "image",
+					Source: anthropic.BetaImageBlockParamSourceUnion{
+						OfBase64: &anthropic.BetaBase64ImageSourceParam{
+							Type:      "base64",
+							Data:      "ZmFrZS1pbWFnZS1kYXRh",
+							MediaType: "image/jpeg",
+						},
+					},
+				},
+			},
 		},
 		{
 			name:  "file block with URL",
 			block: &api.FileBlock{URL: "https://example.com/file.txt"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-					Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-					Data:      anthropic.F("https://example.com/file.txt"),
-					MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-				}),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+					Type: "document",
+					Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+						OfText: &anthropic.BetaPlainTextSourceParam{
+							Type:      "text",
+							Data:      "https://example.com/file.txt",
+							MediaType: "text/plain",
+						},
+					},
+				},
 			},
 		},
 		{
 			name:  "file block with text data",
 			block: &api.FileBlock{Data: []byte("Hello from file")},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-					Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-					Data:      anthropic.F("Hello from file"),
-					MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-				}),
+			want: anthropic.BetaContentBlockParamUnion{
+				OfDocument: &anthropic.BetaRequestDocumentBlockParam{
+					Type: "document",
+					Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+						OfText: &anthropic.BetaPlainTextSourceParam{
+							Type:      "text",
+							Data:      "Hello from file",
+							MediaType: "text/plain",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -665,7 +879,7 @@ func TestEncodeAssistantMessage(t *testing.T) {
 	tests := []struct {
 		name    string
 		msg     *api.AssistantMessage
-		want    anthropic.MessageParam
+		want    anthropic.BetaMessageParam
 		wantErr bool
 	}{
 		{
@@ -675,8 +889,13 @@ func TestEncodeAssistantMessage(t *testing.T) {
 					&api.TextBlock{Text: "Hello!"},
 				},
 			},
-			want: anthropic.NewAssistantMessage(
-				anthropic.NewTextBlock("Hello!"),
+			want: NewAssistantMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfText: &anthropic.BetaTextBlockParam{
+						Type: "text",
+						Text: "Hello!",
+					},
+				},
 			),
 		},
 		{
@@ -691,9 +910,21 @@ func TestEncodeAssistantMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewAssistantMessage(
-				anthropic.NewTextBlock("Let me check"),
-				anthropic.NewToolUseBlockParam("tool-1", "test_tool", map[string]any{"key": "value"}),
+			want: NewAssistantMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfText: &anthropic.BetaTextBlockParam{
+						Type: "text",
+						Text: "Let me check",
+					},
+				},
+				anthropic.BetaContentBlockParamUnion{
+					OfToolUse: &anthropic.BetaToolUseBlockParam{
+						Type:  "tool_use",
+						ID:    "tool-1",
+						Name:  "test_tool",
+						Input: json.RawMessage(`{"key":"value"}`),
+					},
+				},
 			),
 		},
 		{
@@ -706,11 +937,13 @@ func TestEncodeAssistantMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewAssistantMessage(
-				anthropic.ThinkingBlockParam{
-					Type:      anthropic.F(anthropic.ThinkingBlockParamTypeThinking),
-					Thinking:  anthropic.F("Let me think about this..."),
-					Signature: anthropic.F("sig123"),
+			want: NewAssistantMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfThinking: &anthropic.BetaThinkingBlockParam{
+						Type:      "thinking",
+						Thinking:  "Let me think about this...",
+						Signature: "sig123",
+					},
 				},
 			),
 		},
@@ -723,10 +956,12 @@ func TestEncodeAssistantMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewAssistantMessage(
-				anthropic.RedactedThinkingBlockParam{
-					Type: anthropic.F(anthropic.RedactedThinkingBlockParamTypeRedactedThinking),
-					Data: anthropic.F("redacted-data"),
+			want: NewAssistantMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfRedactedThinking: &anthropic.BetaRedactedThinkingBlockParam{
+						Type: "redacted_thinking",
+						Data: "redacted-data",
+					},
 				},
 			),
 		},
@@ -809,7 +1044,7 @@ func TestEncodeToolMessage(t *testing.T) {
 	tests := []struct {
 		name    string
 		msg     *api.ToolMessage
-		want    anthropic.MessageParam
+		want    anthropic.BetaMessageParam
 		wantErr bool
 	}{
 		{
@@ -824,8 +1059,22 @@ func TestEncodeToolMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewUserMessage(
-				anthropic.NewToolResultBlock("tool-1", `"success"`, false),
+			want: anthropic.NewBetaUserMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfToolResult: &anthropic.BetaToolResultBlockParam{
+						Type:      "tool_result",
+						ToolUseID: "tool-1",
+						Content: []anthropic.BetaToolResultBlockParamContentUnion{
+							{
+								OfText: &anthropic.BetaTextBlockParam{
+									Type: "text",
+									Text: `"success"`,
+								},
+							},
+						},
+						IsError: anthropic.Bool(false),
+					},
+				},
 			),
 		},
 		{
@@ -840,8 +1089,22 @@ func TestEncodeToolMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewUserMessage(
-				anthropic.NewToolResultBlock("tool-1", `"failed"`, true),
+			want: anthropic.NewBetaUserMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfToolResult: &anthropic.BetaToolResultBlockParam{
+						Type:      "tool_result",
+						ToolUseID: "tool-1",
+						Content: []anthropic.BetaToolResultBlockParamContentUnion{
+							{
+								OfText: &anthropic.BetaTextBlockParam{
+									Type: "text",
+									Text: `"failed"`,
+								},
+							},
+						},
+						IsError: anthropic.Bool(true),
+					},
+				},
 			),
 		},
 		{
@@ -856,8 +1119,22 @@ func TestEncodeToolMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewUserMessage(
-				anthropic.NewToolResultBlock("tool-1", `{"status":"ok","data":123}`, false),
+			want: anthropic.NewBetaUserMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfToolResult: &anthropic.BetaToolResultBlockParam{
+						Type:      "tool_result",
+						ToolUseID: "tool-1",
+						Content: []anthropic.BetaToolResultBlockParamContentUnion{
+							{
+								OfText: &anthropic.BetaTextBlockParam{
+									Type: "text",
+									Text: `{"status":"ok","data":123}`,
+								},
+							},
+						},
+						IsError: anthropic.Bool(false),
+					},
+				},
 			),
 		},
 		{
@@ -879,25 +1156,33 @@ func TestEncodeToolMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewUserMessage(
-				anthropic.ToolResultBlockParam{
-					Type:      anthropic.F(anthropic.ToolResultBlockParamTypeToolResult),
-					ToolUseID: anthropic.F("tool-1"),
-					Content: anthropic.F([]anthropic.ToolResultBlockParamContentUnion{
-						anthropic.TextBlockParam{
-							Type: anthropic.F(anthropic.TextBlockParamTypeText),
-							Text: anthropic.F("Generated image:"),
+			want: anthropic.NewBetaUserMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfToolResult: &anthropic.BetaToolResultBlockParam{
+						Type:      "tool_result",
+						ToolUseID: "tool-1",
+						Content: []anthropic.BetaToolResultBlockParamContentUnion{
+							{
+								OfText: &anthropic.BetaTextBlockParam{
+									Type: "text",
+									Text: "Generated image:",
+								},
+							},
+							{
+								OfImage: &anthropic.BetaImageBlockParam{
+									Type: "image",
+									Source: anthropic.BetaImageBlockParamSourceUnion{
+										OfBase64: &anthropic.BetaBase64ImageSourceParam{
+											Type:      "base64",
+											Data:      "YmFzZTY0ZGF0YQ==",
+											MediaType: "image/png",
+										},
+									},
+								},
+							},
 						},
-						anthropic.ImageBlockParam{
-							Type: anthropic.F(anthropic.ImageBlockParamTypeImage),
-							Source: anthropic.F[anthropic.ImageBlockParamSourceUnion](anthropic.Base64ImageSourceParam{
-								Type:      anthropic.F(anthropic.Base64ImageSourceTypeBase64),
-								Data:      anthropic.F("YmFzZTY0ZGF0YQ=="),
-								MediaType: anthropic.F(anthropic.Base64ImageSourceMediaTypeImagePNG),
-							}),
-						},
-					}),
-					IsError: anthropic.F(false),
+						IsError: anthropic.Bool(false),
+					},
 				},
 			),
 		},
@@ -931,16 +1216,24 @@ func TestEncodeToolMessage(t *testing.T) {
 					},
 				},
 			},
-			want: anthropic.NewUserMessage(
-				anthropic.ToolResultBlockParam{
-					Type:      anthropic.F(anthropic.ToolResultBlockParamTypeToolResult),
-					ToolUseID: anthropic.F("tool-1"),
-					Content: anthropic.F([]anthropic.ToolResultBlockParamContentUnion{anthropic.TextBlockParam{
-						Type: anthropic.F(anthropic.TextBlockParamTypeText),
-						Text: anthropic.F(`"success"`),
-					}}),
-					IsError:      anthropic.F(false),
-					CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral)}),
+			want: anthropic.NewBetaUserMessage(
+				anthropic.BetaContentBlockParamUnion{
+					OfToolResult: &anthropic.BetaToolResultBlockParam{
+						Type:      "tool_result",
+						ToolUseID: "tool-1",
+						Content: []anthropic.BetaToolResultBlockParamContentUnion{
+							{
+								OfText: &anthropic.BetaTextBlockParam{
+									Type: "text",
+									Text: `"success"`,
+								},
+							},
+						},
+						IsError: anthropic.Bool(false),
+						CacheControl: anthropic.BetaCacheControlEphemeralParam{
+							Type: "ephemeral",
+						},
+					},
 				},
 			),
 		},
@@ -982,13 +1275,13 @@ func TestEncodeSystemMessage(t *testing.T) {
 	tests := []struct {
 		name    string
 		msg     *api.SystemMessage
-		want    anthropic.TextBlockParam
+		want    anthropic.BetaTextBlockParam
 		wantErr bool
 	}{
 		{
 			name: "simple system message",
 			msg:  &api.SystemMessage{Content: "You are a helpful assistant"},
-			want: anthropic.NewTextBlock("You are a helpful assistant"),
+			want: NewTextBlock("You are a helpful assistant"),
 		},
 		{
 			name: "system message with cache control",
@@ -1000,10 +1293,12 @@ func TestEncodeSystemMessage(t *testing.T) {
 					},
 				}),
 			},
-			want: anthropic.TextBlockParam{
-				Type:         anthropic.F(anthropic.TextBlockParamTypeText),
-				Text:         anthropic.F("You are a helpful assistant"),
-				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral)}),
+			want: anthropic.BetaTextBlockParam{
+				Type: "text",
+				Text: "You are a helpful assistant",
+				CacheControl: anthropic.BetaCacheControlEphemeralParam{
+					Type: "ephemeral",
+				},
 			},
 		},
 	}
@@ -1031,18 +1326,24 @@ func TestEncodeTextPart(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.TextBlock
-		want    anthropic.ContentBlockParamUnion
+		want    anthropic.BetaTextBlockParam
 		wantErr bool
 	}{
 		{
 			name:  "simple text",
 			block: &api.TextBlock{Text: "Hello, world!"},
-			want:  anthropic.NewTextBlock("Hello, world!"),
+			want: anthropic.BetaTextBlockParam{
+				Type: "text",
+				Text: "Hello, world!",
+			},
 		},
 		{
 			name:  "empty text",
 			block: &api.TextBlock{Text: ""},
-			want:  anthropic.NewTextBlock(""),
+			want: anthropic.BetaTextBlockParam{
+				Type: "text",
+				Text: "",
+			},
 		},
 		{
 			name: "text with cache control",
@@ -1054,10 +1355,12 @@ func TestEncodeTextPart(t *testing.T) {
 					},
 				}),
 			},
-			want: anthropic.TextBlockParam{
-				Type:         anthropic.F(anthropic.TextBlockParamTypeText),
-				Text:         anthropic.F("Hello"),
-				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral)}),
+			want: anthropic.BetaTextBlockParam{
+				Type: "text",
+				Text: "Hello",
+				CacheControl: anthropic.BetaCacheControlEphemeralParam{
+					Type: "ephemeral",
+				},
 			},
 		},
 		{
@@ -1090,7 +1393,7 @@ func TestEncodeToolCallPart(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.ToolCallBlock
-		want    anthropic.ContentBlockParamUnion
+		want    anthropic.BetaToolUseBlockParam
 		wantErr bool
 	}{
 		{
@@ -1100,11 +1403,11 @@ func TestEncodeToolCallPart(t *testing.T) {
 				ToolName:   "test_tool",
 				Args:       json.RawMessage(`{"key":"value"}`),
 			},
-			want: anthropic.ToolUseBlockParam{
-				Type:  anthropic.F(anthropic.ToolUseBlockParamTypeToolUse),
-				ID:    anthropic.F("tool-1"),
-				Name:  anthropic.F("test_tool"),
-				Input: anthropic.F[any](map[string]any{"key": "value"}),
+			want: anthropic.BetaToolUseBlockParam{
+				Type:  "tool_use",
+				ID:    "tool-1",
+				Name:  "test_tool",
+				Input: json.RawMessage(`{"key":"value"}`),
 			},
 		},
 		{
@@ -1114,11 +1417,11 @@ func TestEncodeToolCallPart(t *testing.T) {
 				ToolName:   "",
 				Args:       json.RawMessage(`{}`),
 			},
-			want: anthropic.ToolUseBlockParam{
-				Type:  anthropic.F(anthropic.ToolUseBlockParamTypeToolUse),
-				ID:    anthropic.F("tool-1"),
-				Name:  anthropic.F(""),
-				Input: anthropic.F[any](map[string]any{}),
+			want: anthropic.BetaToolUseBlockParam{
+				Type:  "tool_use",
+				ID:    "tool-1",
+				Name:  "",
+				Input: json.RawMessage(`{}`),
 			},
 		},
 		{
@@ -1133,12 +1436,14 @@ func TestEncodeToolCallPart(t *testing.T) {
 					},
 				}),
 			},
-			want: anthropic.ToolUseBlockParam{
-				Type:         anthropic.F(anthropic.ToolUseBlockParamTypeToolUse),
-				ID:           anthropic.F("tool-1"),
-				Name:         anthropic.F("test_tool"),
-				Input:        anthropic.F[any](map[string]any{"key": "value"}),
-				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral)}),
+			want: anthropic.BetaToolUseBlockParam{
+				Type:  "tool_use",
+				ID:    "tool-1",
+				Name:  "test_tool",
+				Input: json.RawMessage(`{"key":"value"}`),
+				CacheControl: anthropic.BetaCacheControlEphemeralParam{
+					Type: "ephemeral",
+				},
 			},
 		},
 		{
@@ -1171,67 +1476,77 @@ func TestEncodeFilePart(t *testing.T) {
 	tests := []struct {
 		name     string
 		block    *api.FileBlock
-		want     anthropic.BetaBase64PDFBlockParam
+		want     anthropic.BetaRequestDocumentBlockParam
 		wantBeta []anthropic.AnthropicBeta
 		wantErr  bool
 	}{
 		{
 			name:  "file with URL",
 			block: &api.FileBlock{URL: "http://example.com/file.txt"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-					Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-					Data:      anthropic.F("http://example.com/file.txt"),
-					MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfText: &anthropic.BetaPlainTextSourceParam{
+						Type:      "text",
+						Data:      "http://example.com/file.txt",
+						MediaType: "text/plain",
+					},
+				},
 			},
 		},
 		{
 			name:  "PDF file with URL",
 			block: &api.FileBlock{URL: "http://example.com/doc.pdf"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaURLPDFSourceParam{
-					Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-					URL:  anthropic.F("http://example.com/doc.pdf"),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfURL: &anthropic.BetaURLPDFSourceParam{
+						Type: "url",
+						URL:  "http://example.com/doc.pdf",
+					},
+				},
 			},
 			wantBeta: []anthropic.AnthropicBeta{anthropic.AnthropicBetaPDFs2024_09_25},
 		},
 		{
 			name:  "PDF file with URL and query parameters",
 			block: &api.FileBlock{URL: "http://example.com/doc.pdf?version=2&user=test"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaURLPDFSourceParam{
-					Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-					URL:  anthropic.F("http://example.com/doc.pdf?version=2&user=test"),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfURL: &anthropic.BetaURLPDFSourceParam{
+						Type: "url",
+						URL:  "http://example.com/doc.pdf?version=2&user=test",
+					},
+				},
 			},
 			wantBeta: []anthropic.AnthropicBeta{anthropic.AnthropicBetaPDFs2024_09_25},
 		},
 		{
 			name:  "PDF file with URL and fragment",
 			block: &api.FileBlock{URL: "http://example.com/doc.pdf#page=5"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaURLPDFSourceParam{
-					Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-					URL:  anthropic.F("http://example.com/doc.pdf#page=5"),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfURL: &anthropic.BetaURLPDFSourceParam{
+						Type: "url",
+						URL:  "http://example.com/doc.pdf#page=5",
+					},
+				},
 			},
 			wantBeta: []anthropic.AnthropicBeta{anthropic.AnthropicBetaPDFs2024_09_25},
 		},
 		{
 			name:  "PDF file with complex path",
 			block: &api.FileBlock{URL: "http://example.com/files/documents/2023/report.pdf"},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaURLPDFSourceParam{
-					Type: anthropic.F(anthropic.BetaURLPDFSourceTypeURL),
-					URL:  anthropic.F("http://example.com/files/documents/2023/report.pdf"),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfURL: &anthropic.BetaURLPDFSourceParam{
+						Type: "url",
+						URL:  "http://example.com/files/documents/2023/report.pdf",
+					},
+				},
 			},
 			wantBeta: []anthropic.AnthropicBeta{anthropic.AnthropicBetaPDFs2024_09_25},
 		},
@@ -1241,26 +1556,30 @@ func TestEncodeFilePart(t *testing.T) {
 				Data:      []byte("PDF data"),
 				MediaType: "application/pdf",
 			},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaBase64PDFSourceParam{
-					Type:      anthropic.F(anthropic.BetaBase64PDFSourceTypeBase64),
-					Data:      anthropic.F(base64.StdEncoding.EncodeToString([]byte("PDF data"))),
-					MediaType: anthropic.F(anthropic.BetaBase64PDFSourceMediaTypeApplicationPDF),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfBase64: &anthropic.BetaBase64PDFSourceParam{
+						Type:      "base64",
+						Data:      base64.StdEncoding.EncodeToString([]byte("PDF data")),
+						MediaType: "application/pdf",
+					},
+				},
 			},
 			wantBeta: []anthropic.AnthropicBeta{anthropic.AnthropicBetaPDFs2024_09_25},
 		},
 		{
 			name:  "file with text data",
 			block: &api.FileBlock{Data: []byte("Hello from file")},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-					Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-					Data:      anthropic.F("Hello from file"),
-					MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfText: &anthropic.BetaPlainTextSourceParam{
+						Type:      "text",
+						Data:      "Hello from file",
+						MediaType: "text/plain",
+					},
+				},
 			},
 		},
 		{
@@ -1286,16 +1605,18 @@ func TestEncodeFilePart(t *testing.T) {
 					},
 				}),
 			},
-			want: anthropic.BetaBase64PDFBlockParam{
-				Type: anthropic.F(anthropic.BetaBase64PDFBlockTypeDocument),
-				Source: anthropic.F[anthropic.BetaBase64PDFBlockSourceUnionParam](anthropic.BetaPlainTextSourceParam{
-					Type:      anthropic.F(anthropic.BetaPlainTextSourceTypeText),
-					Data:      anthropic.F("http://example.com/file.txt"),
-					MediaType: anthropic.F(anthropic.BetaPlainTextSourceMediaTypeTextPlain),
-				}),
-				CacheControl: anthropic.F(anthropic.BetaCacheControlEphemeralParam{
-					Type: anthropic.F(anthropic.BetaCacheControlEphemeralTypeEphemeral),
-				}),
+			want: anthropic.BetaRequestDocumentBlockParam{
+				Type: "document",
+				Source: anthropic.BetaRequestDocumentBlockSourceUnionParam{
+					OfText: &anthropic.BetaPlainTextSourceParam{
+						Type:      "text",
+						Data:      "http://example.com/file.txt",
+						MediaType: "text/plain",
+					},
+				},
+				CacheControl: anthropic.BetaCacheControlEphemeralParam{
+					Type: "ephemeral",
+				},
 			},
 		},
 		{
@@ -1330,7 +1651,7 @@ func TestGetCacheControl(t *testing.T) {
 	tests := []struct {
 		name   string
 		source api.MetadataSource
-		want   *anthropic.CacheControlEphemeralParam
+		want   *anthropic.BetaCacheControlEphemeralParam
 	}{
 		{
 			name:   "nil metadata",
@@ -1369,8 +1690,8 @@ func TestGetCacheControl(t *testing.T) {
 					},
 				}),
 			},
-			want: &anthropic.CacheControlEphemeralParam{
-				Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
+			want: &anthropic.BetaCacheControlEphemeralParam{
+				Type: "ephemeral",
 			},
 		},
 		{
@@ -1409,18 +1730,20 @@ func TestEncodeImagePart(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.ImageBlock
-		want    anthropic.ContentBlockParamUnion
+		want    anthropic.BetaImageBlockParam
 		wantErr bool
 	}{
 		{
 			name:  "image with URL",
 			block: &api.ImageBlock{URL: "http://example.com/image.jpg"},
-			want: anthropic.ImageBlockParam{
-				Type: anthropic.F(anthropic.ImageBlockParamTypeImage),
-				Source: anthropic.F[anthropic.ImageBlockParamSourceUnion](anthropic.URLImageSourceParam{
-					Type: anthropic.F(anthropic.URLImageSourceTypeURL),
-					URL:  anthropic.F("http://example.com/image.jpg"),
-				}),
+			want: anthropic.BetaImageBlockParam{
+				Type: "image",
+				Source: anthropic.BetaImageBlockParamSourceUnion{
+					OfURL: &anthropic.BetaURLImageSourceParam{
+						Type: "url",
+						URL:  "http://example.com/image.jpg",
+					},
+				},
 			},
 		},
 		{
@@ -1429,14 +1752,14 @@ func TestEncodeImagePart(t *testing.T) {
 				Data:      []byte{0, 1, 2, 3},
 				MediaType: "image/png",
 			},
-			want: anthropic.NewImageBlockBase64("image/png", "AAECAw=="),
+			want: NewImageBlockBase64("image/png", "AAECAw=="),
 		},
 		{
 			name: "image with data and no mime type",
 			block: &api.ImageBlock{
 				Data: []byte{0, 1, 2, 3},
 			},
-			want: anthropic.NewImageBlockBase64("image/jpeg", "AAECAw=="),
+			want: NewImageBlockBase64("image/jpeg", "AAECAw=="),
 		},
 		{
 			name: "with cache control",
@@ -1448,15 +1771,17 @@ func TestEncodeImagePart(t *testing.T) {
 					},
 				}),
 			},
-			want: anthropic.ImageBlockParam{
-				Type: anthropic.F(anthropic.ImageBlockParamTypeImage),
-				Source: anthropic.F[anthropic.ImageBlockParamSourceUnion](anthropic.URLImageSourceParam{
-					Type: anthropic.F(anthropic.URLImageSourceTypeURL),
-					URL:  anthropic.F("http://example.com/image.jpg"),
-				}),
-				CacheControl: anthropic.F(anthropic.CacheControlEphemeralParam{
-					Type: anthropic.F(anthropic.CacheControlEphemeralTypeEphemeral),
-				}),
+			want: anthropic.BetaImageBlockParam{
+				Type: "image",
+				Source: anthropic.BetaImageBlockParamSourceUnion{
+					OfURL: &anthropic.BetaURLImageSourceParam{
+						Type: "url",
+						URL:  "http://example.com/image.jpg",
+					},
+				},
+				CacheControl: anthropic.BetaCacheControlEphemeralParam{
+					Type: "ephemeral",
+				},
 			},
 		},
 		{
@@ -1494,7 +1819,7 @@ func TestEncodeReasoningBlock(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.ReasoningBlock
-		want    anthropic.ContentBlockParamUnion
+		want    anthropic.BetaThinkingBlockParam
 		wantErr bool
 	}{
 		{
@@ -1503,10 +1828,10 @@ func TestEncodeReasoningBlock(t *testing.T) {
 				Text:      "Let me think about this...",
 				Signature: "sig123",
 			},
-			want: anthropic.ThinkingBlockParam{
-				Type:      anthropic.F(anthropic.ThinkingBlockParamTypeThinking),
-				Thinking:  anthropic.F("Let me think about this..."),
-				Signature: anthropic.F("sig123"),
+			want: anthropic.BetaThinkingBlockParam{
+				Type:      "thinking",
+				Thinking:  "Let me think about this...",
+				Signature: "sig123",
 			},
 		},
 		{
@@ -1539,7 +1864,7 @@ func TestEncodeRedactedReasoningBlock(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.RedactedReasoningBlock
-		want    anthropic.ContentBlockParamUnion
+		want    anthropic.BetaRedactedThinkingBlockParam
 		wantErr bool
 	}{
 		{
@@ -1547,9 +1872,9 @@ func TestEncodeRedactedReasoningBlock(t *testing.T) {
 			block: &api.RedactedReasoningBlock{
 				Data: "redacted-data",
 			},
-			want: anthropic.RedactedThinkingBlockParam{
-				Type: anthropic.F(anthropic.RedactedThinkingBlockParamTypeRedactedThinking),
-				Data: anthropic.F("redacted-data"),
+			want: anthropic.BetaRedactedThinkingBlockParam{
+				Type: "redacted_thinking",
+				Data: "redacted-data",
 			},
 		},
 		{

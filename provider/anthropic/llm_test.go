@@ -34,14 +34,13 @@ func TestGenerate(t *testing.T) {
 					},
 					Response: httpmock.Response{
 						StatusCode: http.StatusOK,
-						Body: &anthropic.Message{
-							Content: []anthropic.ContentBlock{
+						Body: &anthropic.BetaMessage{
+							Content: []anthropic.BetaContentBlockUnion{
 								{
 									Text: "I'm doing well, thank you for asking!",
-									Type: anthropic.ContentBlockTypeText,
+									Type: "text",
 								},
 							},
-							Role: anthropic.MessageRoleAssistant,
 						},
 					},
 				},
@@ -70,14 +69,13 @@ func TestGenerate(t *testing.T) {
 					},
 					Response: httpmock.Response{
 						StatusCode: http.StatusOK,
-						Body: &anthropic.Message{
-							Content: []anthropic.ContentBlock{
+						Body: &anthropic.BetaMessage{
+							Content: []anthropic.BetaContentBlockUnion{
 								{
 									Text: "4",
-									Type: anthropic.ContentBlockTypeText,
+									Type: "text",
 								},
 							},
-							Role: anthropic.MessageRoleAssistant,
 						},
 					},
 				},
