@@ -1,11 +1,9 @@
 package api
 
-// TODO: This schema package is pretty small.
-// It might be best to just in line it into our AI SDK.
 import (
 	"encoding/json"
 
-	"github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 )
 
 // ToolChoice specifies how tools should be selected by the model.
@@ -44,7 +42,7 @@ type FunctionTool struct {
 	// InputSchema defines the expected inputs. The language model uses this to understand
 	// the tool's input requirements and provide matching suggestions.
 	// InputSchema should be defined using a JSON schema.
-	InputSchema *jsonschema.Definition `json:"input_schema,omitzero"`
+	InputSchema *jsonschema.Schema `json:"input_schema,omitzero"`
 }
 
 var _ ToolDefinition = &FunctionTool{}

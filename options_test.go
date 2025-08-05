@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"go.jetify.com/ai/api"
 	"go.jetify.com/pkg/pointer"
@@ -77,7 +77,7 @@ func TestCallOptionBuilders(t *testing.T) {
 			name: "WithResponseFormat",
 			option: WithResponseFormat(&api.ResponseFormat{
 				Type:        "json",
-				Schema:      &jsonschema.Definition{},
+				Schema:      &jsonschema.Schema{},
 				Name:        "test",
 				Description: "test desc",
 			}),
@@ -85,7 +85,7 @@ func TestCallOptionBuilders(t *testing.T) {
 				CallOptions: api.CallOptions{
 					ResponseFormat: &api.ResponseFormat{
 						Type:        "json",
-						Schema:      &jsonschema.Definition{},
+						Schema:      &jsonschema.Schema{},
 						Name:        "test",
 						Description: "test desc",
 					},

@@ -5,8 +5,8 @@ go 1.24.0
 require (
 	github.com/anthropics/anthropic-sdk-go v1.6.2
 	github.com/k0kubun/pp/v3 v3.5.0
+	github.com/modelcontextprotocol/go-sdk v0.2.0
 	github.com/openai/openai-go v1.12.0
-	github.com/sashabaranov/go-openai v1.40.5
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	go.jetify.com/pkg v0.0.0-20250801151358-5c7132d29664

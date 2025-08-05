@@ -129,7 +129,7 @@ func applyJSONResponseFormat(params *responses.ResponseNewParams, opts api.CallO
 	isStrict := getIsStrict(opts)
 
 	if opts.ResponseFormat.Schema != nil {
-		schemaMap, err := jsonSchemaAsMap(opts.ResponseFormat.Schema)
+		schemaMap, err := encodeSchema(opts.ResponseFormat.Schema)
 		if err != nil {
 			return fmt.Errorf("failed to convert JSON schema: %w", err)
 		}

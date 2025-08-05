@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	jsonschema "github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/tidwall/gjson"
 )
 
@@ -131,7 +131,7 @@ type ResponseFormat struct {
 	Type string `json:"type"`
 
 	// Schema optionally provides a JSON schema to guide the model's output
-	Schema *jsonschema.Definition `json:"schema,omitzero"`
+	Schema *jsonschema.Schema `json:"schema,omitzero"`
 
 	// Name optionally provides a name for the output to guide the model
 	Name string `json:"name,omitzero"`

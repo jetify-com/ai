@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/sashabaranov/go-openai/jsonschema"
 	"go.jetify.com/ai/api"
 )
 
@@ -39,45 +38,6 @@ func convertArgs[T any](args any) (*T, error) {
 	}
 
 	return &result, nil
-}
-
-// encodeInputSchema converts the JSON schema definition to Anthropic's schema format
-func encodeInputSchema(schema *jsonschema.Definition) (anthropic.BetaToolInputSchemaParam, error) {
-	// Verify the schema type is "object"
-	if schema.Type != "" && schema.Type != "object" {
-		return anthropic.BetaToolInputSchemaParam{}, fmt.Errorf("unsupported schema type: %s, only 'object' is supported", schema.Type)
-	}
-
-	// Create the input schema with the type field
-	inputSchema := anthropic.BetaToolInputSchemaParam{
-		Type: "object",
-	}
-
-	// Add properties only if they exist
-	if len(schema.Properties) > 0 {
-		// Convert the properties to a map[string]any by marshaling and unmarshaling
-		var properties map[string]any
-		// Marshal to JSON
-		propsJSON, err := json.Marshal(schema.Properties)
-		if err != nil {
-			return anthropic.BetaToolInputSchemaParam{}, fmt.Errorf("failed to marshal properties: %w", err)
-		}
-
-		// Unmarshal back to map[string]any
-		if err := json.Unmarshal(propsJSON, &properties); err != nil {
-			return anthropic.BetaToolInputSchemaParam{}, fmt.Errorf("failed to unmarshal properties: %w", err)
-		}
-
-		// Set the properties field
-		inputSchema.Properties = properties
-	}
-
-	// Add the required field if it's present in the original schema
-	if len(schema.Required) > 0 {
-		inputSchema.Required = schema.Required
-	}
-
-	return inputSchema, nil
 }
 
 // EncodeFunctionTool converts an API FunctionTool to Anthropic's tool format

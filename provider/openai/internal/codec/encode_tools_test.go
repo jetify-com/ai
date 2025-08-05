@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/api"
@@ -29,9 +29,9 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "test_function",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
@@ -58,18 +58,18 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "function1",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
 				},
 				api.FunctionTool{
 					Name: "function2",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param2": {Type: "number"},
 						},
 						Required: []string{"param2"},
@@ -141,9 +141,9 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "mixed_function",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
@@ -195,9 +195,9 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "function_with_choice",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
@@ -228,9 +228,9 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "function_with_choice",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
@@ -261,18 +261,18 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "function1",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
 				},
 				api.FunctionTool{
 					Name: "function2",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param2": {Type: "number"},
 						},
 					},
@@ -666,9 +666,9 @@ func TestEncodeTools(t *testing.T) {
 			tools: []api.ToolDefinition{
 				api.FunctionTool{
 					Name: "function1",
-					InputSchema: &jsonschema.Definition{
+					InputSchema: &jsonschema.Schema{
 						Type: "object",
-						Properties: map[string]jsonschema.Definition{
+						Properties: map[string]*jsonschema.Schema{
 							"param1": {Type: "string"},
 						},
 					},
@@ -794,7 +794,7 @@ func TestEncodeToolChoice(t *testing.T) {
 func TestJsonSchemaAsMap(t *testing.T) {
 	tests := []struct {
 		name          string
-		input         *jsonschema.Definition
+		input         *jsonschema.Schema
 		expected      string
 		expectedError string
 	}{
@@ -805,9 +805,9 @@ func TestJsonSchemaAsMap(t *testing.T) {
 		},
 		{
 			name: "simple schema",
-			input: &jsonschema.Definition{
+			input: &jsonschema.Schema{
 				Type: "object",
-				Properties: map[string]jsonschema.Definition{
+				Properties: map[string]*jsonschema.Schema{
 					"name": {Type: "string"},
 					"age":  {Type: "number"},
 				},
@@ -822,11 +822,28 @@ func TestJsonSchemaAsMap(t *testing.T) {
 				"required": ["name"]
 			}`,
 		},
+		{
+			name: "schema with additionalProperties false",
+			input: &jsonschema.Schema{
+				Type: "object",
+				Properties: map[string]*jsonschema.Schema{
+					"name": {Type: "string"},
+				},
+				AdditionalProperties: api.FalseSchema(),
+			},
+			expected: `{
+				"type": "object",
+				"properties": {
+					"name": {"type": "string"}
+				},
+				"additionalProperties": false
+			}`,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := jsonSchemaAsMap(tc.input)
+			result, err := encodeSchema(tc.input)
 
 			if tc.expectedError != "" {
 				require.Error(t, err)

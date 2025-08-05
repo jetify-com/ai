@@ -7,7 +7,6 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/packages/param"
 	"github.com/openai/openai-go/responses"
-	"github.com/sashabaranov/go-openai/jsonschema"
 	"go.jetify.com/ai/api"
 )
 
@@ -91,7 +90,7 @@ func encodeToolDefinition(toolItem api.ToolDefinition) (*responses.ToolUnionPara
 func encodeFunctionTool(tool api.FunctionTool) (*responses.ToolUnionParam, []api.CallWarning, error) {
 	name := tool.Name
 
-	props, err := jsonSchemaAsMap(tool.InputSchema)
+	props, err := encodeSchema(tool.InputSchema)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to convert tool parameters: %w", err)
 	}
@@ -322,26 +321,6 @@ func encodeToolChoice(toolChoice *api.ToolChoice) (responses.ResponseNewParamsTo
 		}
 	default:
 		return responses.ResponseNewParamsToolChoiceUnion{}, fmt.Errorf("unsupported tool choice type: %s", toolChoice.Type)
-	}
-
-	return result, nil
-}
-
-// TODO: promote to a framework-level function
-func jsonSchemaAsMap(schema *jsonschema.Definition) (map[string]any, error) {
-	if schema == nil {
-		return nil, nil
-	}
-
-	// Marshal to JSON and unmarshal back to interface{} to convert the types
-	data, err := json.Marshal(schema)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal properties: %w", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal properties: %w", err)
 	}
 
 	return result, nil

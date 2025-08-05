@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"github.com/sashabaranov/go-openai/jsonschema"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/aitesting"
 	"go.jetify.com/ai/api"
@@ -23,24 +23,24 @@ import (
 var standardTools = []api.ToolDefinition{
 	&api.FunctionTool{
 		Name: "weather",
-		InputSchema: &jsonschema.Definition{
-			Type: jsonschema.Object,
-			Properties: map[string]jsonschema.Definition{
-				"location": {Type: jsonschema.String},
+		InputSchema: &jsonschema.Schema{
+			Type: "object",
+			Properties: map[string]*jsonschema.Schema{
+				"location": {Type: "string"},
 			},
 			Required:             []string{"location"},
-			AdditionalProperties: false,
+			AdditionalProperties: api.FalseSchema(),
 		},
 	},
 	&api.FunctionTool{
 		Name: "cityAttractions",
-		InputSchema: &jsonschema.Definition{
-			Type: jsonschema.Object,
-			Properties: map[string]jsonschema.Definition{
-				"city": {Type: jsonschema.String},
+		InputSchema: &jsonschema.Schema{
+			Type: "object",
+			Properties: map[string]*jsonschema.Schema{
+				"city": {Type: "string"},
 			},
 			Required:             []string{"city"},
-			AdditionalProperties: false,
+			AdditionalProperties: api.FalseSchema(),
 		},
 	},
 }
@@ -381,13 +381,13 @@ func TestGenerate(t *testing.T) {
 					Description: "A response",
 					// TODO: I keep going back and forth on whether Schema should by typed, or simply a map[string]any.
 					// FWIW, when the LLM generates the schema, it first defaults to a map[string]any.
-					Schema: &jsonschema.Definition{
-						Type: jsonschema.Object,
-						Properties: map[string]jsonschema.Definition{
-							"value": {Type: jsonschema.String},
+					Schema: &jsonschema.Schema{
+						Type: "object",
+						Properties: map[string]*jsonschema.Schema{
+							"value": {Type: "string"},
 						},
 						Required:             []string{"value"},
-						AdditionalProperties: false,
+						AdditionalProperties: api.FalseSchema(),
 					},
 				},
 			},
@@ -815,13 +815,13 @@ func TestGenerate(t *testing.T) {
 					api.FunctionTool{
 						Name:        "response",
 						Description: "A response",
-						InputSchema: &jsonschema.Definition{
-							Type: jsonschema.Object,
-							Properties: map[string]jsonschema.Definition{
-								"value": {Type: jsonschema.String},
+						InputSchema: &jsonschema.Schema{
+							Type: "object",
+							Properties: map[string]*jsonschema.Schema{
+								"value": {Type: "string"},
 							},
 							Required:             []string{"value"},
-							AdditionalProperties: false,
+							AdditionalProperties: api.FalseSchema(),
 						},
 					},
 				},
@@ -941,13 +941,13 @@ func TestGenerate(t *testing.T) {
 					Type:        "json",
 					Name:        "response",
 					Description: "A response",
-					Schema: &jsonschema.Definition{
-						Type: jsonschema.Object,
-						Properties: map[string]jsonschema.Definition{
-							"value": {Type: jsonschema.String},
+					Schema: &jsonschema.Schema{
+						Type: "object",
+						Properties: map[string]*jsonschema.Schema{
+							"value": {Type: "string"},
 						},
 						Required:             []string{"value"},
-						AdditionalProperties: false,
+						AdditionalProperties: api.FalseSchema(),
 					},
 				},
 			},
@@ -1011,13 +1011,13 @@ func TestGenerate(t *testing.T) {
 					Type:        "json",
 					Name:        "response",
 					Description: "A response",
-					Schema: &jsonschema.Definition{
-						Type: jsonschema.Object,
-						Properties: map[string]jsonschema.Definition{
-							"value": {Type: jsonschema.String},
+					Schema: &jsonschema.Schema{
+						Type: "object",
+						Properties: map[string]*jsonschema.Schema{
+							"value": {Type: "string"},
 						},
 						Required:             []string{"value"},
-						AdditionalProperties: false,
+						AdditionalProperties: api.FalseSchema(),
 					},
 				},
 				ProviderMetadata: api.NewProviderMetadata(map[string]any{

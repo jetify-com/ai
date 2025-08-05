@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/api"
@@ -23,9 +23,9 @@ func TestEncodeFunctionTool(t *testing.T) {
 			input: api.FunctionTool{
 				Name:        "test_function",
 				Description: "A test function",
-				InputSchema: &jsonschema.Definition{
+				InputSchema: &jsonschema.Schema{
 					Type: "object",
-					Properties: map[string]jsonschema.Definition{
+					Properties: map[string]*jsonschema.Schema{
 						"param1": {
 							Type:        "string",
 							Description: "First parameter",
@@ -51,10 +51,38 @@ func TestEncodeFunctionTool(t *testing.T) {
 			}`,
 		},
 		{
+			name: "function tool with additionalProperties false",
+			input: api.FunctionTool{
+				Name:        "test_function",
+				Description: "A test function",
+				InputSchema: &jsonschema.Schema{
+					Type: "object",
+					Properties: map[string]*jsonschema.Schema{
+						"param1": {Type: "string"},
+					},
+					AdditionalProperties: api.FalseSchema(),
+				},
+			},
+			want: `{
+				"type": "tool",
+				"name": "test_function",
+				"description": "A test function",
+				"input_schema": {
+					"type": "object",
+					"properties": {
+						"param1": {
+							"type": "string"
+						}
+					},
+					"additionalProperties": false
+				}
+			}`,
+		},
+		{
 			name: "function tool with minimal fields",
 			input: api.FunctionTool{
 				Name: "minimal_function",
-				InputSchema: &jsonschema.Definition{
+				InputSchema: &jsonschema.Schema{
 					Type: "object",
 				},
 			},
@@ -538,9 +566,9 @@ func TestEncodeTools(t *testing.T) {
 	functionTool := api.FunctionTool{
 		Name:        "test_function",
 		Description: "A test function",
-		InputSchema: &jsonschema.Definition{
+		InputSchema: &jsonschema.Schema{
 			Type: "object",
-			Properties: map[string]jsonschema.Definition{
+			Properties: map[string]*jsonschema.Schema{
 				"param1": {
 					Type:        "string",
 					Description: "First parameter",
@@ -673,7 +701,7 @@ func TestEncodeTools(t *testing.T) {
 				api.FunctionTool{
 					Name:        "test_tool",
 					Description: "A test tool",
-					InputSchema: &jsonschema.Definition{Type: "object"},
+					InputSchema: &jsonschema.Schema{Type: "object"},
 				},
 			},
 			choice: &api.ToolChoice{Type: "tool", ToolName: "test_tool"},
@@ -682,7 +710,7 @@ func TestEncodeTools(t *testing.T) {
 					mustEncodeFunctionTool(api.FunctionTool{
 						Name:        "test_tool",
 						Description: "A test tool",
-						InputSchema: &jsonschema.Definition{Type: "object"},
+						InputSchema: &jsonschema.Schema{Type: "object"},
 					}),
 				},
 				ToolChoice: specificChoice("test_tool"),

@@ -54,7 +54,7 @@ func TestCallOptions_JSON(t *testing.T) {
 							"age": {"type": "integer"}
 						},
 						"required": ["name"],
-						"additionalProperties": false
+						"additionalProperties": {"not": {}}
 					},
 					"name": "user_info",
 					"description": "User information structure"
@@ -72,7 +72,7 @@ func TestCallOptions_JSON(t *testing.T) {
 								"units": {"type": "string", "enum": ["metric", "imperial"]}
 							},
 							"required": ["location"],
-							"additionalProperties": false
+							"additionalProperties": {"not": {}}
 						}
 					},
 					{
@@ -144,7 +144,7 @@ func BenchmarkCallOptionsUnmarshal(b *testing.B) {
 					"age": {"type": "integer"}
 				},
 				"required": ["name"],
-				"additionalProperties": false
+				"additionalProperties": {"not": {}}
 			},
 			"name": "user_info",
 			"description": "User information structure"
@@ -162,7 +162,7 @@ func BenchmarkCallOptionsUnmarshal(b *testing.B) {
 						"units": {"type": "string", "enum": ["metric", "imperial"]}
 					},
 					"required": ["location"],
-					"additionalProperties": false
+					"additionalProperties": {"not": {}}
 				}
 			},
 			{
