@@ -1023,10 +1023,10 @@ var toolMessageTests = []testCase{
 				},
 			},
 		},
-		expectedError: "expected 1 content block for computer use tool result, got 0",
+		expectedError: "expected at least 1 content block for computer use tool result, got 0",
 	},
 	{
-		name: "computer tool result with multiple content blocks",
+		name: "computer tool result with multiple content blocks but no text",
 		input: []api.Message{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
@@ -1046,10 +1046,10 @@ var toolMessageTests = []testCase{
 				},
 			},
 		},
-		expectedError: "expected 1 content block for computer use tool result, got 2",
+		expectedError: "computer use tool result has 2 content blocks but no text content",
 	},
 	{
-		name: "computer tool result with wrong content type",
+		name: "computer tool result with text content",
 		input: []api.Message{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
@@ -1057,14 +1057,109 @@ var toolMessageTests = []testCase{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
 							&api.TextBlock{
-								Text: "not an image",
+								Text: "Action completed successfully",
 							},
 						},
 					},
 				},
 			},
 		},
-		expectedError: "expected image block for computer use tool result",
+		expectedMessages: []string{
+			`{
+				"type": "function_call_output",
+				"call_id": "openai.computer_use_preview",
+				"output": "Action completed successfully"
+			}`,
+		},
+	},
+	{
+		name: "computer tool result with mixed content (text and image)",
+		input: []api.Message{
+			&api.ToolMessage{
+				Content: []api.ToolResultBlock{
+					{
+						ToolCallID: "openai.computer_use_preview",
+						Content: []api.ContentBlock{
+							&api.TextBlock{
+								Text: "Screenshot taken",
+							},
+							&api.ImageBlock{
+								Data:      []byte("test-image-data"),
+								MediaType: "image/png",
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedMessages: []string{
+			`{
+				"type": "function_call_output",
+				"call_id": "openai.computer_use_preview",
+				"output": "Screenshot taken"
+			}`,
+		},
+	},
+	{
+		name: "computer tool result with multiple text blocks",
+		input: []api.Message{
+			&api.ToolMessage{
+				Content: []api.ToolResultBlock{
+					{
+						ToolCallID: "openai.computer_use_preview",
+						Content: []api.ContentBlock{
+							&api.TextBlock{
+								Text: "First line",
+							},
+							&api.TextBlock{
+								Text: "Second line",
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedMessages: []string{
+			`{
+				"type": "function_call_output",
+				"call_id": "openai.computer_use_preview",
+				"output": "First line\nSecond line"
+			}`,
+		},
+	},
+	{
+		name: "computer tool result falls back to Result field",
+		input: []api.Message{
+			&api.ToolMessage{
+				Content: []api.ToolResultBlock{
+					{
+						ToolCallID: "openai.computer_use_preview",
+						Content:    []api.ContentBlock{},
+						Result:     json.RawMessage(`{"status":"error","message":"Action failed"}`),
+					},
+				},
+			},
+		},
+		expectedError: "expected at least 1 content block for computer use tool result, got 0",
+	},
+	{
+		name: "computer tool result with single reasoning block",
+		input: []api.Message{
+			&api.ToolMessage{
+				Content: []api.ToolResultBlock{
+					{
+						ToolCallID: "openai.computer_use_preview",
+						Content: []api.ContentBlock{
+							&api.ReasoningBlock{
+								Text:      "Processing the request...",
+								Signature: "signature_123",
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedError: "computer use tool result has 1 content block of type reasoning, expected image or text",
 	},
 	{
 		name: "tool message value type (not pointer)",

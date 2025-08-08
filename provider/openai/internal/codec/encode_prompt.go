@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/responses"
@@ -409,52 +410,104 @@ func EncodeToolMessage(message *api.ToolMessage) ([]responses.ResponseInputItemU
 
 // encodeComputerToolResult handles encoding the result of a computer use tool call
 func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseInputItemUnionParam, error) {
-	if len(result.Content) != 1 {
-		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("expected 1 content block for computer use tool result, got %d", len(result.Content))
+	// No content at all - this is an error
+	if len(result.Content) == 0 {
+		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("expected at least 1 content block for computer use tool result, got 0")
 	}
 
-	content := result.Content[0]
-	var imageBlock *api.ImageBlock
-	switch b := content.(type) {
-	case *api.ImageBlock:
-		imageBlock = b
-	case api.ImageBlock:
-		imageBlock = &b
-	default:
-		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("expected image block for computer use tool result, got %T", content)
+	// Single content block - try to handle as screenshot
+	if len(result.Content) == 1 {
+		content := result.Content[0]
+		var imageBlock *api.ImageBlock
+		switch b := content.(type) {
+		case *api.ImageBlock:
+			imageBlock = b
+		case api.ImageBlock:
+			imageBlock = &b
+		default:
+			// Single non-image block - check if it's text
+			if _, ok := content.(*api.TextBlock); ok {
+				return encodeTextToolResult(result)
+			}
+			// Single block that's neither image nor text - this is invalid
+			return responses.ResponseInputItemUnionParam{}, fmt.Errorf("computer use tool result has 1 content block of type %s, expected image or text", content.Type())
+		}
+
+		// Create data URL from image data
+		// TODO: Add helper methods to the image and file blocks to make this easier
+		dataURL := "data:" + imageBlock.MediaType + ";base64," + base64.StdEncoding.EncodeToString(imageBlock.Data)
+
+		screenshot := responses.ResponseComputerToolCallOutputScreenshotParam{
+			Type:     "computer_screenshot",
+			ImageURL: openai.String(dataURL),
+		}
+
+		// Extract safety checks from provider metadata if available
+		var acknowledgedSafetyChecks []responses.ResponseInputItemComputerCallOutputAcknowledgedSafetyCheckParam
+		if metadata := GetMetadata(result); metadata != nil {
+			for _, check := range metadata.ComputerSafetyChecks {
+				acknowledgedSafetyChecks = append(acknowledgedSafetyChecks, responses.ResponseInputItemComputerCallOutputAcknowledgedSafetyCheckParam{
+					ID:      check.ID,
+					Code:    openai.String(check.Code),
+					Message: openai.String(check.Message),
+				})
+			}
+		}
+
+		// Create the computer call output parameter
+		output := responses.ResponseInputItemComputerCallOutputParam{
+			CallID:                   result.ToolCallID,
+			Output:                   screenshot,
+			AcknowledgedSafetyChecks: acknowledgedSafetyChecks,
+		}
+
+		return responses.ResponseInputItemUnionParam{
+			OfComputerCallOutput: &output,
+		}, nil
 	}
 
-	// Create data URL from image data
-	// TODO: Add helper methods to the image and file blocks to make this easier
-	dataURL := "data:" + imageBlock.MediaType + ";base64," + base64.StdEncoding.EncodeToString(imageBlock.Data)
-
-	screenshot := responses.ResponseComputerToolCallOutputScreenshotParam{
-		Type:     "computer_screenshot",
-		ImageURL: openai.String(dataURL),
-	}
-
-	// Extract safety checks from provider metadata if available
-	var acknowledgedSafetyChecks []responses.ResponseInputItemComputerCallOutputAcknowledgedSafetyCheckParam
-	if metadata := GetMetadata(result); metadata != nil {
-		for _, check := range metadata.ComputerSafetyChecks {
-			acknowledgedSafetyChecks = append(acknowledgedSafetyChecks, responses.ResponseInputItemComputerCallOutputAcknowledgedSafetyCheckParam{
-				ID:      check.ID,
-				Code:    openai.String(check.Code),
-				Message: openai.String(check.Message),
-			})
+	// Multiple blocks - check if any are text
+	hasText := false
+	for _, content := range result.Content {
+		if _, ok := content.(*api.TextBlock); ok {
+			hasText = true
+			break
 		}
 	}
 
-	// Create the computer call output parameter
-	output := responses.ResponseInputItemComputerCallOutputParam{
-		CallID:                   result.ToolCallID,
-		Output:                   screenshot,
-		AcknowledgedSafetyChecks: acknowledgedSafetyChecks,
+	if !hasText {
+		// Multiple blocks but none are text - this is ambiguous
+		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("computer use tool result has %d content blocks but no text content", len(result.Content))
 	}
 
-	return responses.ResponseInputItemUnionParam{
-		OfComputerCallOutput: &output,
-	}, nil
+	// Has text content - use fallback
+	return encodeTextToolResult(result)
+}
+
+// encodeTextToolResult handles encoding text-based tool results, with Content[] taking precedence over Result
+func encodeTextToolResult(result *api.ToolResultBlock) (responses.ResponseInputItemUnionParam, error) {
+	output := ""
+
+	// Check Content[] first - more expressive when available
+	if len(result.Content) > 0 {
+		for _, content := range result.Content {
+			if textBlock, ok := content.(*api.TextBlock); ok {
+				output += textBlock.Text + "\n"
+			}
+		}
+		output = strings.TrimSuffix(output, "\n")
+	}
+
+	// If no text content found, use Result field
+	if output == "" && result.Result != nil {
+		resultJSON, err := json.Marshal(result.Result)
+		if err != nil {
+			return responses.ResponseInputItemUnionParam{}, fmt.Errorf("failed to marshal tool result: %v", err)
+		}
+		output = string(resultJSON)
+	}
+
+	return responses.ResponseInputItemParamOfFunctionCallOutput(result.ToolCallID, output), nil
 }
 
 func EncodeToolResultBlock(result *api.ToolResultBlock) (responses.ResponseInputItemUnionParam, error) {
