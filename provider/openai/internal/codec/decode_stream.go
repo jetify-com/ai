@@ -336,7 +336,8 @@ func (d *streamDecoder) decodeResponseCompleted(event responses.ResponseStreamEv
 // The final finish event's reason is affected, and errors might be reported via FinishEvent.
 func (d *streamDecoder) decodeResponseFailedOrIncomplete(event responses.ResponseStreamEventUnion) api.StreamEvent {
 	var reason string
-	if event.Type == "response.failed" {
+	switch event.Type {
+	case "response.failed":
 		failedEvent := event.AsResponseFailed()
 		reason = failedEvent.Response.IncompleteDetails.Reason
 		// Potentially, if failedEvent.Response.Error is not nil, we could also emit an ErrorEvent here.
@@ -344,7 +345,7 @@ func (d *streamDecoder) decodeResponseFailedOrIncomplete(event responses.Respons
 		// if errDetails := failedEvent.Response.Error; errDetails.Code != "" || errDetails.Message != "" {
 		//  // This would be a place to consider if a direct error event is also needed
 		// }
-	} else if event.Type == "response.incomplete" {
+	case "response.incomplete":
 		incompleteEvent := event.AsResponseIncomplete()
 		reason = incompleteEvent.Response.IncompleteDetails.Reason
 	}

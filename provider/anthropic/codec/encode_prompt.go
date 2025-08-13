@@ -261,7 +261,8 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaRequestDocumentBlockPa
 		}
 	} else if block.Data != nil {
 		mimeType := block.MediaType
-		if mimeType == "application/pdf" {
+		switch mimeType {
+		case "application/pdf":
 			// Base64 PDF source
 			base64Data := base64.StdEncoding.EncodeToString(block.Data)
 			base64Source := anthropic.BetaBase64PDFSourceParam{
@@ -273,7 +274,7 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaRequestDocumentBlockPa
 				OfBase64: &base64Source,
 			}
 			isPDF = true
-		} else if mimeType == "text/plain" || mimeType == "" {
+		case "text/plain", "":
 			// Plain text source
 			textData := string(block.Data)
 			textSource := anthropic.BetaPlainTextSourceParam{
@@ -284,7 +285,7 @@ func EncodeFileBlock(block *api.FileBlock) (anthropic.BetaRequestDocumentBlockPa
 			param.Source = anthropic.BetaRequestDocumentBlockSourceUnionParam{
 				OfText: &textSource,
 			}
-		} else {
+		default:
 			// Unsupported mime type
 			return anthropic.BetaRequestDocumentBlockParam{}, []anthropic.AnthropicBeta{}, fmt.Errorf("unsupported mime type for file block: %s", mimeType)
 		}
@@ -533,7 +534,7 @@ func encodeToolResultContent(result api.ToolResultBlock) (anthropic.BetaContentB
 func encodeToolResultJSON(result api.ToolResultBlock) (anthropic.BetaContentBlockParamUnion, error) {
 	resultJSON, err := json.Marshal(result.Result)
 	if err != nil {
-		return anthropic.BetaContentBlockParamUnion{}, fmt.Errorf("failed to marshal tool result: %v", err)
+		return anthropic.BetaContentBlockParamUnion{}, fmt.Errorf("failed to marshal tool result: %w", err)
 	}
 	toolResultParam := NewToolResultBlock(result.ToolCallID, string(resultJSON), result.IsError)
 	if cacheControl := getCacheControl(result); cacheControl != nil {
@@ -562,7 +563,7 @@ func encodeToolResultPart(part api.ContentBlock) (anthropic.BetaToolResultBlockP
 func encodeToolResultTextPart(block *api.TextBlock) (anthropic.BetaToolResultBlockParamContentUnion, error) {
 	textParam, err := EncodeTextBlock(block)
 	if err != nil {
-		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode text block: %v", err)
+		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode text block: %w", err)
 	}
 	return anthropic.BetaToolResultBlockParamContentUnion{
 		OfText: &textParam,
@@ -572,7 +573,7 @@ func encodeToolResultTextPart(block *api.TextBlock) (anthropic.BetaToolResultBlo
 func encodeToolResultImagePart(block *api.ImageBlock) (anthropic.BetaToolResultBlockParamContentUnion, error) {
 	imageParam, err := EncodeImageBlock(block)
 	if err != nil {
-		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode image block: %v", err)
+		return anthropic.BetaToolResultBlockParamContentUnion{}, fmt.Errorf("failed to encode image block: %w", err)
 	}
 	return anthropic.BetaToolResultBlockParamContentUnion{
 		OfImage: &imageParam,
@@ -605,7 +606,7 @@ func getCacheControl(source api.MetadataSource) *anthropic.BetaCacheControlEphem
 	return nil
 }
 
-func NewImageBlockBase64(mediaType string, encodedData string) anthropic.BetaImageBlockParam {
+func NewImageBlockBase64(mediaType, encodedData string) anthropic.BetaImageBlockParam {
 	base64Source := anthropic.BetaBase64ImageSourceParam{
 		Type:      "base64",
 		Data:      encodedData,
@@ -619,7 +620,7 @@ func NewImageBlockBase64(mediaType string, encodedData string) anthropic.BetaIma
 	}
 }
 
-func NewToolResultBlock(toolUseID string, content string, isError bool) anthropic.BetaToolResultBlockParam {
+func NewToolResultBlock(toolUseID, content string, isError bool) anthropic.BetaToolResultBlockParam {
 	return anthropic.BetaToolResultBlockParam{
 		Type:      "tool_result",
 		ToolUseID: toolUseID,
@@ -635,7 +636,7 @@ func NewToolResultBlock(toolUseID string, content string, isError bool) anthropi
 	}
 }
 
-func NewToolUseBlockParam(id string, name string, input interface{}) anthropic.BetaToolUseBlockParam {
+func NewToolUseBlockParam(id, name string, input interface{}) anthropic.BetaToolUseBlockParam {
 	return anthropic.BetaToolUseBlockParam{
 		ID:    id,
 		Input: input,

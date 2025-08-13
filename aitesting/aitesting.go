@@ -58,7 +58,7 @@ type T interface {
 // and 10 input tokens, while ignoring all other fields and content blocks.
 // The second example only checks for the presence of a tool call named "get_weather".
 // The third example checks for the presence of any image block regardless of its content.
-func ResponseContains(testingT T, expected api.Response, contains api.Response) {
+func ResponseContains(testingT T, expected, contains api.Response) {
 	// Compare content blocks if set
 	if len(expected.Content) > 0 {
 		// Check that we have enough blocks in the actual response

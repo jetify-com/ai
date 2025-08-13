@@ -14,7 +14,7 @@ type UnsupportedFunctionalityError struct {
 // Parameters:
 //   - functionality: The name of the unsupported functionality
 //   - message: The error message (optional, will be auto-generated if empty)
-func NewUnsupportedFunctionalityError(functionality string, message string) *UnsupportedFunctionalityError {
+func NewUnsupportedFunctionalityError(functionality, message string) *UnsupportedFunctionalityError {
 	if message == "" {
 		message = fmt.Sprintf("'%s' functionality not supported.", functionality)
 	}

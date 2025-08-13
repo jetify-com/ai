@@ -36,7 +36,7 @@ func printResponse(response api.Response) {
 	response.Warnings = nil
 	printer := pp.New()
 	printer.SetOmitEmpty(true)
-	printer.Print(response)
+	_, _ = printer.Print(response)
 }
 
 func main() {

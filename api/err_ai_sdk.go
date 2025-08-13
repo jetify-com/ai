@@ -22,7 +22,7 @@ func (e *AISDKError) Error() string {
 //   - name: The name of the error.
 //   - message: The error message.
 //   - cause: The underlying cause of the error.
-func NewAISDKError(name string, message string, cause any) *AISDKError {
+func NewAISDKError(name, message string, cause any) *AISDKError {
 	return &AISDKError{
 		Name:    name,
 		Message: message,

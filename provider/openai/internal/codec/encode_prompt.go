@@ -334,7 +334,7 @@ func EncodeToolCallBlock(block *api.ToolCallBlock) (*responses.ResponseInputItem
 	// Marshal the arguments to JSON
 	argsJSON, err := json.Marshal(block.Args)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal tool call arguments: %v", err)
+		return nil, fmt.Errorf("failed to marshal tool call arguments: %w", err)
 	}
 	arguments := string(argsJSON)
 
@@ -502,7 +502,7 @@ func encodeTextToolResult(result *api.ToolResultBlock) (responses.ResponseInputI
 	if output == "" && result.Result != nil {
 		resultJSON, err := json.Marshal(result.Result)
 		if err != nil {
-			return responses.ResponseInputItemUnionParam{}, fmt.Errorf("failed to marshal tool result: %v", err)
+			return responses.ResponseInputItemUnionParam{}, fmt.Errorf("failed to marshal tool result: %w", err)
 		}
 		output = string(resultJSON)
 	}
@@ -523,7 +523,7 @@ func EncodeToolResultBlock(result *api.ToolResultBlock) (responses.ResponseInput
 	// Handle regular function tool output
 	resultJSON, err := json.Marshal(result.Result)
 	if err != nil {
-		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("failed to marshal tool result: %v", err)
+		return responses.ResponseInputItemUnionParam{}, fmt.Errorf("failed to marshal tool result: %w", err)
 	}
 	output := string(resultJSON)
 

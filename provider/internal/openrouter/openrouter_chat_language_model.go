@@ -245,7 +245,7 @@ func (m *OpenRouterChatLanguageModel) DoGenerate(
 	if err != nil {
 		return api.Response{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
@@ -352,7 +352,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 
 	// Create sequence for events
 	stream := func(yield func(api.StreamEvent) bool) {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		scanner := bufio.NewScanner(resp.Body)
 		var toolCalls []client.ToolCall

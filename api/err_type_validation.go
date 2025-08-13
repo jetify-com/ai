@@ -18,7 +18,7 @@ type TypeValidationError struct {
 // Parameters:
 //   - value: The value that failed validation
 //   - cause: The original error or cause of the validation failure
-func NewTypeValidationError(value any, cause any) *TypeValidationError {
+func NewTypeValidationError(value, cause any) *TypeValidationError {
 	valueJSON, _ := json.Marshal(value)
 	message := fmt.Sprintf("Type validation failed: Value: %s.\nError message: %v", string(valueJSON), cause)
 	return &TypeValidationError{

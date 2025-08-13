@@ -25,7 +25,7 @@ type TooManyEmbeddingValuesForCallError struct {
 //   - modelID: The identifier of the model
 //   - maxEmbeddingsPerCall: The maximum number of embeddings allowed per call
 //   - values: The embedding values that were provided
-func NewTooManyEmbeddingValuesForCallError(provider string, modelID string, maxEmbeddingsPerCall int, values []any) *TooManyEmbeddingValuesForCallError {
+func NewTooManyEmbeddingValuesForCallError(provider, modelID string, maxEmbeddingsPerCall int, values []any) *TooManyEmbeddingValuesForCallError {
 	message := fmt.Sprintf(
 		"Too many values for a single embedding call. The %s model \"%s\" can only embed up to %d values per call, but %d values were provided.",
 		provider,

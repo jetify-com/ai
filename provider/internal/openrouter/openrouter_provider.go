@@ -18,7 +18,7 @@ type OpenRouterProvider struct {
 }
 
 // NewOpenRouterProvider creates a new OpenRouter provider.
-func NewOpenRouterProvider(baseURL string, apiKey string, opts ...ProviderOption) *OpenRouterProvider {
+func NewOpenRouterProvider(baseURL, apiKey string, opts ...ProviderOption) *OpenRouterProvider {
 	p := &OpenRouterProvider{
 		baseURL: baseURL,
 		apiKey:  apiKey,

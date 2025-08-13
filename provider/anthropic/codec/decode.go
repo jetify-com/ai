@@ -102,7 +102,8 @@ func decodeToolUse(block anthropic.BetaContentBlockUnion) *api.ToolCallBlock {
 
 // decodeReasoning converts an Anthropic thinking block to an AI SDK ReasoningBlock
 func decodeReasoning(block anthropic.BetaContentBlockUnion) api.Reasoning {
-	if block.Type == "thinking" {
+	switch block.Type {
+	case "thinking":
 		// Check for nil or empty thinking text
 		if block.Thinking == "" {
 			return nil
@@ -111,7 +112,7 @@ func decodeReasoning(block anthropic.BetaContentBlockUnion) api.Reasoning {
 			Text:      block.Thinking,
 			Signature: block.Signature,
 		}
-	} else if block.Type == "redacted_thinking" {
+	case "redacted_thinking":
 		// Check for nil or empty data
 		if block.Data == "" {
 			return nil
