@@ -54,12 +54,12 @@ type ImageData interface {
 // Base64Image represents an image as a base64 encoded string
 type Base64Image string
 
-func (Base64Image) IsImageData() {}
+func (b *Base64Image) IsImageData() {}
 
 // BinaryImage represents an image as binary data
 type BinaryImage []byte
 
-func (BinaryImage) IsImageData() {}
+func (b *BinaryImage) IsImageData() {}
 
 // ImageResponseMetadata contains response information for telemetry and debugging purposes.
 type ImageResponseMetadata struct {

@@ -27,7 +27,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "single function tool",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "test_function",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -56,7 +56,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "multiple function tools",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function1",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -65,7 +65,7 @@ func TestEncodeTools(t *testing.T) {
 						},
 					},
 				},
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function2",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -121,7 +121,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "file search tool (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.file_search",
 					Name: "file_search",
 					Args: map[string]any{
@@ -139,7 +139,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "mix of function and provider-defined tools",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "mixed_function",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -173,7 +173,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "unsupported tool type with warning",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "unsupported_tool",
 					Name: "unsupported",
 					Args: &mockUnsupportedTool{id: "unsupported_tool"},
@@ -182,7 +182,7 @@ func TestEncodeTools(t *testing.T) {
 			expectedWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: api.ProviderDefinedTool{
+					Tool: &api.ProviderDefinedTool{
 						ID:   "unsupported_tool",
 						Name: "unsupported",
 						Args: &mockUnsupportedTool{id: "unsupported_tool"},
@@ -193,7 +193,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "tool choice auto",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function_with_choice",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -226,7 +226,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "tool choice none",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function_with_choice",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -259,7 +259,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "tool choice specific function",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function1",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -268,7 +268,7 @@ func TestEncodeTools(t *testing.T) {
 						},
 					},
 				},
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function2",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -332,7 +332,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "tool choice provider-defined tool (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.file_search",
 					Name: "file_search",
 					Args: map[string]any{
@@ -366,7 +366,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "web search tool with minimal settings (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.web_search_preview",
 					Name: "web_search_preview",
 					Args: map[string]any{},
@@ -393,7 +393,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "web search tool with search context size (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.web_search_preview",
 					Name: "web_search_preview",
 					Args: map[string]any{
@@ -434,7 +434,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "web search tool with user location (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.web_search_preview",
 					Name: "web_search_preview",
 					Args: map[string]any{
@@ -477,7 +477,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -499,7 +499,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool missing required display width",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -513,7 +513,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool missing required display height",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -550,7 +550,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "web search tool with partial user location (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.web_search_preview",
 					Name: "web_search_preview",
 					Args: map[string]any{
@@ -591,7 +591,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool with mac environment (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -627,7 +627,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool with browser environment (map args)",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -649,7 +649,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "computer use tool with invalid environment",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "openai.computer_use_preview",
 					Name: "computer_use_preview",
 					Args: map[string]any{
@@ -664,7 +664,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "invalid tool choice type",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name: "function1",
 					InputSchema: &jsonschema.Schema{
 						Type: "object",
@@ -868,7 +868,7 @@ func TestJsonSchemaAsMap(t *testing.T) {
 func TestEncodeProviderDefinedTool(t *testing.T) {
 	tests := []struct {
 		name             string
-		input            api.ProviderDefinedTool
+		input            *api.ProviderDefinedTool
 		expected         string
 		expectedWarnings []api.CallWarning
 		expectedError    string
@@ -884,7 +884,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "file search tool (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "openai.file_search",
 				Name: "file_search",
 				Args: map[string]any{
@@ -899,7 +899,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "unsupported provider tool",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "unsupported_tool",
 				Name: "unsupported",
 				Args: &mockUnsupportedTool{id: "unsupported_tool"},
@@ -908,7 +908,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			expectedWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: api.ProviderDefinedTool{
+					Tool: &api.ProviderDefinedTool{
 						ID:   "unsupported_tool",
 						Name: "unsupported",
 						Args: &mockUnsupportedTool{id: "unsupported_tool"},

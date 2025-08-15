@@ -162,7 +162,7 @@ func applyJSONResponseFormat(params *responses.ResponseNewParams, opts api.CallO
 // applyProviderMetadata applies metadata-specific options to the parameters
 func applyProviderMetadata(params *responses.ResponseNewParams, opts api.CallOptions) {
 	if opts.ProviderMetadata != nil {
-		metadata := GetMetadata(opts)
+		metadata := GetMetadata(&opts)
 		if metadata != nil {
 			if metadata.ParallelToolCalls != nil {
 				params.ParallelToolCalls = openai.Bool(*metadata.ParallelToolCalls)
@@ -192,7 +192,7 @@ func applyReasoningSettings(params *responses.ResponseNewParams, opts api.CallOp
 
 	// Apply reasoning settings for reasoning models
 	if modelConfig.IsReasoningModel {
-		metadata := GetMetadata(opts)
+		metadata := GetMetadata(&opts)
 		if metadata != nil && (metadata.ReasoningEffort != "" || metadata.ReasoningSummary != "") {
 			params.Reasoning = shared.ReasoningParam{}
 			if metadata.ReasoningEffort != "" {

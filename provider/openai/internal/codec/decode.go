@@ -16,9 +16,9 @@ type responseContent struct {
 }
 
 // DecodeResponse converts an OpenAI Response to the AI SDK Response type
-func DecodeResponse(msg *responses.Response) (api.Response, error) {
+func DecodeResponse(msg *responses.Response) (*api.Response, error) {
 	if msg == nil {
-		return api.Response{
+		return &api.Response{
 			Content:  []api.ContentBlock{},
 			Warnings: []api.CallWarning{},
 		}, nil
@@ -26,18 +26,17 @@ func DecodeResponse(msg *responses.Response) (api.Response, error) {
 
 	content, err := decodeContent(msg)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	// Create the response with the extracted fields
-	resp := api.Response{
+	resp := &api.Response{
 		Content:          content.Content,
 		Usage:            decodeUsage(msg.Usage),
 		ProviderMetadata: decodeProviderMetadata(msg),
 		Warnings:         []api.CallWarning{},
+		FinishReason:     decodeFinishReason(msg.IncompleteDetails.Reason, content.HasTools),
 	}
-
-	resp.FinishReason = decodeFinishReason(msg.IncompleteDetails.Reason, content.HasTools)
 
 	return resp, nil
 }
@@ -59,7 +58,7 @@ func decodeContent(msg *responses.Response) (responseContent, error) {
 			if err != nil {
 				return responseContent{}, fmt.Errorf("failed to decode tool call: %w", err)
 			}
-			content.Content = append(content.Content, &toolCall)
+			content.Content = append(content.Content, toolCall)
 			content.HasTools = true
 		case "message":
 			message := outputItem.AsMessage()
@@ -130,15 +129,15 @@ func decodeReasoning(item responses.ResponseOutputItemUnion) (api.Reasoning, err
 }
 
 // decodeFunctionCall processes a function call output item
-func decodeFunctionCall(functionCall responses.ResponseFunctionToolCall) (api.ToolCallBlock, error) {
+func decodeFunctionCall(functionCall responses.ResponseFunctionToolCall) (*api.ToolCallBlock, error) {
 	if functionCall.Name == "" {
-		return api.ToolCallBlock{}, fmt.Errorf("function call missing name")
+		return nil, fmt.Errorf("function call missing name")
 	}
 	if functionCall.CallID == "" {
-		return api.ToolCallBlock{}, fmt.Errorf("function call missing call_id")
+		return nil, fmt.Errorf("function call missing call_id")
 	}
 	args := json.RawMessage(functionCall.Arguments)
-	return api.ToolCallBlock{
+	return &api.ToolCallBlock{
 		ToolCallID: functionCall.CallID,
 		ToolName:   functionCall.Name,
 		Args:       args,
@@ -146,8 +145,8 @@ func decodeFunctionCall(functionCall responses.ResponseFunctionToolCall) (api.To
 }
 
 // decodeFileSearchCall processes a file search call output item
-func decodeFileSearchCall(fileSearch responses.ResponseFileSearchToolCall) (api.ToolCallBlock, error) {
-	return api.ToolCallBlock{
+func decodeFileSearchCall(fileSearch responses.ResponseFileSearchToolCall) (*api.ToolCallBlock, error) {
+	return &api.ToolCallBlock{
 		ToolCallID: fileSearch.ID,
 		ToolName:   "openai.file_search",
 		Args:       json.RawMessage(fileSearch.RawJSON()),
@@ -155,8 +154,8 @@ func decodeFileSearchCall(fileSearch responses.ResponseFileSearchToolCall) (api.
 }
 
 // decodeWebSearchCall processes a web search call output item
-func decodeWebSearchCall(webSearch responses.ResponseFunctionWebSearch) (api.ToolCallBlock, error) {
-	return api.ToolCallBlock{
+func decodeWebSearchCall(webSearch responses.ResponseFunctionWebSearch) (*api.ToolCallBlock, error) {
+	return &api.ToolCallBlock{
 		ToolCallID: webSearch.ID,
 		ToolName:   "openai.web_search_preview",
 		Args:       json.RawMessage(webSearch.RawJSON()),
@@ -164,7 +163,7 @@ func decodeWebSearchCall(webSearch responses.ResponseFunctionWebSearch) (api.Too
 }
 
 // decodeComputerCall processes a computer call output item
-func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (api.ToolCallBlock, error) {
+func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (*api.ToolCallBlock, error) {
 	// Convert safety checks to our internal type - initialize as empty slice
 	safetyChecks := make([]ComputerSafetyCheck, 0, len(computerCall.PendingSafetyChecks))
 	for _, check := range computerCall.PendingSafetyChecks {
@@ -181,7 +180,7 @@ func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (api.To
 	}
 
 	// Create tool call block with provider metadata
-	return api.ToolCallBlock{
+	return &api.ToolCallBlock{
 		ToolCallID:       computerCall.ID,
 		ToolName:         "openai.computer_use_preview",
 		Args:             json.RawMessage(computerCall.RawJSON()),
@@ -191,7 +190,7 @@ func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (api.To
 
 // decodeToolCall processes a tool call output items
 // Note that there are several types of tool calls provided by OpenAI.
-func decodeToolCall(item responses.ResponseOutputItemUnion) (api.ToolCallBlock, error) {
+func decodeToolCall(item responses.ResponseOutputItemUnion) (*api.ToolCallBlock, error) {
 	switch item.Type {
 	case "function_call":
 		return decodeFunctionCall(item.AsFunctionCall())
@@ -202,7 +201,7 @@ func decodeToolCall(item responses.ResponseOutputItemUnion) (api.ToolCallBlock, 
 	case "computer_call":
 		return decodeComputerCall(item.AsComputerCall())
 	default:
-		return api.ToolCallBlock{}, fmt.Errorf("unknown tool call type: %s", item.Type)
+		return nil, fmt.Errorf("unknown tool call type: %s", item.Type)
 	}
 }
 

@@ -127,9 +127,9 @@ func TestGenerate(t *testing.T) {
 	// This test demonstrates various response field validations using aitesting.ResponseContains.
 	// When creating new tests, you can omit fields you don't care about in expectedResp.
 	// For example:
-	// - Only check text: expectedResp: api.Response{Text: "example"}
-	// - Only check usage: expectedResp: api.Response{Usage: api.Usage{PromptTokens: 10}}
-	// - Only check finish reason: expectedResp: api.Response{FinishReason: api.FinishReasonStop}
+	// - Only check text: expectedResp: &api.Response{Text: "example"}
+	// - Only check usage: expectedResp: &api.Response{Usage: api.Usage{PromptTokens: 10}}
+	// - Only check finish reason: expectedResp: &api.Response{FinishReason: api.FinishReasonStop}
 	// aitesting.ResponseContains only checks fields that are specified in expectedResp.
 	tests := []struct {
 		name         string
@@ -138,15 +138,15 @@ func TestGenerate(t *testing.T) {
 		prompt       []api.Message
 		exchanges    []httpmock.Exchange
 		wantErr      bool
-		expectedResp api.Response // Expected response fields
-		skip         bool         // Skip this test if true
+		expectedResp *api.Response // Expected response fields
+		skip         bool          // Skip this test if true
 	}{
 		{
 			name:      "response contains text",
 			modelID:   "gpt-4o",
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -157,7 +157,7 @@ func TestGenerate(t *testing.T) {
 			modelID:   "gpt-4o",
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Usage: api.Usage{
 					InputTokens:       345,
 					OutputTokens:      538,
@@ -172,7 +172,7 @@ func TestGenerate(t *testing.T) {
 			modelID:   "gpt-4o",
 			prompt:    standardPrompt,
 			exchanges: standardExchange,
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				ProviderMetadata: api.NewProviderMetadata(map[string]any{
 					"openai": &Metadata{
 						ResponseID: "resp_67c97c0203188190a025beb4a75242bc",
@@ -236,7 +236,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -285,7 +285,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -352,7 +352,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -435,7 +435,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -482,7 +482,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -527,7 +527,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -572,7 +572,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -617,7 +617,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -662,7 +662,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -709,7 +709,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -754,7 +754,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -799,7 +799,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -812,7 +812,7 @@ func TestGenerate(t *testing.T) {
 			prompt:  standardPrompt,
 			options: api.CallOptions{
 				Tools: []api.ToolDefinition{
-					api.FunctionTool{
+					&api.FunctionTool{
 						Name:        "response",
 						Description: "A response",
 						InputSchema: &jsonschema.Schema{
@@ -878,7 +878,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -925,7 +925,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -995,7 +995,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -1070,7 +1070,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -1127,7 +1127,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -1191,7 +1191,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -1235,7 +1235,7 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "answer text"},
 				},
@@ -1374,8 +1374,8 @@ func TestGenerate_ToolCalls(t *testing.T) {
 		prompt       []api.Message
 		exchanges    []httpmock.Exchange
 		wantErr      bool
-		expectedResp api.Response // Expected response fields
-		skip         bool         // Skip this test if true
+		expectedResp *api.Response // Expected response fields
+		skip         bool          // Skip this test if true
 	}{
 		{
 			name:    "should generate tool calls",
@@ -1385,7 +1385,7 @@ func TestGenerate_ToolCalls(t *testing.T) {
 				Tools: standardTools,
 			},
 			exchanges: standardExchange,
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_0NdsJqOS8N3J9l2p0p4WpYU9",
@@ -1408,7 +1408,7 @@ func TestGenerate_ToolCalls(t *testing.T) {
 				Tools: standardTools,
 			},
 			exchanges: standardExchange,
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				FinishReason: api.FinishReasonToolCalls,
 			},
 		},
@@ -1576,8 +1576,8 @@ func TestGenerate_WebSearch(t *testing.T) {
 		prompt       []api.Message
 		exchanges    []httpmock.Exchange
 		wantErr      bool
-		expectedResp api.Response // Expected response fields
-		skip         bool         // Skip this test if true
+		expectedResp *api.Response // Expected response fields
+		skip         bool          // Skip this test if true
 	}{
 		{
 			name:      "should generate text with web search",
@@ -1594,7 +1594,7 @@ func TestGenerate_WebSearch(t *testing.T) {
 					),
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "ws_67cf2b3051e88190b006770db6fdb13d",
@@ -1619,7 +1619,7 @@ func TestGenerate_WebSearch(t *testing.T) {
 					),
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "ws_67cf2b3051e88190b006770db6fdb13d",
@@ -2964,7 +2964,7 @@ func runGenerateTests(t *testing.T, tests []struct {
 	prompt       []api.Message
 	exchanges    []httpmock.Exchange
 	wantErr      bool
-	expectedResp api.Response
+	expectedResp *api.Response
 	skip         bool
 },
 ) {

@@ -30,18 +30,18 @@ func TestResponseContains(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		expected api.Response
-		contains api.Response
+		expected *api.Response
+		contains *api.Response
 		wantFail bool
 	}{
 		{
 			name: "matching text",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello world"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello world"},
 				},
@@ -50,12 +50,12 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "mismatched text",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello world"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "goodbye world"},
 				},
@@ -64,7 +64,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching usage",
-			expected: api.Response{
+			expected: &api.Response{
 				Usage: api.Usage{
 					InputTokens:       10,
 					OutputTokens:      20,
@@ -73,7 +73,7 @@ func TestResponseContains(t *testing.T) {
 					CachedInputTokens: 5,
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Usage: api.Usage{
 					InputTokens:       10,
 					OutputTokens:      20,
@@ -86,13 +86,13 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "exact usage check",
-			expected: api.Response{
+			expected: &api.Response{
 				Usage: api.Usage{
 					InputTokens: 10,
 					// All other fields should be 0
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Usage: api.Usage{
 					InputTokens: 10,
 					// All other fields should be 0
@@ -102,12 +102,12 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "mismatched usage",
-			expected: api.Response{
+			expected: &api.Response{
 				Usage: api.Usage{
 					InputTokens: 10,
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Usage: api.Usage{
 					InputTokens:  10,
 					OutputTokens: 20, // This will cause the test to fail since OutputTokens doesn't match
@@ -117,14 +117,14 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching response info",
-			expected: api.Response{
+			expected: &api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "test-id",
 					ModelID:   "test-model",
 					Timestamp: now,
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "test-id",
 					ModelID:   "test-model",
@@ -135,24 +135,24 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "nil response info when expected",
-			expected: api.Response{
+			expected: &api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID: "test-id",
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				ResponseInfo: nil,
 			},
 			wantFail: true,
 		},
 		{
 			name: "ignores unset fields",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 					&api.SourceBlock{ID: "src-1", URL: "http://example.com"},
@@ -165,7 +165,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching tool calls",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "test-id",
@@ -174,7 +174,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "test-id",
@@ -187,7 +187,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching files",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
 						Filename:  "test.txt",
@@ -196,7 +196,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
 						Filename:  "test.txt",
@@ -209,7 +209,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "mismatched files",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
 						Filename:  "test.txt",
@@ -218,7 +218,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.FileBlock{
 						Filename:  "different.txt",
@@ -231,7 +231,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching image blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{
 						URL:       "https://example.com/image.jpg",
@@ -239,7 +239,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{
 						URL:       "https://example.com/image.jpg",
@@ -251,7 +251,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching reasoning blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{
 						Text:      "Let me think about this...",
@@ -259,7 +259,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{
 						Text:      "Let me think about this...",
@@ -271,14 +271,14 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching redacted reasoning blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.RedactedReasoningBlock{
 						Data: "redacted_data_123",
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.RedactedReasoningBlock{
 						Data: "redacted_data_123",
@@ -289,7 +289,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "matching source blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.SourceBlock{
 						ID:    "src-1",
@@ -298,7 +298,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.SourceBlock{
 						ID:    "src-1",
@@ -311,7 +311,7 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "partial field matching - tool call only name",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolName: "test",
@@ -319,7 +319,7 @@ func TestResponseContains(t *testing.T) {
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "some-id",
@@ -332,14 +332,14 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "partial field matching - text block empty text",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{
 						// Text is empty, so it won't be compared
 					},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{
 						Text: "any text here",
@@ -350,13 +350,13 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "mixed content blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 					&api.ToolCallBlock{ToolName: "test"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 					&api.ImageBlock{URL: "https://example.com/img.jpg"},
@@ -372,12 +372,12 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "wrong content block type",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ImageBlock{URL: "https://example.com/img.jpg"},
 				},
@@ -386,10 +386,10 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "empty content blocks",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "hello"},
 				},
@@ -398,13 +398,13 @@ func TestResponseContains(t *testing.T) {
 		},
 		{
 			name: "content blocks must match in order",
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "first"},
 					&api.ToolCallBlock{ToolName: "test"},
 				},
 			},
-			contains: api.Response{
+			contains: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{ToolName: "test"},
 					&api.TextBlock{Text: "first"},

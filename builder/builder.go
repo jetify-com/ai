@@ -93,29 +93,6 @@ func (b *ResponseBuilder) AddEvent(event api.StreamEvent) error {
 	case *api.ErrorEvent:
 		return b.addError(evt)
 
-	// Handle value types
-	case api.TextDeltaEvent:
-		return b.addTextDelta(&evt)
-	case api.ReasoningEvent:
-		return b.addReasoning(&evt)
-	case api.ReasoningSignatureEvent:
-		return b.addReasoningSignature(&evt)
-	case api.RedactedReasoningEvent:
-		return b.addRedactedReasoning(&evt)
-	case api.ToolCallEvent:
-		return b.addToolCall(&evt)
-	case api.ToolCallDeltaEvent:
-		return b.addToolCallDelta(&evt)
-	case api.SourceEvent:
-		return b.addSource(&evt)
-	case api.FileEvent:
-		return b.addFile(&evt)
-	case api.ResponseMetadataEvent:
-		return b.addResponseMetadata(&evt)
-	case api.FinishEvent:
-		return b.addFinish(&evt)
-	case api.ErrorEvent:
-		return b.addError(&evt)
 	default:
 		return fmt.Errorf("unknown event type: %T", event)
 	}
@@ -306,12 +283,12 @@ func (b *ResponseBuilder) addError(e *api.ErrorEvent) error {
 }
 
 // Build creates a Response from the collected events.
-func (b *ResponseBuilder) Build() (api.Response, error) {
+func (b *ResponseBuilder) Build() (*api.Response, error) {
 	// Return any error that was encountered during event processing
 	if b.err != nil {
-		return b.resp, b.err
+		return &b.resp, b.err
 	}
-	return b.resp, nil
+	return &b.resp, nil
 }
 
 // AddMetadata adds metadata from a StreamResponse to the builder.

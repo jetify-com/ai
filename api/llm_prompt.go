@@ -55,19 +55,19 @@ type SystemMessage struct {
 
 var _ Message = &SystemMessage{}
 
-func (m SystemMessage) Role() MessageRole { return MessageRoleSystem }
+func (m *SystemMessage) Role() MessageRole { return MessageRoleSystem }
 
-func (m SystemMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
+func (m *SystemMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
 
 // MarshalJSON includes the role field when marshaling SystemMessage
-func (m SystemMessage) MarshalJSON() ([]byte, error) {
+func (m *SystemMessage) MarshalJSON() ([]byte, error) {
 	type Alias SystemMessage
 	return json.Marshal(struct {
 		Role string `json:"role"`
 		*Alias
 	}{
 		Role:  string(MessageRoleSystem),
-		Alias: (*Alias)(&m),
+		Alias: (*Alias)(m),
 	})
 }
 
@@ -101,19 +101,19 @@ type UserMessage struct {
 
 var _ Message = &UserMessage{}
 
-func (m UserMessage) Role() MessageRole { return MessageRoleUser }
+func (m *UserMessage) Role() MessageRole { return MessageRoleUser }
 
-func (m UserMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
+func (m *UserMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
 
 // MarshalJSON includes the role field when marshaling UserMessage
-func (m UserMessage) MarshalJSON() ([]byte, error) {
+func (m *UserMessage) MarshalJSON() ([]byte, error) {
 	type Alias UserMessage
 	return json.Marshal(struct {
 		Role string `json:"role"`
 		*Alias
 	}{
 		Role:  string(MessageRoleUser),
-		Alias: (*Alias)(&m),
+		Alias: (*Alias)(m),
 	})
 }
 
@@ -166,19 +166,19 @@ type AssistantMessage struct {
 
 var _ Message = &AssistantMessage{}
 
-func (m AssistantMessage) Role() MessageRole { return MessageRoleAssistant }
+func (m *AssistantMessage) Role() MessageRole { return MessageRoleAssistant }
 
-func (m AssistantMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
+func (m *AssistantMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
 
 // MarshalJSON includes the role field when marshaling AssistantMessage
-func (m AssistantMessage) MarshalJSON() ([]byte, error) {
+func (m *AssistantMessage) MarshalJSON() ([]byte, error) {
 	type Alias AssistantMessage
 	return json.Marshal(struct {
 		Role string `json:"role"`
 		*Alias
 	}{
 		Role:  string(MessageRoleAssistant),
-		Alias: (*Alias)(&m),
+		Alias: (*Alias)(m),
 	})
 }
 
@@ -231,19 +231,19 @@ type ToolMessage struct {
 
 var _ Message = &ToolMessage{}
 
-func (m ToolMessage) Role() MessageRole { return MessageRoleTool }
+func (m *ToolMessage) Role() MessageRole { return MessageRoleTool }
 
-func (m ToolMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
+func (m *ToolMessage) GetProviderMetadata() *ProviderMetadata { return m.ProviderMetadata }
 
 // MarshalJSON includes the role field when marshaling ToolMessage
-func (m ToolMessage) MarshalJSON() ([]byte, error) {
+func (m *ToolMessage) MarshalJSON() ([]byte, error) {
 	type Alias ToolMessage
 	return json.Marshal(struct {
 		Role string `json:"role"`
 		*Alias
 	}{
 		Role:  string(MessageRoleTool),
-		Alias: (*Alias)(&m),
+		Alias: (*Alias)(m),
 	})
 }
 
@@ -357,19 +357,19 @@ type TextBlock struct {
 
 var _ ContentBlock = &TextBlock{}
 
-func (b TextBlock) Type() ContentBlockType { return ContentBlockTypeText }
+func (b *TextBlock) Type() ContentBlockType { return ContentBlockTypeText }
 
-func (b TextBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *TextBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling TextBlock
-func (b TextBlock) MarshalJSON() ([]byte, error) {
+func (b *TextBlock) MarshalJSON() ([]byte, error) {
 	type Alias TextBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeText),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -393,21 +393,21 @@ var (
 	_ Reasoning    = &ReasoningBlock{}
 )
 
-func (b ReasoningBlock) Type() ContentBlockType { return ContentBlockTypeReasoning }
+func (b *ReasoningBlock) Type() ContentBlockType { return ContentBlockTypeReasoning }
 
-func (b ReasoningBlock) isReasoning() {}
+func (b *ReasoningBlock) isReasoning() {}
 
-func (b ReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *ReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling ReasoningBlock
-func (b ReasoningBlock) MarshalJSON() ([]byte, error) {
+func (b *ReasoningBlock) MarshalJSON() ([]byte, error) {
 	type Alias ReasoningBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeReasoning),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -427,21 +427,21 @@ var (
 	_ Reasoning    = &RedactedReasoningBlock{}
 )
 
-func (b RedactedReasoningBlock) Type() ContentBlockType { return ContentBlockTypeRedactedReasoning }
+func (b *RedactedReasoningBlock) Type() ContentBlockType { return ContentBlockTypeRedactedReasoning }
 
-func (b RedactedReasoningBlock) isReasoning() {}
+func (b *RedactedReasoningBlock) isReasoning() {}
 
-func (b RedactedReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *RedactedReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling RedactedReasoningBlock
-func (b RedactedReasoningBlock) MarshalJSON() ([]byte, error) {
+func (b *RedactedReasoningBlock) MarshalJSON() ([]byte, error) {
 	type Alias RedactedReasoningBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeRedactedReasoning),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -468,19 +468,19 @@ type ImageBlock struct {
 
 var _ ContentBlock = &ImageBlock{}
 
-func (b ImageBlock) Type() ContentBlockType { return ContentBlockTypeImage }
+func (b *ImageBlock) Type() ContentBlockType { return ContentBlockTypeImage }
 
-func (b ImageBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *ImageBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling ImageBlock
-func (b ImageBlock) MarshalJSON() ([]byte, error) {
+func (b *ImageBlock) MarshalJSON() ([]byte, error) {
 	type Alias ImageBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeImage),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -526,19 +526,19 @@ type FileBlock struct {
 
 var _ ContentBlock = &FileBlock{}
 
-func (b FileBlock) Type() ContentBlockType { return ContentBlockTypeFile }
+func (b *FileBlock) Type() ContentBlockType { return ContentBlockTypeFile }
 
-func (b FileBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *FileBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling FileBlock
-func (b FileBlock) MarshalJSON() ([]byte, error) {
+func (b *FileBlock) MarshalJSON() ([]byte, error) {
 	type Alias FileBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeFile),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -579,19 +579,19 @@ type ToolCallBlock struct {
 
 var _ ContentBlock = &ToolCallBlock{}
 
-func (b ToolCallBlock) Type() ContentBlockType { return ContentBlockTypeToolCall }
+func (b *ToolCallBlock) Type() ContentBlockType { return ContentBlockTypeToolCall }
 
-func (b ToolCallBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *ToolCallBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling ToolCallBlock
-func (b ToolCallBlock) MarshalJSON() ([]byte, error) {
+func (b *ToolCallBlock) MarshalJSON() ([]byte, error) {
 	type Alias ToolCallBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeToolCall),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -624,19 +624,19 @@ type ToolResultBlock struct {
 
 var _ ContentBlock = &ToolResultBlock{}
 
-func (b ToolResultBlock) Type() ContentBlockType { return ContentBlockTypeToolResult }
+func (b *ToolResultBlock) Type() ContentBlockType { return ContentBlockTypeToolResult }
 
-func (b ToolResultBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *ToolResultBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling ToolResultBlock
-func (b ToolResultBlock) MarshalJSON() ([]byte, error) {
+func (b *ToolResultBlock) MarshalJSON() ([]byte, error) {
 	type Alias ToolResultBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeToolResult),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 
@@ -695,19 +695,19 @@ type SourceBlock struct {
 
 var _ ContentBlock = &SourceBlock{}
 
-func (b SourceBlock) Type() ContentBlockType { return ContentBlockTypeSource }
+func (b *SourceBlock) Type() ContentBlockType { return ContentBlockTypeSource }
 
-func (b SourceBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
+func (b *SourceBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
 // MarshalJSON includes the type field when marshaling SourceBlock
-func (b SourceBlock) MarshalJSON() ([]byte, error) {
+func (b *SourceBlock) MarshalJSON() ([]byte, error) {
 	type Alias SourceBlock
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeSource),
-		Alias: (*Alias)(&b),
+		Alias: (*Alias)(b),
 	})
 }
 

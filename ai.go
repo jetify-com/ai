@@ -32,7 +32,7 @@ import (
 // The last argument can optionally be a series of [GenerateOption] arguments:
 //
 //	GenerateText(ctx, messages, WithMaxTokens(100))
-func GenerateText(ctx context.Context, prompt []api.Message, opts ...GenerateOption) (api.Response, error) {
+func GenerateText(ctx context.Context, prompt []api.Message, opts ...GenerateOption) (*api.Response, error) {
 	config := buildGenerateConfig(opts)
 	return generate(ctx, prompt, config)
 }
@@ -51,14 +51,14 @@ func GenerateText(ctx context.Context, prompt []api.Message, opts ...GenerateOpt
 //
 // The string prompt is automatically converted to a [api.UserMessage] before
 // being passed to GenerateText.
-func GenerateTextStr(ctx context.Context, prompt string, opts ...GenerateOption) (api.Response, error) {
-	msg := api.UserMessage{
-		Content: []api.ContentBlock{api.TextBlock{Text: prompt}},
+func GenerateTextStr(ctx context.Context, prompt string, opts ...GenerateOption) (*api.Response, error) {
+	msg := &api.UserMessage{
+		Content: []api.ContentBlock{&api.TextBlock{Text: prompt}},
 	}
 	return GenerateText(ctx, []api.Message{msg}, opts...)
 }
 
-func generate(ctx context.Context, prompt []api.Message, opts GenerateOptions) (api.Response, error) {
+func generate(ctx context.Context, prompt []api.Message, opts GenerateOptions) (*api.Response, error) {
 	return opts.Model.Generate(ctx, prompt, opts.CallOptions)
 }
 
@@ -88,7 +88,7 @@ func generate(ctx context.Context, prompt []api.Message, opts GenerateOptions) (
 // The last argument can optionally be a series of [GenerateOption] arguments:
 //
 //	StreamText(ctx, messages, WithMaxTokens(100))
-func StreamText(ctx context.Context, prompt []api.Message, opts ...GenerateOption) (api.StreamResponse, error) {
+func StreamText(ctx context.Context, prompt []api.Message, opts ...GenerateOption) (*api.StreamResponse, error) {
 	config := buildGenerateConfig(opts)
 	return stream(ctx, prompt, config)
 }
@@ -107,13 +107,13 @@ func StreamText(ctx context.Context, prompt []api.Message, opts ...GenerateOptio
 //
 // The string prompt is automatically converted to a [api.UserMessage] before
 // being passed to StreamText.
-func StreamTextStr(ctx context.Context, prompt string, opts ...GenerateOption) (api.StreamResponse, error) {
-	msg := api.UserMessage{
-		Content: []api.ContentBlock{api.TextBlock{Text: prompt}},
+func StreamTextStr(ctx context.Context, prompt string, opts ...GenerateOption) (*api.StreamResponse, error) {
+	msg := &api.UserMessage{
+		Content: []api.ContentBlock{&api.TextBlock{Text: prompt}},
 	}
 	return StreamText(ctx, []api.Message{msg}, opts...)
 }
 
-func stream(ctx context.Context, prompt []api.Message, opts GenerateOptions) (api.StreamResponse, error) {
+func stream(ctx context.Context, prompt []api.Message, opts GenerateOptions) (*api.StreamResponse, error) {
 	return opts.Model.Stream(ctx, prompt, opts.CallOptions)
 }

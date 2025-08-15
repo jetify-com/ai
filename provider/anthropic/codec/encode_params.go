@@ -125,7 +125,7 @@ func unsupportedWarnings(opts api.CallOptions) []api.CallWarning {
 func encodeThinking(params *anthropic.BetaMessageNewParams, opts api.CallOptions) ([]api.CallWarning, error) {
 	var warnings []api.CallWarning
 
-	metadata := GetMetadata(opts)
+	metadata := GetMetadata(&opts)
 	thinkingEnabled := metadata != nil && metadata.Thinking.Enabled
 
 	if !thinkingEnabled {

@@ -48,20 +48,20 @@ type FunctionTool struct {
 var _ ToolDefinition = &FunctionTool{}
 
 // Type is the type of the tool (always "function")
-func (t FunctionTool) Type() string { return "function" }
+func (t *FunctionTool) Type() string { return "function" }
 
 // isToolDefinition is a marker method to satisfy the ToolDefinition interface
-func (t FunctionTool) isToolDefinition() bool { return true }
+func (t *FunctionTool) isToolDefinition() bool { return true }
 
 // FunctionTool JSON marshaling - automatically includes "type" field
-func (t FunctionTool) MarshalJSON() ([]byte, error) {
+func (t *FunctionTool) MarshalJSON() ([]byte, error) {
 	type Alias FunctionTool
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  "function",
-		Alias: (*Alias)(&t),
+		Alias: (*Alias)(t),
 	})
 }
 
@@ -85,19 +85,19 @@ type ProviderDefinedTool struct {
 var _ ToolDefinition = &ProviderDefinedTool{}
 
 // Type is the type of the tool (always "provider-defined")
-func (t ProviderDefinedTool) Type() string { return "provider-defined" }
+func (t *ProviderDefinedTool) Type() string { return "provider-defined" }
 
 // isToolDefinition is a marker method to satisfy the ToolDefinition interface
-func (t ProviderDefinedTool) isToolDefinition() bool { return true }
+func (t *ProviderDefinedTool) isToolDefinition() bool { return true }
 
 // ProviderDefinedTool JSON marshaling - automatically includes "type" field
-func (t ProviderDefinedTool) MarshalJSON() ([]byte, error) {
+func (t *ProviderDefinedTool) MarshalJSON() ([]byte, error) {
 	type Alias ProviderDefinedTool
 	return json.Marshal(struct {
 		Type string `json:"type"`
 		*Alias
 	}{
 		Type:  "provider-defined",
-		Alias: (*Alias)(&t),
+		Alias: (*Alias)(t),
 	})
 }

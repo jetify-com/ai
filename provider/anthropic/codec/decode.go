@@ -9,19 +9,18 @@ import (
 )
 
 // DecodeResponse converts an Anthropic Message to the AI SDK Response type
-func DecodeResponse(msg *anthropic.BetaMessage) (api.Response, error) {
+func DecodeResponse(msg *anthropic.BetaMessage) (*api.Response, error) {
 	if msg == nil {
-		return api.Response{}, errors.New("nil message provided")
+		return nil, errors.New("nil message provided")
 	}
 
-	response := api.Response{
+	response := &api.Response{
 		FinishReason:     decodeFinishReason(msg.StopReason),
 		Usage:            decodeUsage(msg.Usage),
 		ResponseInfo:     decodeResponseInfo(msg),
 		ProviderMetadata: decodeProviderMetadata(msg),
+		Content:          decodeContent(msg.Content),
 	}
-
-	response.Content = decodeContent(msg.Content)
 
 	return response, nil
 }

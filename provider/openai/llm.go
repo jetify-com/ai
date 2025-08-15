@@ -66,20 +66,20 @@ func (m *LanguageModel) SupportedUrls() []api.SupportedURL {
 
 func (m *LanguageModel) Generate(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
-) (api.Response, error) {
+) (*api.Response, error) {
 	params, warnings, err := codec.Encode(m.modelID, prompt, opts)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	openaiResponse, err := m.client.Responses.New(ctx, params)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	response, err := codec.DecodeResponse(openaiResponse)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	response.Warnings = append(response.Warnings, warnings...)
@@ -88,18 +88,18 @@ func (m *LanguageModel) Generate(
 
 func (m *LanguageModel) Stream(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
-) (api.StreamResponse, error) {
+) (*api.StreamResponse, error) {
 	// TODO: add warnings to the stream response by adding an initial StreamStart event
 	// (it could happen inside of codec.Encode)
 	params, _, err := codec.Encode(m.modelID, prompt, opts)
 	if err != nil {
-		return api.StreamResponse{}, err
+		return nil, err
 	}
 
 	stream := m.client.Responses.NewStreaming(ctx, params)
 	response, err := codec.DecodeStream(stream)
 	if err != nil {
-		return api.StreamResponse{}, err
+		return nil, err
 	}
 
 	return response, nil

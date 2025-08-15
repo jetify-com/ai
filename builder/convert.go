@@ -27,5 +27,5 @@ func StreamToResponse(stream *api.StreamResponse) (*api.Response, error) {
 		return nil, err
 	}
 
-	return &resp, nil
+	return resp, nil
 }

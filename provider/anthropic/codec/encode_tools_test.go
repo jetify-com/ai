@@ -99,7 +99,7 @@ func TestEncodeFunctionTool(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := EncodeFunctionTool(tc.input)
+			result, err := EncodeFunctionTool(&tc.input)
 			if tc.wantErr {
 				assert.Error(t, err)
 				return
@@ -191,7 +191,7 @@ func TestEncodeToolChoice(t *testing.T) {
 func TestEncodeProviderDefinedTool(t *testing.T) {
 	tests := []struct {
 		name         string
-		input        api.ProviderDefinedTool
+		input        *api.ProviderDefinedTool
 		expectNil    bool
 		expectBetas  []string
 		wantWarnings []api.CallWarning // Expected warnings (empty means no warnings)
@@ -242,7 +242,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		// Computer tool tests using map[string]any args
 		{
 			name: "computer tool with version 20250124 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.computer",
 				Name: "computer",
 				Args: map[string]any{
@@ -264,7 +264,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "computer tool with version 20241022 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.computer",
 				Name: "computer",
 				Args: map[string]any{
@@ -286,7 +286,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "computer tool with default version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.computer",
 				Name: "computer",
 				Args: map[string]any{
@@ -338,7 +338,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		// Text editor tool tests using map[string]any args
 		{
 			name: "text editor tool with version 20250124 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.text_editor",
 				Name: "str_replace_editor",
 				Args: map[string]any{
@@ -353,7 +353,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "text editor tool with version 20241022 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.text_editor",
 				Name: "str_replace_editor",
 				Args: map[string]any{
@@ -368,7 +368,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "text editor tool with default version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.text_editor",
 				Name: "str_replace_editor",
 				Args: map[string]any{},
@@ -412,7 +412,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		// Bash tool tests using map[string]any args
 		{
 			name: "bash tool with version 20250124 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.bash",
 				Name: "bash",
 				Args: map[string]any{
@@ -427,7 +427,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "bash tool with version 20241022 (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.bash",
 				Name: "bash",
 				Args: map[string]any{
@@ -442,7 +442,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "bash tool with default version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.bash",
 				Name: "bash",
 				Args: map[string]any{},
@@ -457,7 +457,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		// Error cases using map[string]any args
 		{
 			name: "computer tool with invalid version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.computer",
 				Name: "computer",
 				Args: map[string]any{
@@ -470,7 +470,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "text editor tool with invalid version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.text_editor",
 				Name: "str_replace_editor",
 				Args: map[string]any{
@@ -481,7 +481,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		},
 		{
 			name: "bash tool with invalid version (map args)",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "anthropic.bash",
 				Name: "bash",
 				Args: map[string]any{
@@ -494,7 +494,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 		// Unsupported tool type
 		{
 			name: "unsupported tool type",
-			input: api.ProviderDefinedTool{
+			input: &api.ProviderDefinedTool{
 				ID:   "mock.unsupported",
 				Name: "unsupported",
 				Args: &unsupportedArgs{},
@@ -504,7 +504,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 			wantWarnings: []api.CallWarning{
 				{
 					Type: "unsupported-tool",
-					Tool: api.ProviderDefinedTool{
+					Tool: &api.ProviderDefinedTool{
 						ID:   "mock.unsupported",
 						Name: "unsupported",
 						Args: &unsupportedArgs{},
@@ -563,7 +563,7 @@ func TestEncodeProviderDefinedTool(t *testing.T) {
 }
 
 func TestEncodeTools(t *testing.T) {
-	functionTool := api.FunctionTool{
+	functionTool := &api.FunctionTool{
 		Name:        "test_function",
 		Description: "A test function",
 		InputSchema: &jsonschema.Schema{
@@ -578,7 +578,7 @@ func TestEncodeTools(t *testing.T) {
 		},
 	}
 
-	computerTool := api.ProviderDefinedTool{
+	computerTool := &api.ProviderDefinedTool{
 		ID:   "anthropic.computer",
 		Name: "computer",
 		Args: &ComputerToolArgs{
@@ -589,7 +589,7 @@ func TestEncodeTools(t *testing.T) {
 	}
 
 	// Use a concrete tool type that we know won't be handled correctly
-	unsupportedTool := api.ProviderDefinedTool{
+	unsupportedTool := &api.ProviderDefinedTool{
 		ID:   "mock.unsupported",
 		Name: "unsupported",
 		Args: &unsupportedArgs{},
@@ -698,7 +698,7 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "object tool mode equivalent",
 			tools: []api.ToolDefinition{
-				api.FunctionTool{
+				&api.FunctionTool{
 					Name:        "test_tool",
 					Description: "A test tool",
 					InputSchema: &jsonschema.Schema{Type: "object"},
@@ -707,7 +707,7 @@ func TestEncodeTools(t *testing.T) {
 			choice: &api.ToolChoice{Type: "tool", ToolName: "test_tool"},
 			want: AnthropicTools{
 				Tools: []anthropic.BetaToolUnionParam{
-					mustEncodeFunctionTool(api.FunctionTool{
+					mustEncodeFunctionTool(&api.FunctionTool{
 						Name:        "test_tool",
 						Description: "A test tool",
 						InputSchema: &jsonschema.Schema{Type: "object"},
@@ -721,17 +721,17 @@ func TestEncodeTools(t *testing.T) {
 		{
 			name: "multiple provider tools with same beta",
 			tools: []api.ToolDefinition{
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "anthropic.computer",
 					Name: "computer",
 					Args: &ComputerToolArgs{DisplayWidthPx: 800, DisplayHeightPx: 600, DisplayNumber: 1},
 				},
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "anthropic.text_editor",
 					Name: "str_replace_editor",
 					Args: &TextEditorToolArgs{},
 				},
-				api.ProviderDefinedTool{
+				&api.ProviderDefinedTool{
 					ID:   "anthropic.bash",
 					Name: "bash",
 					Args: &BashToolArgs{},
@@ -781,7 +781,7 @@ func TestEncodeTools(t *testing.T) {
 }
 
 // Helper functions to create expected tool encodings
-func mustEncodeFunctionTool(tool api.FunctionTool) anthropic.BetaToolUnionParam {
+func mustEncodeFunctionTool(tool *api.FunctionTool) anthropic.BetaToolUnionParam {
 	result, err := EncodeFunctionTool(tool)
 	if err != nil {
 		panic(err)

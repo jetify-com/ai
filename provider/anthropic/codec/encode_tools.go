@@ -41,7 +41,7 @@ func convertArgs[T any](args any) (*T, error) {
 }
 
 // EncodeFunctionTool converts an API FunctionTool to Anthropic's tool format
-func EncodeFunctionTool(tool api.FunctionTool) (anthropic.BetaToolUnionParam, error) {
+func EncodeFunctionTool(tool *api.FunctionTool) (anthropic.BetaToolUnionParam, error) {
 	inputSchema, err := encodeInputSchema(tool.InputSchema)
 	if err != nil {
 		return anthropic.BetaToolUnionParam{}, fmt.Errorf("error encoding input schema: %w", err)
@@ -60,7 +60,7 @@ func EncodeFunctionTool(tool api.FunctionTool) (anthropic.BetaToolUnionParam, er
 // EncodeProviderDefinedTool converts provider-defined tools to Anthropic's format
 // Returns the tool, required betas, and any warnings
 func EncodeProviderDefinedTool(
-	tool api.ProviderDefinedTool,
+	tool *api.ProviderDefinedTool,
 ) (anthropic.BetaToolUnionParam, []anthropic.AnthropicBeta, []api.CallWarning, error) {
 	var warnings []api.CallWarning
 	var betas []anthropic.AnthropicBeta
@@ -213,19 +213,13 @@ func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice) (Anthro
 	// Process each tool
 	for _, toolItem := range tools {
 		switch tool := toolItem.(type) {
-		case api.FunctionTool:
+		case *api.FunctionTool:
 			functionTool, err := EncodeFunctionTool(tool)
 			if err != nil {
 				return AnthropicTools{}, err
 			}
 			anthropicTools = append(anthropicTools, functionTool)
-		case *api.FunctionTool:
-			functionTool, err := EncodeFunctionTool(*tool)
-			if err != nil {
-				return AnthropicTools{}, err
-			}
-			anthropicTools = append(anthropicTools, functionTool)
-		case api.ProviderDefinedTool:
+		case *api.ProviderDefinedTool:
 			providerTool, toolBetas, toolWarnings, err := EncodeProviderDefinedTool(tool)
 			if err != nil {
 				return AnthropicTools{}, err

@@ -14,7 +14,7 @@ func TestResponseBuilder(t *testing.T) {
 	tests := []struct {
 		name     string
 		events   []api.StreamEvent
-		expected api.Response
+		expected *api.Response
 		metadata *api.StreamResponse
 	}{
 		{
@@ -22,7 +22,7 @@ func TestResponseBuilder(t *testing.T) {
 			events: []api.StreamEvent{
 				&api.TextDeltaEvent{TextDelta: "Hello"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello"},
 				},
@@ -34,7 +34,7 @@ func TestResponseBuilder(t *testing.T) {
 				&api.TextDeltaEvent{TextDelta: "Hello "},
 				&api.TextDeltaEvent{TextDelta: "World"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello World"},
 				},
@@ -49,7 +49,7 @@ func TestResponseBuilder(t *testing.T) {
 					Args:       json.RawMessage(`["arg1", "arg2"]`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_1",
@@ -70,7 +70,7 @@ func TestResponseBuilder(t *testing.T) {
 				},
 				&api.TextDeltaEvent{TextDelta: "World"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello "},
 					&api.ToolCallBlock{
@@ -89,7 +89,7 @@ func TestResponseBuilder(t *testing.T) {
 				&api.ReasoningSignatureEvent{Signature: "sig123"},
 				&api.RedactedReasoningEvent{Data: "redacted_data"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{
 						Text:      "Let's think about this",
@@ -119,7 +119,7 @@ func TestResponseBuilder(t *testing.T) {
 					ArgsDelta:  json.RawMessage(`"arg2"]`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_1",
@@ -144,7 +144,7 @@ func TestResponseBuilder(t *testing.T) {
 					Data:      []byte("test data"),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.SourceBlock{
 						ID:    "test_source",
@@ -175,7 +175,7 @@ func TestResponseBuilder(t *testing.T) {
 					},
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				ResponseInfo: &api.ResponseInfo{
 					ID:        "resp_123",
 					Timestamp: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -196,7 +196,7 @@ func TestResponseBuilder(t *testing.T) {
 					Err: "test error",
 				},
 			},
-			expected: api.Response{},
+			expected: &api.Response{},
 		},
 		{
 			name: "create tool call through deltas",
@@ -212,7 +212,7 @@ func TestResponseBuilder(t *testing.T) {
 					ArgsDelta:  json.RawMessage(`"value1"}`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_1",
@@ -246,7 +246,7 @@ func TestResponseBuilder(t *testing.T) {
 					ArgsDelta:  json.RawMessage(`"value2"}`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_1",
@@ -275,7 +275,7 @@ func TestResponseBuilder(t *testing.T) {
 					Args:       json.RawMessage(`{"timezone":"EST"}`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call1",
@@ -297,7 +297,7 @@ func TestResponseBuilder(t *testing.T) {
 				&api.ReasoningEvent{TextDelta: "\nSecond point"},
 				&api.ReasoningSignatureEvent{Signature: "sig123"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{
 						Text:      "First point\nSecond point",
@@ -323,7 +323,7 @@ func TestResponseBuilder(t *testing.T) {
 				},
 				&api.TextDeltaEvent{TextDelta: "end"},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Starting "},
 					&api.ToolCallBlock{
@@ -338,9 +338,9 @@ func TestResponseBuilder(t *testing.T) {
 		{
 			name: "reasoning value type",
 			events: []api.StreamEvent{
-				api.ReasoningEvent{TextDelta: "Thinking..."}, // Value type
+				&api.ReasoningEvent{TextDelta: "Thinking..."}, // Value type
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{Text: "Thinking..."},
 				},
@@ -379,15 +379,15 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 	tests := []struct {
 		name     string
 		events   []api.StreamEvent
-		expected api.Response
+		expected *api.Response
 		wantErr  bool
 	}{
 		{
 			name: "text delta value type",
 			events: []api.StreamEvent{
-				api.TextDeltaEvent{TextDelta: "Hello"}, // Value type, not pointer
+				&api.TextDeltaEvent{TextDelta: "Hello"}, // Value type, not pointer
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello"},
 				},
@@ -396,15 +396,15 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 		{
 			name: "multiple event value types",
 			events: []api.StreamEvent{
-				api.TextDeltaEvent{TextDelta: "Hello "}, // Value type
-				api.TextDeltaEvent{TextDelta: "World"},  // Value type
-				api.SourceEvent{Source: api.Source{ // Value type - sources can be mixed with text
+				&api.TextDeltaEvent{TextDelta: "Hello "}, // Value type
+				&api.TextDeltaEvent{TextDelta: "World"},  // Value type
+				&api.SourceEvent{Source: api.Source{ // Value type - sources can be mixed with text
 					SourceType: "url",
 					ID:         "test_source",
 					URL:        "example.com",
 				}},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello World"},
 					&api.SourceBlock{
@@ -418,13 +418,13 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 		{
 			name: "tool call value type",
 			events: []api.StreamEvent{
-				api.ToolCallEvent{ // Value type
+				&api.ToolCallEvent{ // Value type
 					ToolCallID: "call_1",
 					ToolName:   "test_tool",
 					Args:       json.RawMessage(`["arg1", "arg2"]`),
 				},
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ToolCallBlock{
 						ToolCallID: "call_1",
@@ -437,11 +437,11 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 		{
 			name: "mixed value and pointer types",
 			events: []api.StreamEvent{
-				api.TextDeltaEvent{TextDelta: "Hello "},                 // Value type
-				&api.TextDeltaEvent{TextDelta: "from pointer"},          // Pointer type
-				api.FinishEvent{FinishReason: api.FinishReason("stop")}, // Value type
+				&api.TextDeltaEvent{TextDelta: "Hello "},                 // Value type
+				&api.TextDeltaEvent{TextDelta: "from pointer"},           // Pointer type
+				&api.FinishEvent{FinishReason: api.FinishReason("stop")}, // Value type
 			},
-			expected: api.Response{
+			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello from pointer"},
 				},
@@ -451,9 +451,9 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 		{
 			name: "error event value type",
 			events: []api.StreamEvent{
-				api.ErrorEvent{Err: "test error"}, // Value type
+				&api.ErrorEvent{Err: "test error"}, // Value type
 			},
-			expected: api.Response{},
+			expected: &api.Response{},
 		},
 	}
 

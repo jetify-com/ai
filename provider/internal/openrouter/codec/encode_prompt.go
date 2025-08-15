@@ -32,17 +32,8 @@ func encodeMessage(msg api.Message) ([]client.Message, error) {
 	case *api.SystemMessage:
 		encoded := encodeSystemMessage(msg)
 		return []client.Message{encoded}, nil
-	case api.SystemMessage:
-		encoded := encodeSystemMessage(&msg)
-		return []client.Message{encoded}, nil
 	case *api.UserMessage:
 		encoded, err := encodeUserMessage(msg)
-		if err != nil {
-			return nil, err
-		}
-		return []client.Message{encoded}, nil
-	case api.UserMessage:
-		encoded, err := encodeUserMessage(&msg)
 		if err != nil {
 			return nil, err
 		}
@@ -53,16 +44,8 @@ func encodeMessage(msg api.Message) ([]client.Message, error) {
 			return nil, err
 		}
 		return []client.Message{encoded}, nil
-	case api.AssistantMessage:
-		encoded, err := encodeAssistantMessage(&msg)
-		if err != nil {
-			return nil, err
-		}
-		return []client.Message{encoded}, nil
 	case *api.ToolMessage:
 		return encodeToolMessage(msg)
-	case api.ToolMessage:
-		return encodeToolMessage(&msg)
 	default:
 		// TODO: use a more specific error type from api.
 		return nil, fmt.Errorf("unsupported message type: %T", msg)
@@ -117,16 +100,10 @@ func encodeUserContentBlock(block api.ContentBlock) (client.ContentPart, error) 
 	switch block := block.(type) {
 	case *api.TextBlock:
 		return encodeTextBlock(block), nil
-	case api.TextBlock:
-		return encodeTextBlock(&block), nil
 	case *api.ImageBlock:
 		return encodeImageBlock(block), nil
-	case api.ImageBlock:
-		return encodeImageBlock(&block), nil
 	case *api.FileBlock:
 		return encodeFileBlock(block), nil
-	case api.FileBlock:
-		return encodeFileBlock(&block), nil
 	default:
 		return nil, fmt.Errorf("unsupported content block type: %T", block)
 	}
@@ -189,17 +166,8 @@ func encodeAssistantMessage(msg *api.AssistantMessage) (*client.AssistantMessage
 		case *api.TextBlock:
 			encoded := encodeTextBlock(block)
 			text += encoded.Text // Concatenate all text parts
-		case api.TextBlock:
-			encoded := encodeTextBlock(&block)
-			text += encoded.Text // Concatenate all text parts
 		case *api.ToolCallBlock:
 			toolCall, err := encodeToolCallBlock(block)
-			if err != nil {
-				return nil, err
-			}
-			toolCalls = append(toolCalls, toolCall)
-		case api.ToolCallBlock:
-			toolCall, err := encodeToolCallBlock(&block)
 			if err != nil {
 				return nil, err
 			}

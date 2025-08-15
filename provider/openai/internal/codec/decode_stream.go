@@ -23,7 +23,7 @@ type StreamReader interface {
 
 // DecodeStream converts an OpenAI SSE stream to our API's StreamResponse.
 // This is the main entry point for decoding OpenAI streams.
-func DecodeStream(stream StreamReader) (api.StreamResponse, error) {
+func DecodeStream(stream StreamReader) (*api.StreamResponse, error) {
 	decoder := &streamDecoder{}
 	return decoder.DecodeStream(stream)
 }
@@ -62,12 +62,12 @@ type toolCallInfo struct {
 }
 
 // DecodeStream processes an OpenAI stream and returns our API stream format.
-func (d *streamDecoder) DecodeStream(stream StreamReader) (api.StreamResponse, error) {
+func (d *streamDecoder) DecodeStream(stream StreamReader) (*api.StreamResponse, error) {
 	if d.ongoingToolCalls == nil {
 		d.ongoingToolCalls = make(map[int64]toolCallInfo)
 	}
 
-	return api.StreamResponse{
+	return &api.StreamResponse{
 		Stream: d.decodeEvents(stream),
 	}, nil
 }

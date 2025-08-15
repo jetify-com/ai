@@ -95,7 +95,7 @@ func TestDoGenerate(t *testing.T) {
 		settings     *client.ChatSettings // Optional: custom settings
 		expectedReq  httpmock.Request
 		mockResp     responseValues
-		expectedResp api.Response
+		expectedResp *api.Response
 		wantErr      bool
 	}{
 		{
@@ -103,7 +103,7 @@ func TestDoGenerate(t *testing.T) {
 			mockResp: responseValues{
 				Content: "Hello, World!",
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello, World!"},
 				},
@@ -119,7 +119,7 @@ func TestDoGenerate(t *testing.T) {
 					CompletionTokens: 5,
 				},
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				Usage: api.Usage{
 					InputTokens:  20,
 					OutputTokens: 5,
@@ -132,7 +132,7 @@ func TestDoGenerate(t *testing.T) {
 			mockResp: responseValues{
 				LogProbs: testLogprobs,
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				// TODO: LogProbs support not yet implemented in the new interface
 				// LogProbs: codec.DecodeLogProbs(testLogprobs),
 			},
@@ -143,7 +143,7 @@ func TestDoGenerate(t *testing.T) {
 				Content:      "",
 				FinishReason: client.FinishReasonStop,
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				FinishReason: api.FinishReasonStop,
 			},
 		},
@@ -153,7 +153,7 @@ func TestDoGenerate(t *testing.T) {
 				Content:      "",
 				FinishReason: "eos",
 			},
-			expectedResp: api.Response{
+			expectedResp: &api.Response{
 				FinishReason: api.FinishReasonUnknown,
 			},
 		},

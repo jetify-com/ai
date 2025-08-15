@@ -61,7 +61,7 @@ func WithMaxNumResults(maxResults int) FileSearchToolOption {
 // FileSearchTool creates a new file search tool with the specified configuration.
 // FileSearchTool is a built-in tool that searches for relevant content from uploaded files.
 // Learn more about the [file search tool](https://platform.openai.com/docs/guides/tools-file-search).
-func FileSearchTool(options ...FileSearchToolOption) api.ProviderDefinedTool {
+func FileSearchTool(options ...FileSearchToolOption) *api.ProviderDefinedTool {
 	args := &FileSearchToolArgs{}
 
 	// Apply options
@@ -69,7 +69,7 @@ func FileSearchTool(options ...FileSearchToolOption) api.ProviderDefinedTool {
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "openai.file_search",
 		Name: "file_search",
 		Args: args,
@@ -120,7 +120,7 @@ func WithUserLocation(location *WebSearchUserLocation) WebSearchToolOption {
 // WebSearchTool creates a new web search tool with the specified configuration.
 // WebSearchTool is a built-in tool that searches the web for relevant results to use in a response.
 // Learn more about the [web search tool](https://platform.openai.com/docs/guides/tools-web-search).
-func WebSearchTool(options ...WebSearchToolOption) api.ProviderDefinedTool {
+func WebSearchTool(options ...WebSearchToolOption) *api.ProviderDefinedTool {
 	args := &WebSearchToolArgs{}
 
 	// Apply options
@@ -128,7 +128,7 @@ func WebSearchTool(options ...WebSearchToolOption) api.ProviderDefinedTool {
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "openai.web_search_preview",
 		Name: "web_search_preview",
 		Args: args,
@@ -231,7 +231,7 @@ func WithEnvironment(env string) ComputerUseToolOption {
 // ComputerUseTool creates a new computer use tool with the specified configuration.
 // ComputerUseTool is a built-in tool that controls a virtual computer. Learn more about the
 // [computer tool](https://platform.openai.com/docs/guides/tools-computer-use).
-func ComputerUseTool(displayWidth, displayHeight int, environment string, options ...ComputerUseToolOption) api.ProviderDefinedTool {
+func ComputerUseTool(displayWidth, displayHeight int, environment string, options ...ComputerUseToolOption) *api.ProviderDefinedTool {
 	args := &ComputerUseToolArgs{
 		DisplayWidth:  displayWidth,
 		DisplayHeight: displayHeight,
@@ -243,7 +243,7 @@ func ComputerUseTool(displayWidth, displayHeight int, environment string, option
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "openai.computer_use_preview",
 		Name: "computer_use_preview",
 		Args: args,

@@ -149,7 +149,7 @@ var systemMessageTests = []testCase{
 	{
 		name: "system message value type (not pointer)",
 		input: []api.Message{
-			api.SystemMessage{
+			&api.SystemMessage{
 				Content: "Hello from value type",
 			},
 		},
@@ -565,7 +565,7 @@ var userMessageTests = []testCase{
 	{
 		name: "user message value type (not pointer)",
 		input: []api.Message{
-			api.UserMessage{
+			&api.UserMessage{
 				Content: []api.ContentBlock{
 					&api.TextBlock{
 						Text: "Hello from value type",
@@ -790,7 +790,7 @@ var assistantMessageTests = []testCase{
 	{
 		name: "assistant message value type (not pointer)",
 		input: []api.Message{
-			api.AssistantMessage{
+			&api.AssistantMessage{
 				Content: []api.ContentBlock{
 					&api.TextBlock{
 						Text: "Hello from value type",
@@ -935,7 +935,7 @@ var toolMessageTests = []testCase{
 					{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
-							api.ImageBlock{
+							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
 								MediaType: "image/png",
 							},
@@ -991,7 +991,7 @@ var toolMessageTests = []testCase{
 					{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
-							api.ImageBlock{
+							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
 								MediaType: "image/png",
 							},
@@ -1033,11 +1033,11 @@ var toolMessageTests = []testCase{
 					{
 						ToolCallID: "openai.computer_use_preview",
 						Content: []api.ContentBlock{
-							api.ImageBlock{
+							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
 								MediaType: "image/png",
 							},
-							api.ImageBlock{
+							&api.ImageBlock{
 								Data:      []byte("test-image-data-2"),
 								MediaType: "image/png",
 							},
@@ -1164,7 +1164,7 @@ var toolMessageTests = []testCase{
 	{
 		name: "tool message value type (not pointer)",
 		input: []api.Message{
-			api.ToolMessage{
+			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
 						ToolCallID: "call_123",
@@ -1208,13 +1208,13 @@ func TestEncodePrompt(t *testing.T) {
 				input: []api.Message{
 					&api.UserMessage{
 						Content: []api.ContentBlock{
-							api.TextBlock{
+							&api.TextBlock{
 								Text: "Text block as value",
 							},
-							api.ImageBlock{
+							&api.ImageBlock{
 								URL: "https://example.com/image.jpg",
 							},
-							api.FileBlock{
+							&api.FileBlock{
 								Data:      []byte{1, 2, 3, 4, 5},
 								MediaType: "application/pdf",
 							},
@@ -1247,10 +1247,10 @@ func TestEncodePrompt(t *testing.T) {
 				input: []api.Message{
 					&api.AssistantMessage{
 						Content: []api.ContentBlock{
-							api.TextBlock{
+							&api.TextBlock{
 								Text: "Text block as value",
 							},
-							api.ToolCallBlock{
+							&api.ToolCallBlock{
 								ToolCallID: "call_789",
 								ToolName:   "test_tool",
 								Args:       json.RawMessage(`{"param":"value"}`),
@@ -1285,7 +1285,7 @@ func TestEncodePrompt(t *testing.T) {
 							{
 								ToolCallID: "openai.computer_use_preview",
 								Content: []api.ContentBlock{
-									api.ImageBlock{
+									&api.ImageBlock{
 										Data:      []byte("test-image-data"),
 										MediaType: "image/png",
 									},

@@ -22,7 +22,7 @@ type OpenAITools struct {
 func getIsStrict(opts api.CallOptions) bool {
 	isStrict := true // Default to true
 	if opts.ProviderMetadata != nil {
-		metadata := GetMetadata(opts)
+		metadata := GetMetadata(&opts)
 		if metadata != nil && metadata.StrictSchemas != nil {
 			isStrict = *metadata.StrictSchemas
 		}
@@ -71,11 +71,9 @@ func EncodeTools(tools []api.ToolDefinition, toolChoice *api.ToolChoice, opts ap
 // encodeTool encodes a single tool into a ToolUnionParam
 func encodeToolDefinition(toolItem api.ToolDefinition) (*responses.ToolUnionParam, []api.CallWarning, error) {
 	switch tool := toolItem.(type) {
-	case api.FunctionTool:
-		return encodeFunctionTool(tool)
 	case *api.FunctionTool:
 		return encodeFunctionTool(*tool)
-	case api.ProviderDefinedTool:
+	case *api.ProviderDefinedTool:
 		return encodeProviderDefinedTool(tool)
 	default:
 		warning := api.CallWarning{
@@ -142,7 +140,7 @@ func convertArgs[T any](args any) (*T, error) {
 }
 
 // encodeProviderDefinedTool encodes a provider-defined tool
-func encodeProviderDefinedTool(tool api.ProviderDefinedTool) (*responses.ToolUnionParam, []api.CallWarning, error) {
+func encodeProviderDefinedTool(tool *api.ProviderDefinedTool) (*responses.ToolUnionParam, []api.CallWarning, error) {
 	var result responses.ToolUnionParam
 	var err error
 
@@ -192,7 +190,7 @@ func encodeProviderDefinedTool(tool api.ProviderDefinedTool) (*responses.ToolUni
 }
 
 // encodeFileSearchTool creates a file search tool parameter
-func encodeFileSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
+func encodeFileSearchTool(tool *api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
 	fileSearchArgs, err := convertArgs[FileSearchToolArgs](tool.Args)
 	if err != nil {
 		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert file search tool args: %w", err)
@@ -202,7 +200,7 @@ func encodeFileSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionPara
 }
 
 // encodeWebSearchTool creates a web search tool parameter
-func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
+func encodeWebSearchTool(tool *api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
 	webSearchArgs, err := convertArgs[WebSearchToolArgs](tool.Args)
 	if err != nil {
 		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert web search tool args: %w", err)
@@ -248,7 +246,7 @@ func encodeWebSearchTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam
 }
 
 // encodeComputerUseTool creates a computer use tool parameter
-func encodeComputerUseTool(tool api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
+func encodeComputerUseTool(tool *api.ProviderDefinedTool) (responses.ToolUnionParam, error) {
 	computerArgs, err := convertArgs[ComputerUseToolArgs](tool.Args)
 	if err != nil {
 		return responses.ToolUnionParam{}, fmt.Errorf("failed to convert computer use tool args: %w", err)

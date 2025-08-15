@@ -177,7 +177,7 @@ func WithDisplayNumber(displayNum int) ComputerToolOption {
 // ComputerTool is a built-in tool that can be used to control a computer.
 // It allows the model to use a mouse and keyboard and to take screenshots.
 // See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
-func ComputerTool(displayWidth, displayHeight int, options ...ComputerToolOption) api.ProviderDefinedTool {
+func ComputerTool(displayWidth, displayHeight int, options ...ComputerToolOption) *api.ProviderDefinedTool {
 	args := &ComputerToolArgs{
 		DisplayWidthPx:  displayWidth,
 		DisplayHeightPx: displayHeight,
@@ -189,7 +189,7 @@ func ComputerTool(displayWidth, displayHeight int, options ...ComputerToolOption
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "anthropic.computer",
 		Name: "computer",
 		Args: args,
@@ -217,7 +217,7 @@ func WithBashVersion(version string) BashToolOption {
 // BashTool creates a new bash tool with the specified configuration.
 // BashTool is a built-in tool that can be used to run shell commands.
 // See the [computer use guide](https://docs.anthropic.com/en/docs/agents-and-tools/computer-use) for more details.
-func BashTool(options ...BashToolOption) api.ProviderDefinedTool {
+func BashTool(options ...BashToolOption) *api.ProviderDefinedTool {
 	args := &BashToolArgs{
 		Version: DefaultToolVersion,
 	}
@@ -226,7 +226,7 @@ func BashTool(options ...BashToolOption) api.ProviderDefinedTool {
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "anthropic.bash",
 		Name: "bash",
 		Args: args,
@@ -254,7 +254,7 @@ func WithTextEditorVersion(version string) TextEditorToolOption {
 // TextEditorTool creates a new text editor tool with the specified configuration.
 // TextEditorTool is a built-in tool that can be used to view, create and edit text files.
 // See the [text editor guide](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/text-editor-tool) for more details.
-func TextEditorTool(options ...TextEditorToolOption) api.ProviderDefinedTool {
+func TextEditorTool(options ...TextEditorToolOption) *api.ProviderDefinedTool {
 	args := &TextEditorToolArgs{
 		Version: DefaultToolVersion,
 	}
@@ -263,7 +263,7 @@ func TextEditorTool(options ...TextEditorToolOption) api.ProviderDefinedTool {
 		opt(args)
 	}
 
-	return api.ProviderDefinedTool{
+	return &api.ProviderDefinedTool{
 		ID:   "anthropic.text_editor",
 		Name: "str_replace_editor",
 		Args: args,

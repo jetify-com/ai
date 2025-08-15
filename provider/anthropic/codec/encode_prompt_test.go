@@ -382,7 +382,7 @@ func TestEncodePrompt(t *testing.T) {
 		{
 			name: "user message with value type (not pointer)",
 			prompt: []api.Message{
-				api.UserMessage{Content: api.ContentFromText("Hello from value type")},
+				&api.UserMessage{Content: api.ContentFromText("Hello from value type")},
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
@@ -398,8 +398,8 @@ func TestEncodePrompt(t *testing.T) {
 		{
 			name: "system message with value type (not pointer)",
 			prompt: []api.Message{
-				api.SystemMessage{Content: "System from value type"},
-				api.UserMessage{Content: api.ContentFromText("Hello")},
+				&api.SystemMessage{Content: "System from value type"},
+				&api.UserMessage{Content: api.ContentFromText("Hello")},
 			},
 			want: &AnthropicPrompt{
 				System: []anthropic.BetaTextBlockParam{
@@ -418,7 +418,7 @@ func TestEncodePrompt(t *testing.T) {
 		{
 			name: "assistant message with value type (not pointer)",
 			prompt: []api.Message{
-				api.AssistantMessage{Content: api.ContentFromText("Assistant from value type")},
+				&api.AssistantMessage{Content: api.ContentFromText("Assistant from value type")},
 			},
 			want: &AnthropicPrompt{
 				Messages: []anthropic.BetaMessageParam{
@@ -434,7 +434,7 @@ func TestEncodePrompt(t *testing.T) {
 		{
 			name: "tool message with value type (not pointer)",
 			prompt: []api.Message{
-				api.ToolMessage{
+				&api.ToolMessage{
 					Content: []api.ToolResultBlock{
 						{
 							ToolCallID: "tool-123",
@@ -472,13 +472,13 @@ func TestEncodePrompt(t *testing.T) {
 			prompt: []api.Message{
 				&api.UserMessage{
 					Content: []api.ContentBlock{
-						api.TextBlock{
+						&api.TextBlock{
 							Text: "Text as value",
 						},
-						api.ImageBlock{
+						&api.ImageBlock{
 							URL: "https://example.com/img.jpg",
 						},
-						api.FileBlock{
+						&api.FileBlock{
 							Data:      []byte("test pdf data"),
 							MediaType: "application/pdf",
 						},
@@ -527,10 +527,10 @@ func TestEncodePrompt(t *testing.T) {
 			prompt: []api.Message{
 				&api.AssistantMessage{
 					Content: []api.ContentBlock{
-						api.TextBlock{
+						&api.TextBlock{
 							Text: "Assistant text as value",
 						},
-						api.ToolCallBlock{
+						&api.ToolCallBlock{
 							ToolCallID: "tool-456",
 							ToolName:   "search_tool",
 							Args:       json.RawMessage(`{"query":"test"}`),
@@ -568,10 +568,10 @@ func TestEncodePrompt(t *testing.T) {
 							ToolCallID: "tool-789",
 							ToolName:   "image_tool",
 							Content: []api.ContentBlock{
-								api.TextBlock{
+								&api.TextBlock{
 									Text: "Tool result text",
 								},
-								api.ImageBlock{
+								&api.ImageBlock{
 									Data:      []byte{1, 2, 3, 4},
 									MediaType: "image/png",
 								},

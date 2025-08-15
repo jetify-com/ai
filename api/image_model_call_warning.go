@@ -31,7 +31,7 @@ type UnsupportedSettingWarning struct {
 	Details *string `json:"details,omitzero"`
 }
 
-func (UnsupportedSettingWarning) isImageCallWarning() {}
+func (u *UnsupportedSettingWarning) isImageCallWarning() {}
 
 // NewUnsupportedSettingWarning creates a new UnsupportedSettingWarning with the given setting and optional details
 func NewUnsupportedSettingWarning(setting string, details *string) UnsupportedSettingWarning {
@@ -51,7 +51,7 @@ type OtherWarning struct {
 	Message string `json:"message"`
 }
 
-func (OtherWarning) isImageCallWarning() {}
+func (o *OtherWarning) isImageCallWarning() {}
 
 // NewOtherWarning creates a new OtherWarning with the given message
 func NewOtherWarning(message string) OtherWarning {

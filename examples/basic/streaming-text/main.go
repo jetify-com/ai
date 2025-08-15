@@ -31,7 +31,7 @@ func example() error {
 	return nil
 }
 
-func printStreamResponse(response api.StreamResponse) {
+func printStreamResponse(response *api.StreamResponse) {
 	fmt.Print("AI: ")
 
 	for event := range response.Stream {

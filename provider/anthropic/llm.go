@@ -66,20 +66,20 @@ func (m *LanguageModel) SupportedUrls() []api.SupportedURL {
 
 func (m *LanguageModel) Generate(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
-) (api.Response, error) {
+) (*api.Response, error) {
 	params, warnings, err := codec.EncodeParams(m.modelID, prompt, opts)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	message, err := m.client.Beta.Messages.New(ctx, params)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	response, err := codec.DecodeResponse(message)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	response.Warnings = append(response.Warnings, warnings...)
@@ -88,6 +88,6 @@ func (m *LanguageModel) Generate(
 
 func (m *LanguageModel) Stream(
 	ctx context.Context, prompt []api.Message, opts api.CallOptions,
-) (api.StreamResponse, error) {
-	return api.StreamResponse{}, api.NewUnsupportedFunctionalityError("streaming generation", "")
+) (*api.StreamResponse, error) {
+	return nil, api.NewUnsupportedFunctionalityError("streaming generation", "")
 }

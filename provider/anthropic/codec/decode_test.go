@@ -376,7 +376,7 @@ func TestDecodeResponse(t *testing.T) {
 	tests := []struct {
 		name    string
 		msg     *anthropic.BetaMessage
-		want    api.Response
+		want    *api.Response
 		wantErr bool
 	}{
 		{
@@ -396,7 +396,7 @@ func TestDecodeResponse(t *testing.T) {
 					},
 				},
 			},
-			want: api.Response{
+			want: &api.Response{
 				Content: []api.ContentBlock{
 					&api.TextBlock{
 						Text: "Hello, I am Claude",
@@ -426,7 +426,7 @@ func TestDecodeResponse(t *testing.T) {
 		{
 			name: "empty message",
 			msg:  &anthropic.BetaMessage{},
-			want: api.Response{
+			want: &api.Response{
 				Content:      []api.ContentBlock{},
 				FinishReason: api.FinishReasonUnknown,
 				ResponseInfo: &api.ResponseInfo{},
@@ -441,7 +441,7 @@ func TestDecodeResponse(t *testing.T) {
 		{
 			name:    "nil message",
 			msg:     nil,
-			want:    api.Response{},
+			want:    nil,
 			wantErr: true,
 		},
 	}

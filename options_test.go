@@ -108,10 +108,10 @@ func TestCallOptionBuilders(t *testing.T) {
 		},
 		{
 			name:   "WithTools",
-			option: WithTools(api.FunctionTool{Name: "test-tool"}),
+			option: WithTools(&api.FunctionTool{Name: "test-tool"}),
 			expected: GenerateOptions{
 				CallOptions: api.CallOptions{
-					Tools: []api.ToolDefinition{api.FunctionTool{Name: "test-tool"}},
+					Tools: []api.ToolDefinition{&api.FunctionTool{Name: "test-tool"}},
 				},
 			},
 		},
@@ -222,11 +222,11 @@ func TestBuildCallOptions(t *testing.T) {
 		{
 			name: "With tools",
 			opts: []GenerateOption{
-				WithTools(api.FunctionTool{Name: "test-tool"}),
+				WithTools(&api.FunctionTool{Name: "test-tool"}),
 			},
 			expected: GenerateOptions{
 				CallOptions: api.CallOptions{
-					Tools:            []api.ToolDefinition{api.FunctionTool{Name: "test-tool"}},
+					Tools:            []api.ToolDefinition{&api.FunctionTool{Name: "test-tool"}},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{}),
 				},
 				Model: DefaultLanguageModel(),
@@ -247,12 +247,12 @@ type mockLanguageModel struct {
 	name string
 }
 
-func (m *mockLanguageModel) Generate(ctx context.Context, prompt []api.Message, opts api.CallOptions) (api.Response, error) {
-	return api.Response{}, nil
+func (m *mockLanguageModel) Generate(ctx context.Context, prompt []api.Message, opts api.CallOptions) (*api.Response, error) {
+	return &api.Response{}, nil
 }
 
-func (m *mockLanguageModel) Stream(ctx context.Context, prompt []api.Message, opts api.CallOptions) (api.StreamResponse, error) {
-	return api.StreamResponse{}, nil
+func (m *mockLanguageModel) Stream(ctx context.Context, prompt []api.Message, opts api.CallOptions) (*api.StreamResponse, error) {
+	return &api.StreamResponse{}, nil
 }
 
 func (m *mockLanguageModel) ModelID() string {

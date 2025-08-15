@@ -163,7 +163,7 @@ func (m *OpenRouterChatLanguageModel) buildRequestBody(
 	if len(options.Tools) > 0 {
 		tools := make([]map[string]any, 0, len(options.Tools))
 		for _, tool := range options.Tools {
-			if funcTool, ok := tool.(api.FunctionTool); ok {
+			if funcTool, ok := tool.(*api.FunctionTool); ok {
 				tools = append(tools, map[string]any{
 					"type": "function",
 					"function": map[string]any{
@@ -228,10 +228,10 @@ func (m *OpenRouterChatLanguageModel) DoGenerate(
 	ctx context.Context,
 	prompt []api.Message,
 	opts api.CallOptions,
-) (api.Response, error) {
+) (*api.Response, error) {
 	requestBody, err := m.buildRequestBody(prompt, opts, false)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 
 	// Make request
@@ -243,30 +243,30 @@ func (m *OpenRouterChatLanguageModel) DoGenerate(
 		opts.Headers,
 	)
 	if err != nil {
-		return api.Response{}, err
+		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return api.Response{}, fmt.Errorf("read response body: %w", err)
+		return nil, fmt.Errorf("read response body: %w", err)
 	}
 
 	// Handle non-200 responses
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return api.Response{}, OpenRouterFailedResponseHandler(resp, body, requestBody)
+		return nil, OpenRouterFailedResponseHandler(resp, body, requestBody)
 	}
 
 	// Parse response
 	var response chatResponse
 	if err := json.Unmarshal(body, &response); err != nil {
-		return api.Response{}, api.NewJSONParseError(string(body), err)
+		return nil, api.NewJSONParseError(string(body), err)
 	}
 
 	// Ensure we have at least one choice
 	if len(response.Choices) == 0 {
-		return api.Response{}, api.NewNoContentGeneratedError("no choices in response")
+		return nil, api.NewNoContentGeneratedError("no choices in response")
 	}
 
 	choice := response.Choices[0]
@@ -300,7 +300,7 @@ func (m *OpenRouterChatLanguageModel) DoGenerate(
 	}
 
 	// Build result
-	result := api.Response{
+	result := &api.Response{
 		Content:      content,
 		FinishReason: codec.DecodeFinishReason(choice.FinishReason),
 		Usage: api.Usage{
@@ -326,10 +326,10 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 	ctx context.Context,
 	prompt []api.Message,
 	opts api.CallOptions,
-) (api.StreamResponse, error) {
+) (*api.StreamResponse, error) {
 	requestBody, err := m.buildRequestBody(prompt, opts, true)
 	if err != nil {
-		return api.StreamResponse{}, err
+		return nil, err
 	}
 
 	// TODO: Consider replacing custom SSE parsing logic with a dedicated SSE library
@@ -347,7 +347,7 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 		opts.Headers,
 	)
 	if err != nil {
-		return api.StreamResponse{}, err
+		return nil, err
 	}
 
 	// Create sequence for events
@@ -497,5 +497,5 @@ func (m *OpenRouterChatLanguageModel) DoStream(
 		}
 	}
 
-	return api.StreamResponse{Stream: stream}, nil
+	return &api.StreamResponse{Stream: stream}, nil
 }

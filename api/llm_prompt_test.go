@@ -47,7 +47,7 @@ func TestSystemMessage_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Unmarshal JSON string into SystemMessage
-			var systemMsg SystemMessage
+			var systemMsg *SystemMessage
 			err := json.Unmarshal([]byte(tt.jsonStr), &systemMsg)
 			require.NoError(t, err, "Failed to unmarshal JSON")
 
@@ -211,7 +211,7 @@ func TestUserMessage_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Unmarshal JSON string into UserMessage
-			var userMsg UserMessage
+			var userMsg *UserMessage
 			err := json.Unmarshal([]byte(tt.jsonStr), &userMsg)
 			require.NoError(t, err, "Failed to unmarshal JSON")
 
@@ -375,7 +375,7 @@ func TestAssistantMessage_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Unmarshal JSON string into AssistantMessage
-			var assistantMsg AssistantMessage
+			var assistantMsg *AssistantMessage
 			err := json.Unmarshal([]byte(tt.jsonStr), &assistantMsg)
 			require.NoError(t, err, "Failed to unmarshal JSON")
 
@@ -624,7 +624,7 @@ func TestToolMessage_JSON(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Unmarshal JSON string into ToolMessage
-			var toolMsg ToolMessage
+			var toolMsg *ToolMessage
 			err := json.Unmarshal([]byte(tt.jsonStr), &toolMsg)
 			require.NoError(t, err, "Failed to unmarshal JSON")
 

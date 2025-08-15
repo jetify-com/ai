@@ -68,7 +68,7 @@ type CallOptions struct {
 	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
-func (o CallOptions) GetProviderMetadata() *ProviderMetadata { return o.ProviderMetadata }
+func (o *CallOptions) GetProviderMetadata() *ProviderMetadata { return o.ProviderMetadata }
 
 // UnmarshalJSON implements custom JSON unmarshaling for CallOptions
 // to handle the polymorphic ToolDefinition interface

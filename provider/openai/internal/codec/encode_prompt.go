@@ -53,25 +53,8 @@ func encodeMessage(message api.Message, modelConfig modelConfig) ([]responses.Re
 		}
 		return []responses.ResponseInputItemUnionParam{}, itemWarnings, nil
 
-	case api.SystemMessage:
-		item, itemWarnings, err := EncodeSystemMessage(&msg, modelConfig)
-		if err != nil {
-			return nil, nil, fmt.Errorf("encoding system message: %w", err)
-		}
-		if item != nil {
-			return []responses.ResponseInputItemUnionParam{*item}, itemWarnings, nil
-		}
-		return []responses.ResponseInputItemUnionParam{}, itemWarnings, nil
-
 	case *api.UserMessage:
 		item, err := EncodeUserMessage(msg)
-		if err != nil {
-			return nil, nil, fmt.Errorf("encoding user message: %w", err)
-		}
-		return []responses.ResponseInputItemUnionParam{item}, nil, nil
-
-	case api.UserMessage:
-		item, err := EncodeUserMessage(&msg)
 		if err != nil {
 			return nil, nil, fmt.Errorf("encoding user message: %w", err)
 		}
@@ -84,22 +67,8 @@ func encodeMessage(message api.Message, modelConfig modelConfig) ([]responses.Re
 		}
 		return items, nil, nil
 
-	case api.AssistantMessage:
-		items, err := EncodeAssistantMessage(&msg)
-		if err != nil {
-			return nil, nil, fmt.Errorf("encoding assistant message: %w", err)
-		}
-		return items, nil, nil
-
 	case *api.ToolMessage:
 		items, err := EncodeToolMessage(msg)
-		if err != nil {
-			return nil, nil, fmt.Errorf("encoding tool message: %w", err)
-		}
-		return items, nil, nil
-
-	case api.ToolMessage:
-		items, err := EncodeToolMessage(&msg)
 		if err != nil {
 			return nil, nil, fmt.Errorf("encoding tool message: %w", err)
 		}
@@ -161,20 +130,11 @@ func EncodeUserContentBlock(block api.ContentBlock) (*responses.ResponseInputCon
 	case *api.TextBlock:
 		return EncodeInputTextBlock(b)
 
-	case api.TextBlock:
-		return EncodeInputTextBlock(&b)
-
 	case *api.ImageBlock:
 		return EncodeImageBlock(b)
 
-	case api.ImageBlock:
-		return EncodeImageBlock(&b)
-
 	case *api.FileBlock:
 		return EncodeFileBlock(b)
-
-	case api.FileBlock:
-		return EncodeFileBlock(&b)
 
 	default:
 		return nil, fmt.Errorf("unsupported content block type: %T", block)
@@ -360,12 +320,6 @@ func EncodeAssistantMessage(message *api.AssistantMessage) ([]responses.Response
 				return nil, fmt.Errorf("encoding text block: %w", err)
 			}
 			items = append(items, *item)
-		case api.TextBlock:
-			item, err := EncodeOutputTextBlock(&b)
-			if err != nil {
-				return nil, fmt.Errorf("encoding text block: %w", err)
-			}
-			items = append(items, *item)
 		case *api.ToolCallBlock:
 			// Handle the tool call as a separate item
 			item, err := EncodeToolCallBlock(b)
@@ -375,16 +329,6 @@ func EncodeAssistantMessage(message *api.AssistantMessage) ([]responses.Response
 			if item != nil {
 				items = append(items, *item)
 			}
-		case api.ToolCallBlock:
-			// Handle the tool call as a separate item
-			item, err := EncodeToolCallBlock(&b)
-			if err != nil {
-				return nil, fmt.Errorf("encoding tool call block: %w", err)
-			}
-			if item != nil {
-				items = append(items, *item)
-			}
-		// TODO: Handle reasoning blocks in assistant messages
 		default:
 			return nil, fmt.Errorf("unsupported content block type in assistant message: %T", block)
 		}
@@ -422,8 +366,6 @@ func encodeComputerToolResult(result *api.ToolResultBlock) (responses.ResponseIn
 		switch b := content.(type) {
 		case *api.ImageBlock:
 			imageBlock = b
-		case api.ImageBlock:
-			imageBlock = &b
 		default:
 			// Single non-image block - check if it's text
 			if _, ok := content.(*api.TextBlock); ok {
