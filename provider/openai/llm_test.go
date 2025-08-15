@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/jsonschema"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/option"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/aitesting"
 	"go.jetify.com/ai/api"

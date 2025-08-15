@@ -3,7 +3,7 @@ package openai
 import (
 	"context"
 
-	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/v2"
 	"go.jetify.com/ai/api"
 	"go.jetify.com/ai/provider/openai/internal/codec"
 )

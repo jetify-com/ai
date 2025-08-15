@@ -4,20 +4,26 @@ import (
 	"sync/atomic"
 
 	"go.jetify.com/ai/api"
-	"go.jetify.com/ai/provider/anthropic"
+	"go.jetify.com/ai/provider/openai"
 )
+
+// modelWrapper wraps api.LanguageModel to ensure consistent type for atomic.Value
+type modelWrapper struct {
+	model api.LanguageModel
+}
 
 var defaultLanguageModel atomic.Value
 
 func init() {
-	model := anthropic.NewLanguageModel(anthropic.ModelClaude37Sonnet20250219)
-	defaultLanguageModel.Store(model)
+	model := openai.NewLanguageModel(openai.ChatModelGPT5)
+	defaultLanguageModel.Store(&modelWrapper{model: model})
 }
 
 func SetDefaultLanguageModel(lm api.LanguageModel) {
-	defaultLanguageModel.Store(lm)
+	defaultLanguageModel.Store(&modelWrapper{model: lm})
 }
 
 func DefaultLanguageModel() api.LanguageModel {
-	return defaultLanguageModel.Load().(api.LanguageModel)
+	wrapper := defaultLanguageModel.Load().(*modelWrapper)
+	return wrapper.model
 }

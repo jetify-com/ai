@@ -8,8 +8,8 @@ import (
 	"iter"
 	"time"
 
-	"github.com/openai/openai-go/packages/param"
-	"github.com/openai/openai-go/responses"
+	"github.com/openai/openai-go/v2/packages/param"
+	"github.com/openai/openai-go/v2/responses"
 	"go.jetify.com/ai/api"
 )
 

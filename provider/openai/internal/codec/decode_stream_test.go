@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/openai/openai-go/responses"
+	"github.com/openai/openai-go/v2/responses"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.jetify.com/ai/api"

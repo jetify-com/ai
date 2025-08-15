@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/packages/param"
-	"github.com/openai/openai-go/responses"
+	"github.com/openai/openai-go/v2"
+	"github.com/openai/openai-go/v2/packages/param"
+	"github.com/openai/openai-go/v2/responses"
 	"go.jetify.com/ai/api"
 )
 
