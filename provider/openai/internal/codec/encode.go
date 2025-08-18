@@ -133,25 +133,21 @@ func applyJSONResponseFormat(params *responses.ResponseNewParams, opts api.CallO
 		if err != nil {
 			return fmt.Errorf("failed to convert JSON schema: %w", err)
 		}
-		params.Text = responses.ResponseTextConfigParam{
-			Format: responses.ResponseFormatTextConfigUnionParam{
-				OfJSONSchema: &responses.ResponseFormatTextJSONSchemaConfigParam{
-					Type:   "json_schema",
-					Name:   opts.ResponseFormat.Name,
-					Schema: schemaMap,
-					Strict: openai.Bool(isStrict),
-				},
+		params.Text.Format = responses.ResponseFormatTextConfigUnionParam{
+			OfJSONSchema: &responses.ResponseFormatTextJSONSchemaConfigParam{
+				Type:   "json_schema",
+				Name:   opts.ResponseFormat.Name,
+				Schema: schemaMap,
+				Strict: openai.Bool(isStrict),
 			},
 		}
 		if opts.ResponseFormat.Description != "" {
 			params.Text.Format.OfJSONSchema.Description = openai.String(opts.ResponseFormat.Description)
 		}
 	} else {
-		params.Text = responses.ResponseTextConfigParam{
-			Format: responses.ResponseFormatTextConfigUnionParam{
-				OfJSONObject: &shared.ResponseFormatJSONObjectParam{
-					Type: "json_object",
-				},
+		params.Text.Format = responses.ResponseFormatTextConfigUnionParam{
+			OfJSONObject: &shared.ResponseFormatJSONObjectParam{
+				Type: "json_object",
 			},
 		}
 	}

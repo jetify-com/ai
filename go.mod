@@ -6,7 +6,7 @@ require (
 	github.com/anthropics/anthropic-sdk-go v1.9.1
 	github.com/google/jsonschema-go v0.2.0
 	github.com/k0kubun/pp/v3 v3.5.0
-	github.com/openai/openai-go/v2 v2.0.2
+	github.com/openai/openai-go/v2 v2.1.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	go.jetify.com/pkg v0.0.0-20250818185051-9f5918d88d2b
@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/goccy/go-yaml v1.18.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -24,6 +25,6 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	gopkg.in/dnaeon/go-vcr.v4 v4.0.4 // indirect
+	gopkg.in/dnaeon/go-vcr.v4 v4.0.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

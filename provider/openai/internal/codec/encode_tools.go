@@ -14,7 +14,7 @@ type OpenAITools struct {
 	ToolChoice     responses.ResponseNewParamsToolChoiceUnion
 	Tools          []responses.ToolUnionParam
 	Warnings       []api.CallWarning
-	ResponseFormat *responses.ResponseTextConfigParam
+	ResponseFormat *responses.ResponseFormatTextConfigUnionParam
 }
 
 // TODO: support provider metadata in tool mode information.
