@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/modelcontextprotocol/go-sdk/jsonschema"
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 // FalseSchema returns a new Schema that fails to validate any value.

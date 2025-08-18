@@ -54,7 +54,7 @@ func TestCallOptions_JSON(t *testing.T) {
 							"age": {"type": "integer"}
 						},
 						"required": ["name"],
-						"additionalProperties": {"not": {}}
+						"additionalProperties": false
 					},
 					"name": "user_info",
 					"description": "User information structure"
@@ -72,7 +72,7 @@ func TestCallOptions_JSON(t *testing.T) {
 								"units": {"type": "string", "enum": ["metric", "imperial"]}
 							},
 							"required": ["location"],
-							"additionalProperties": {"not": {}}
+							"additionalProperties": false
 						}
 					},
 					{

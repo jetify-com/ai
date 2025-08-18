@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 
-	"github.com/modelcontextprotocol/go-sdk/jsonschema"
+	"github.com/google/jsonschema-go/jsonschema"
 )
 
 // ToolChoice specifies how tools should be selected by the model.

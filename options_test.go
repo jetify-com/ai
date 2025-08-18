@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/modelcontextprotocol/go-sdk/jsonschema"
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"go.jetify.com/ai/api"
 	"go.jetify.com/pkg/pointer"
