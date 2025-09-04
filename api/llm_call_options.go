@@ -22,10 +22,6 @@ type CallOptions struct {
 	// It is recommended to set either Temperature or TopP, but not both.
 	Temperature *float64 `json:"temperature,omitzero"`
 
-	// StopSequences specifies sequences that will stop generation when produced.
-	// Providers may have limits on the number of stop sequences.
-	StopSequences []string `json:"stop_sequences,omitempty"`
-
 	// TopP controls nucleus sampling.
 	// It is recommended to set either Temperature or TopP, but not both.
 	TopP float64 `json:"top_p,omitzero"`
@@ -43,13 +39,23 @@ type CallOptions struct {
 	// repeatedly using the same words or phrases
 	FrequencyPenalty float64 `json:"frequency_penalty,omitzero"`
 
-	// ResponseFormat specifies whether the output should be text or JSON.
-	// For JSON output, a schema can optionally guide the model.
-	ResponseFormat *ResponseFormat `json:"response_format,omitzero"`
+	// StopSequences specifies sequences that will stop generation when produced.
+	// Providers may have limits on the number of stop sequences.
+	StopSequences []string `json:"stop_sequences,omitempty"`
 
 	// Seed provides an integer seed for random sampling.
 	// If supported by the model, calls will generate deterministic results.
 	Seed int `json:"seed,omitzero"`
+
+	// Headers specifies additional HTTP headers to send with the request.
+	// Only applicable for HTTP-based providers.
+	Headers http.Header `json:"headers,omitempty"`
+
+	// TODO: Add maxRetries at the ai package level but not provider level.
+
+	// =====
+	// Tool-related, might consider moving to a separate struct.
+	// =====
 
 	// Tools that are available for the model to use.
 	Tools []ToolDefinition `json:"tools,omitempty"`
@@ -58,14 +64,26 @@ type CallOptions struct {
 	// Defaults to 'auto'.
 	ToolChoice *ToolChoice `json:"tool_choice,omitzero"`
 
-	// Headers specifies additional HTTP headers to send with the request.
-	// Only applicable for HTTP-based providers.
-	Headers http.Header `json:"headers,omitempty"`
+	// =====
+	// Provider-specific fields, should not expose in main ai package.
+	// =====
+
+	// ResponseFormat specifies whether the output should be text or JSON.
+	// For JSON output, a schema can optionally guide the model.
+	ResponseFormat *ResponseFormat `json:"response_format,omitzero"` // TODO: Only for providers, not exposed.
 
 	// ProviderMetadata contains additional provider-specific metadata.
 	// The metadata is passed through to the provider from the AI SDK and enables
 	// provider-specific functionality that can be fully encapsulated in the provider.
 	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
+
+	// TODO:
+	// Include raw chunks in the stream. Only applicable for streaming calls.
+	// IncludeRawChunks bool
+
+	// TODO:
+	// Do we want to let users specify a model name at this level, to let the
+	// provider pick it based on a string? Or does that belong outside CallOptions
 }
 
 func (o *CallOptions) GetProviderMetadata() *ProviderMetadata { return o.ProviderMetadata }

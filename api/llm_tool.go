@@ -28,6 +28,9 @@ type ToolDefinition interface {
 	isToolDefinition() bool
 }
 
+// For the equivalent of ToolDefinition in MCP, see the Tool struct in:
+// https://github.com/modelcontextprotocol/go-sdk/blob/main/mcp/protocol.go#L854
+
 // FunctionTool represents a tool that has a name, description, and set of input arguments.
 // Note: this is not the user-facing tool definition. The AI SDK methods will
 // map the user-facing tool definitions to this format.

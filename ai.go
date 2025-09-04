@@ -6,6 +6,8 @@ import (
 	"go.jetify.com/ai/api"
 )
 
+// TODO: do we want to rename from GenerateText to Generate and from StreamText to Stream?
+
 // GenerateText uses a language model to generate a text response from a given prompt.
 //
 // This function does not stream its output.

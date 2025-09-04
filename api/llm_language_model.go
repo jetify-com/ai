@@ -83,6 +83,11 @@ type Response struct {
 	// Warnings is a list of warnings that occurred during the call,
 	// e.g. unsupported settings.
 	Warnings []CallWarning `json:"warnings,omitempty"`
+
+	// TODO:
+	// - Consider promoting "response id" (like in OpenAI's responses API) to a top-level
+	//  field.
+	// - Should we make the entire response is serializable including RequestInfo and ResponseInfo?
 }
 
 func (r *Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
@@ -150,6 +155,8 @@ type Usage struct {
 
 	// CachedInputTokens is the number of input tokens that were cached from a previous call.
 	CachedInputTokens int `json:"cached_input_tokens,omitzero"`
+
+	// TODO: consider adding ToolCount, StepCount fields
 }
 
 // IsZero returns true if all fields of the Usage struct are zero.
@@ -174,6 +181,7 @@ type ResponseInfo struct {
 
 	// Timestamp for the start of the generated response, if the provider sends one.
 	Timestamp time.Time `json:"timestamp,omitzero"`
+	// TODO: what should we do about fields like timestamp when replaying from a cache?
 
 	// ModelID of the model that was used to generate the response, if the provider sends one.
 	ModelID string `json:"model_id,omitzero"`

@@ -8,6 +8,13 @@ import (
 // It stores and retrieves strongly-typed metadata for specific providers.
 type ProviderMetadata struct {
 	data map[string]any
+
+	// TODO:
+	// - Decide if we should rename to "meta" to be consistent with MCP
+	// - Do we need to distinguish between additional data for inputs vs outputs?
+	//   Vercel's latest SDK uses ProviderOptions for inputs, and ProviderMetadata for outputs
+	// - Should we simplify by not having a special struct/type here? We could just use
+	//   map[string]any directly
 }
 
 // NewProviderMetadata creates a new ProviderMetadata with the given initial data.

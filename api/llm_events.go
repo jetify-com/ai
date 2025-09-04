@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// TODO: Update events based on TextStreamPart:
+// https://github.com/vercel/ai/blob/main/packages/ai/src/generate-text/stream-text-result.ts#L350
+//
+// Might also want to take a look at the SessionNotifications defined by the "agent client protocol":
+// https://github.com/zed-industries/agent-client-protocol/blob/main/typescript/schema.ts#L893
+
 // EventType represents the different types of stream events.
 type EventType string
 
