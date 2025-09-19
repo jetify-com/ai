@@ -25,9 +25,6 @@ const (
 	// EventReasoningSignature represents a signature that verifies reasoning content.
 	EventReasoningSignature EventType = "reasoning-signature"
 
-	// EventRedactedReasoning represents redacted reasoning data.
-	EventRedactedReasoning EventType = "redacted-reasoning"
-
 	// EventSource represents a citation that was used to generate the response.
 	EventSource EventType = "source"
 
@@ -87,16 +84,6 @@ type ReasoningSignatureEvent struct {
 }
 
 func (b *ReasoningSignatureEvent) Type() EventType { return EventReasoningSignature }
-
-// RedactedReasoningEvent represents an update to redacted reasoning data.
-//
-// Used to update the data field of a RedactedReasoningBlock.
-type RedactedReasoningEvent struct {
-	// Data contains redacted reasoning data
-	Data string `json:"data"`
-}
-
-func (b *RedactedReasoningEvent) Type() EventType { return EventRedactedReasoning }
 
 // SourceEvent represents a source that was used to generate the response.
 //

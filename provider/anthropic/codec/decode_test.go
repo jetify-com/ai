@@ -172,7 +172,7 @@ func TestDecodeReasoning(t *testing.T) {
 	tests := []struct {
 		name  string
 		block anthropic.BetaContentBlockUnion
-		want  api.Reasoning
+		want  *api.ReasoningBlock
 	}{
 		{
 			name: "thinking block",
@@ -192,8 +192,13 @@ func TestDecodeReasoning(t *testing.T) {
 				Type: "redacted_thinking",
 				Data: "redacted-data",
 			},
-			want: &api.RedactedReasoningBlock{
-				Data: "redacted-data",
+			want: &api.ReasoningBlock{
+				Text: "", // Empty text for redacted reasoning
+				ProviderMetadata: api.NewProviderMetadata(map[string]any{
+					"anthropic": &Metadata{
+						RedactedData: "redacted-data",
+					},
+				}),
 			},
 		},
 		{

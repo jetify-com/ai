@@ -142,10 +142,6 @@ func contentBlocksEqual(testingT T, expected, actual api.ContentBlock) bool {
 		if actualBlock, ok := actual.(*api.ReasoningBlock); ok {
 			return reasoningBlocksEqual(testingT, expectedBlock, actualBlock)
 		}
-	case *api.RedactedReasoningBlock:
-		if actualBlock, ok := actual.(*api.RedactedReasoningBlock); ok {
-			return redactedReasoningBlocksEqual(testingT, expectedBlock, actualBlock)
-		}
 	case *api.ImageBlock:
 		if actualBlock, ok := actual.(*api.ImageBlock); ok {
 			return imageBlocksEqual(testingT, expectedBlock, actualBlock)
@@ -191,18 +187,6 @@ func reasoningBlocksEqual(testingT T, expected, actual *api.ReasoningBlock) bool
 	// Only check signature if it's set in expected
 	if expected.Signature != "" {
 		if !assert.Equal(testingT, expected.Signature, actual.Signature, "ReasoningBlock.Signature mismatch") {
-			allMatch = false
-		}
-	}
-	return allMatch
-}
-
-// redactedReasoningBlocksEqual compares two redacted reasoning blocks using contains semantics
-func redactedReasoningBlocksEqual(testingT T, expected, actual *api.RedactedReasoningBlock) bool {
-	allMatch := true
-	// Only check data if it's set in expected
-	if expected.Data != "" {
-		if !assert.Equal(testingT, expected.Data, actual.Data, "RedactedReasoningBlock.Data mismatch") {
 			allMatch = false
 		}
 	}

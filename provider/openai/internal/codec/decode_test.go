@@ -1142,7 +1142,7 @@ func TestDecodeReasoning(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		want    api.Reasoning
+		want    *api.ReasoningBlock
 		wantErr string
 	}{
 		{

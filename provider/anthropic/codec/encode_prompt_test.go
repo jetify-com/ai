@@ -55,7 +55,8 @@ func TestEncodePrompt(t *testing.T) {
 			},
 			want: &AnthropicPrompt{
 				System: []anthropic.BetaTextBlockParam{
-					NewTextBlock("First system message\nSecond system message"),
+					NewTextBlock("First system message"),
+					NewTextBlock("Second system message"),
 				},
 				Messages: []anthropic.BetaMessageParam{
 					anthropic.NewBetaUserMessage(anthropic.BetaContentBlockParamUnion{
@@ -951,8 +952,13 @@ func TestEncodeAssistantMessage(t *testing.T) {
 			name: "with redacted reasoning",
 			msg: &api.AssistantMessage{
 				Content: []api.ContentBlock{
-					&api.RedactedReasoningBlock{
-						Data: "redacted-data",
+					&api.ReasoningBlock{
+						Text: "", // Empty text for redacted reasoning
+						ProviderMetadata: api.NewProviderMetadata(map[string]any{
+							"anthropic": &Metadata{
+								RedactedData: "redacted-data",
+							},
+						}),
 					},
 				},
 			},
@@ -1006,15 +1012,6 @@ func TestEncodeAssistantMessage(t *testing.T) {
 			msg: &api.AssistantMessage{
 				Content: []api.ContentBlock{
 					(*api.ReasoningBlock)(nil),
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "nil redacted reasoning block",
-			msg: &api.AssistantMessage{
-				Content: []api.ContentBlock{
-					(*api.RedactedReasoningBlock)(nil),
 				},
 			},
 			wantErr: true,
@@ -1819,7 +1816,7 @@ func TestEncodeReasoningBlock(t *testing.T) {
 	tests := []struct {
 		name    string
 		block   *api.ReasoningBlock
-		want    anthropic.BetaThinkingBlockParam
+		want    anthropic.BetaContentBlockParamUnion
 		wantErr bool
 	}{
 		{
@@ -1828,10 +1825,29 @@ func TestEncodeReasoningBlock(t *testing.T) {
 				Text:      "Let me think about this...",
 				Signature: "sig123",
 			},
-			want: anthropic.BetaThinkingBlockParam{
-				Type:      "thinking",
-				Thinking:  "Let me think about this...",
-				Signature: "sig123",
+			want: anthropic.BetaContentBlockParamUnion{
+				OfThinking: &anthropic.BetaThinkingBlockParam{
+					Type:      "thinking",
+					Thinking:  "Let me think about this...",
+					Signature: "sig123",
+				},
+			},
+		},
+		{
+			name: "redacted reasoning block",
+			block: &api.ReasoningBlock{
+				Text: "", // Empty text for redacted reasoning
+				ProviderMetadata: api.NewProviderMetadata(map[string]any{
+					"anthropic": &Metadata{
+						RedactedData: "redacted-data",
+					},
+				}),
+			},
+			want: anthropic.BetaContentBlockParamUnion{
+				OfRedactedThinking: &anthropic.BetaRedactedThinkingBlockParam{
+					Type: "redacted_thinking",
+					Data: "redacted-data",
+				},
 			},
 		},
 		{
@@ -1844,49 +1860,6 @@ func TestEncodeReasoningBlock(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := EncodeReasoningBlock(tt.block)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-
-			// Compare JSON representations
-			wantJSON, err := json.Marshal(tt.want)
-			require.NoError(t, err)
-			gotJSON, err := json.Marshal(got)
-			require.NoError(t, err)
-			assert.JSONEq(t, string(wantJSON), string(gotJSON))
-		})
-	}
-}
-
-func TestEncodeRedactedReasoningBlock(t *testing.T) {
-	tests := []struct {
-		name    string
-		block   *api.RedactedReasoningBlock
-		want    anthropic.BetaRedactedThinkingBlockParam
-		wantErr bool
-	}{
-		{
-			name: "valid redacted reasoning block",
-			block: &api.RedactedReasoningBlock{
-				Data: "redacted-data",
-			},
-			want: anthropic.BetaRedactedThinkingBlockParam{
-				Type: "redacted_thinking",
-				Data: "redacted-data",
-			},
-		},
-		{
-			name:    "nil block",
-			block:   nil,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := EncodeRedactedReasoningBlock(tt.block)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

@@ -147,10 +147,10 @@ func TestUserMessage_JSON(t *testing.T) {
 						}
 					},
 					{
-						"type": "redacted-reasoning",
-						"data": "redacted_reasoning_data_xyz789",
+						"type": "reasoning",
 						"provider_metadata": {
 							"anthropic": {
+								"redacted_data": "redacted_reasoning_data_xyz789",
 								"redaction_level": "high"
 							}
 						}
@@ -277,10 +277,10 @@ func TestAssistantMessage_JSON(t *testing.T) {
 						}
 					},
 					{
-						"type": "redacted-reasoning",
-						"data": "redacted_assistant_reasoning_abc123",
+						"type": "reasoning",
 						"provider_metadata": {
 							"anthropic": {
+								"redacted_data": "redacted_assistant_reasoning_abc123",
 								"redaction_level": "medium",
 								"redaction_reason": "privacy"
 							}

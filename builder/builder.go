@@ -76,8 +76,6 @@ func (b *ResponseBuilder) AddEvent(event api.StreamEvent) error {
 		return b.addReasoning(evt)
 	case *api.ReasoningSignatureEvent:
 		return b.addReasoningSignature(evt)
-	case *api.RedactedReasoningEvent:
-		return b.addRedactedReasoning(evt)
 	case *api.ToolCallEvent:
 		return b.addToolCall(evt)
 	case *api.ToolCallDeltaEvent:
@@ -152,20 +150,6 @@ func (b *ResponseBuilder) addReasoningSignature(e *api.ReasoningSignatureEvent) 
 		return nil
 	}
 	return fmt.Errorf("cannot add reasoning signature: last block is not a reasoning block")
-}
-
-// addRedactedReasoning adds a redacted reasoning event to the response.
-func (b *ResponseBuilder) addRedactedReasoning(e *api.RedactedReasoningEvent) error {
-	// Validate state transition
-	if b.currentState != noState && b.currentState != reasoningState {
-		return fmt.Errorf("invalid state transition: cannot add redacted reasoning in state %v", b.currentState)
-	}
-
-	b.currentState = reasoningState
-	b.resp.Content = append(b.resp.Content, &api.RedactedReasoningBlock{
-		Data: e.Data,
-	})
-	return nil
 }
 
 // addToolCall adds a tool call event to the response.

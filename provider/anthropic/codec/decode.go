@@ -100,7 +100,7 @@ func decodeToolUse(block anthropic.BetaContentBlockUnion) *api.ToolCallBlock {
 }
 
 // decodeReasoning converts an Anthropic thinking block to an AI SDK ReasoningBlock
-func decodeReasoning(block anthropic.BetaContentBlockUnion) api.Reasoning {
+func decodeReasoning(block anthropic.BetaContentBlockUnion) *api.ReasoningBlock {
 	switch block.Type {
 	case "thinking":
 		// Check for nil or empty thinking text
@@ -116,8 +116,15 @@ func decodeReasoning(block anthropic.BetaContentBlockUnion) api.Reasoning {
 		if block.Data == "" {
 			return nil
 		}
-		return &api.RedactedReasoningBlock{
-			Data: block.Data,
+		// Create ReasoningBlock with redacted data in provider metadata
+		metadata := api.NewProviderMetadata(map[string]any{
+			"anthropic": &Metadata{
+				RedactedData: block.Data,
+			},
+		})
+		return &api.ReasoningBlock{
+			Text:             "", // Empty text for redacted reasoning
+			ProviderMetadata: metadata,
 		}
 	}
 	return nil

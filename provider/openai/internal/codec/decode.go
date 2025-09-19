@@ -98,7 +98,7 @@ func decodeContent(msg *responses.Response) (responseContent, error) {
 }
 
 // decodeReasoning processes a reasoning output item and returns a reasoning block
-func decodeReasoning(item responses.ResponseOutputItemUnion) (api.Reasoning, error) {
+func decodeReasoning(item responses.ResponseOutputItemUnion) (*api.ReasoningBlock, error) {
 	if item.Type != "reasoning" {
 		return nil, fmt.Errorf("unexpected item type for reasoning: %s", item.Type)
 	}

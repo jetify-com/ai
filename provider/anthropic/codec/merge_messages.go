@@ -43,6 +43,14 @@ func appendMessageGroup(result *[]api.Message, group []api.Message) {
 		return
 	}
 
+	// Don't merge system messages
+	if len(group) > 0 {
+		if _, isSystem := group[0].(*api.SystemMessage); isSystem {
+			*result = append(*result, group...)
+			return
+		}
+	}
+
 	combined, err := mergeMessageGroup(group)
 	if err != nil {
 		*result = append(*result, group...)
@@ -105,42 +113,23 @@ func mergeSystemMessages(messages []api.Message) (api.Message, error) {
 // mergeUserMessages combines multiple user messages into a single message.
 // Metadata handling:
 //   - Each block keeps its own metadata if it has any
-//   - For the last block of the last message only:
-//     If the block has no metadata, it gets the message's metadata
+//   - For the last block of EACH message:
+//     Message metadata is merged with block metadata (block takes precedence)
 func mergeUserMessages(messages []api.Message) (api.Message, error) {
 	var combinedContent []api.ContentBlock
-	for i, msg := range messages {
+	for _, msg := range messages {
 		user, ok := msg.(*api.UserMessage)
 		if !ok {
 			return nil, fmt.Errorf("expected UserMessage, got %T", msg)
 		}
-		isLastMessage := i == len(messages)-1
 
-		// For all blocks except the last one in the last message,
-		// just append with their own metadata
-		if !isLastMessage {
-			combinedContent = append(combinedContent, user.Content...)
-			continue
-		}
-
-		// For the last message, handle the last block specially
+		// Process every message for metadata precedence
 		for j, block := range user.Content {
-			if j == len(user.Content)-1 {
-				// For the last block of the last message, preserve message metadata if block has none
-				switch b := block.(type) {
-				case *api.TextBlock:
-					if b.ProviderMetadata.IsZero() {
-						b.ProviderMetadata = user.ProviderMetadata
-					}
-				case *api.ImageBlock:
-					if b.ProviderMetadata.IsZero() {
-						b.ProviderMetadata = user.ProviderMetadata
-					}
-				case *api.FileBlock:
-					if b.ProviderMetadata.IsZero() {
-						b.ProviderMetadata = user.ProviderMetadata
-					}
-				}
+			isLastBlock := j == len(user.Content)-1
+
+			if isLastBlock {
+				// For the last block of each message, apply metadata precedence
+				applyMetadataPrecedenceToBlock(block, user.ProviderMetadata)
 			}
 			combinedContent = append(combinedContent, block)
 		}
@@ -151,93 +140,92 @@ func mergeUserMessages(messages []api.Message) (api.Message, error) {
 // mergeAssistantMessages combines multiple assistant messages into a single message.
 // Metadata handling:
 //   - Each block keeps its own metadata if it has any
-//   - For the last block of the last message only:
-//     If the block has no metadata, it gets the message's metadata
+//   - For the last block of EACH message:
+//     Message metadata is merged with block metadata (block takes precedence)
 func mergeAssistantMessages(messages []api.Message) (api.Message, error) {
 	var combinedContent []api.ContentBlock
-	for i, msg := range messages {
+	for _, msg := range messages {
 		assistant, ok := msg.(*api.AssistantMessage)
 		if !ok {
 			return nil, fmt.Errorf("expected AssistantMessage, got %T", msg)
 		}
-		isLastMessage := i == len(messages)-1
 
-		if !isLastMessage {
-			// For all blocks except the last message, just append with their own metadata
-			combinedContent = append(combinedContent, assistant.Content...)
-			continue
+		// Process every message for metadata precedence
+		for j, block := range assistant.Content {
+			isLastBlock := j == len(assistant.Content)-1
+
+			if isLastBlock {
+				// For the last block of each message, apply metadata precedence
+				applyMetadataPrecedenceToBlock(block, assistant.ProviderMetadata)
+			}
+			combinedContent = append(combinedContent, block)
 		}
-
-		// Process the last message specially
-		processLastAssistantMessage(&combinedContent, assistant)
 	}
 	return &api.AssistantMessage{Content: combinedContent}, nil
 }
 
-// processLastAssistantMessage handles the special case of the last message in a sequence
-// where metadata needs to be preserved for the last block if it has none
-func processLastAssistantMessage(combinedContent *[]api.ContentBlock, assistant *api.AssistantMessage) {
-	for j, block := range assistant.Content {
-		isLastBlock := j == len(assistant.Content)-1
-
-		if isLastBlock {
-			// For the last block of the last message, preserve message metadata if block has none
-			preserveMetadataForLastBlock(block, assistant.ProviderMetadata)
-		}
-
-		*combinedContent = append(*combinedContent, block)
+// applyMetadataPrecedenceToBlock applies metadata precedence:
+// - If block has no metadata, use message metadata
+// - If block has metadata, block metadata takes complete precedence (no merging)
+func applyMetadataPrecedenceToBlock(block api.ContentBlock, messageMetadata *api.ProviderMetadata) {
+	if messageMetadata == nil || messageMetadata.IsZero() {
+		return
 	}
-}
 
-// preserveMetadataForLastBlock applies message-level metadata to the last content block
-// if the block doesn't already have metadata
-func preserveMetadataForLastBlock(block api.ContentBlock, metadata *api.ProviderMetadata) {
 	switch b := block.(type) {
 	case *api.TextBlock:
 		if b.ProviderMetadata.IsZero() {
-			b.ProviderMetadata = metadata
+			b.ProviderMetadata = messageMetadata
 		}
+		// If block has metadata, don't apply message metadata (precedence)
 	case *api.ToolCallBlock:
 		if b.ProviderMetadata.IsZero() {
-			b.ProviderMetadata = metadata
+			b.ProviderMetadata = messageMetadata
 		}
+		// If block has metadata, don't apply message metadata (precedence)
 	case *api.ReasoningBlock:
 		if b.ProviderMetadata.IsZero() {
-			b.ProviderMetadata = metadata
+			b.ProviderMetadata = messageMetadata
 		}
-	case *api.RedactedReasoningBlock:
+		// If block has metadata, don't apply message metadata (precedence)
+	case *api.ImageBlock:
 		if b.ProviderMetadata.IsZero() {
-			b.ProviderMetadata = metadata
+			b.ProviderMetadata = messageMetadata
 		}
+		// If block has metadata, don't apply message metadata (precedence)
+	case *api.FileBlock:
+		if b.ProviderMetadata.IsZero() {
+			b.ProviderMetadata = messageMetadata
+		}
+		// If block has metadata, don't apply message metadata (precedence)
 	}
 }
 
 // mergeToolMessages combines multiple tool messages into a single message.
 // Metadata handling:
 //   - Each block keeps its own metadata if it has any
-//   - For the last block of the last message only:
-//     If the block has no metadata, it gets the message's metadata
+//   - For the last block of EACH message:
+//     Message metadata is merged with block metadata (block takes precedence)
 func mergeToolMessages(messages []api.Message) (api.Message, error) {
 	var combinedContent []api.ToolResultBlock
-	for i, msg := range messages {
+	for _, msg := range messages {
 		tool, ok := msg.(*api.ToolMessage)
 		if !ok {
 			return nil, fmt.Errorf("expected ToolMessage, got %T", msg)
 		}
-		isLastMessage := i == len(messages)-1
 
-		// For all blocks except the last one in the last message,
-		// just append with their own metadata
-		if !isLastMessage {
-			combinedContent = append(combinedContent, tool.Content...)
-			continue
-		}
-
-		// For the last message, handle the last block specially
+		// Process every message for metadata precedence
 		for j, block := range tool.Content {
-			if j == len(tool.Content)-1 && block.ProviderMetadata.IsZero() {
-				// For the last block of the last message, preserve message metadata if block has none
-				block.ProviderMetadata = tool.ProviderMetadata
+			isLastBlock := j == len(tool.Content)-1
+
+			if isLastBlock {
+				// For the last block of each message, apply metadata precedence
+				if messageMetadata := tool.ProviderMetadata; messageMetadata != nil && !messageMetadata.IsZero() {
+					if block.ProviderMetadata.IsZero() {
+						block.ProviderMetadata = messageMetadata
+					}
+					// If block has metadata, don't apply message metadata (precedence)
+				}
 			}
 			combinedContent = append(combinedContent, block)
 		}

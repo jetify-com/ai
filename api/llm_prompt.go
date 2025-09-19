@@ -328,8 +328,6 @@ const (
 	ContentBlockTypeToolResult ContentBlockType = "tool-result"
 	// ContentBlockTypeReasoning represents reasoning text from the model
 	ContentBlockTypeReasoning ContentBlockType = "reasoning"
-	// ContentBlockTypeRedactedReasoning represents redacted reasoning data
-	ContentBlockTypeRedactedReasoning ContentBlockType = "redacted-reasoning"
 	// ContentBlockTypeSource represents a source block
 	ContentBlockTypeSource ContentBlockType = "source"
 )
@@ -338,17 +336,10 @@ const (
 type ContentBlock interface {
 	// Type returns the type of the content block.
 	// Valid types are: "text", "image", "file", "tool-call", "tool-result",
-	// "reasoning", "redacted-reasoning".
+	// "reasoning".
 	Type() ContentBlockType
 	// ProviderMetadata returns the provider-specific metadata for the content block.
 	GetProviderMetadata() *ProviderMetadata
-}
-
-// Reasoning represents a reasoning content block in a message.
-// It can be either a ReasoningBlock or a RedactedReasoningBlock.
-type Reasoning interface {
-	ContentBlock
-	isReasoning()
 }
 
 // TextBlock represents text content in a message
@@ -384,7 +375,7 @@ func (b *TextBlock) MarshalJSON() ([]byte, error) {
 // It contains a string of reasoning text.
 type ReasoningBlock struct {
 	// Text contains the reasoning text.
-	Text string `json:"text"`
+	Text string `json:"text,omitempty"`
 
 	// Signature is an optional signature for verifying that the reasoning originated from the model.
 	Signature string `json:"signature,omitzero"`
@@ -395,14 +386,9 @@ type ReasoningBlock struct {
 	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
 }
 
-var (
-	_ ContentBlock = &ReasoningBlock{}
-	_ Reasoning    = &ReasoningBlock{}
-)
+var _ ContentBlock = &ReasoningBlock{}
 
 func (b *ReasoningBlock) Type() ContentBlockType { return ContentBlockTypeReasoning }
-
-func (b *ReasoningBlock) isReasoning() {}
 
 func (b *ReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
 
@@ -414,43 +400,6 @@ func (b *ReasoningBlock) MarshalJSON() ([]byte, error) {
 		*Alias
 	}{
 		Type:  string(ContentBlockTypeReasoning),
-		Alias: (*Alias)(b),
-	})
-}
-
-// RedactedReasoningBlock represents a redacted reasoning content block of a prompt.
-type RedactedReasoningBlock struct {
-	// TODO: Simplify by removing RedactedReasoningBlock
-	// Vercel's AI SDK removed it in favor of adding `redactedData` within the provider metadata
-
-	// Data contains redacted reasoning data.
-	Data string `json:"data"`
-
-	// ProviderMetadata contains additional provider-specific metadata.
-	// They are passed through to the provider from the AI SDK and enable
-	// provider-specific functionality that can be fully encapsulated in the provider.
-	ProviderMetadata *ProviderMetadata `json:"provider_metadata,omitzero"`
-}
-
-var (
-	_ ContentBlock = &RedactedReasoningBlock{}
-	_ Reasoning    = &RedactedReasoningBlock{}
-)
-
-func (b *RedactedReasoningBlock) Type() ContentBlockType { return ContentBlockTypeRedactedReasoning }
-
-func (b *RedactedReasoningBlock) isReasoning() {}
-
-func (b *RedactedReasoningBlock) GetProviderMetadata() *ProviderMetadata { return b.ProviderMetadata }
-
-// MarshalJSON includes the type field when marshaling RedactedReasoningBlock
-func (b *RedactedReasoningBlock) MarshalJSON() ([]byte, error) {
-	type Alias RedactedReasoningBlock
-	return json.Marshal(struct {
-		Type string `json:"type"`
-		*Alias
-	}{
-		Type:  string(ContentBlockTypeRedactedReasoning),
 		Alias: (*Alias)(b),
 	})
 }
@@ -782,12 +731,6 @@ func unmarshalContentBlocks(rawBlocks []json.RawMessage) ([]ContentBlock, error)
 				return nil, fmt.Errorf("failed to unmarshal reasoning block at index %d: %w", i, err)
 			}
 			blocks[i] = &reasoningBlock
-		case string(ContentBlockTypeRedactedReasoning):
-			var redactedReasoningBlock RedactedReasoningBlock
-			if err := json.Unmarshal(blockData, &redactedReasoningBlock); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal redacted reasoning block at index %d: %w", i, err)
-			}
-			blocks[i] = &redactedReasoningBlock
 		case string(ContentBlockTypeSource):
 			var sourceBlock SourceBlock
 			if err := json.Unmarshal(blockData, &sourceBlock); err != nil {

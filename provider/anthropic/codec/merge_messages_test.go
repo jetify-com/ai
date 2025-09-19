@@ -73,7 +73,8 @@ func TestMergeMessages(t *testing.T) {
 				&api.SystemMessage{Content: "Second"},
 			},
 			expected: []api.Message{
-				&api.SystemMessage{Content: "First\nSecond"},
+				&api.SystemMessage{Content: "First"},
+				&api.SystemMessage{Content: "Second"},
 			},
 		},
 		{
@@ -103,7 +104,11 @@ func TestMergeMessages(t *testing.T) {
 			},
 			expected: []api.Message{
 				&api.SystemMessage{
-					Content:          "First\nSecond",
+					Content:          "First",
+					ProviderMetadata: api.NewProviderMetadata(map[string]any{"key1": map[string]any{"value": "1"}}),
+				},
+				&api.SystemMessage{
+					Content:          "Second",
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{"key2": map[string]any{"value": "2"}}),
 				},
 			},
@@ -134,12 +139,16 @@ func TestMergeMessages(t *testing.T) {
 				&api.UserMessage{
 					Content: []api.ContentBlock{
 						&api.TextBlock{
-							Text:             "First",
-							ProviderMetadata: api.NewProviderMetadata(map[string]any{"block1": map[string]any{"value": "1"}}),
+							Text: "First",
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"block1": map[string]any{"value": "1"}, // Only block metadata (precedence)
+							}),
 						},
 						&api.TextBlock{
-							Text:             "Second",
-							ProviderMetadata: api.NewProviderMetadata(map[string]any{"block2": map[string]any{"value": "2"}}),
+							Text: "Second",
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"block2": map[string]any{"value": "2"}, // Only block metadata (precedence)
+							}),
 						},
 					},
 				},
@@ -224,13 +233,15 @@ func TestMergeMessages(t *testing.T) {
 							ProviderMetadata: api.NewProviderMetadata(map[string]any{"img1": map[string]any{"value": "1"}}),
 						},
 						&api.FileBlock{
-							URL:              "file1.txt",
-							ProviderMetadata: api.NewProviderMetadata(map[string]any{"file1": map[string]any{"value": "1"}}),
+							URL: "file1.txt",
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"file1": map[string]any{"value": "1"}, // Only block metadata (precedence)
+							}),
 						},
 						&api.ImageBlock{URL: "image2.jpg"},
 						&api.FileBlock{
 							URL:              "file2.txt",
-							ProviderMetadata: api.NewProviderMetadata(map[string]any{"msg2": map[string]any{"value": "2"}}),
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{"msg2": map[string]any{"value": "2"}}), // Message metadata applied (last block of second message, no existing metadata)
 						},
 					},
 				},
@@ -250,8 +261,13 @@ func TestMergeMessages(t *testing.T) {
 				},
 				&api.AssistantMessage{
 					Content: []api.ContentBlock{
-						&api.RedactedReasoningBlock{
-							Data: "redacted1",
+						&api.ReasoningBlock{
+							Text: "", // Empty text for redacted reasoning
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"anthropic": &Metadata{
+									RedactedData: "redacted1",
+								},
+							}),
 						},
 					},
 					ProviderMetadata: api.NewProviderMetadata(map[string]any{"msg2": map[string]any{"value": "2"}}),
@@ -263,10 +279,17 @@ func TestMergeMessages(t *testing.T) {
 						&api.ReasoningBlock{
 							Text:      "reasoning1",
 							Signature: "sig1",
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"msg1": map[string]any{"value": "1"}, // Message metadata applied (no existing metadata)
+							}),
 						},
-						&api.RedactedReasoningBlock{
-							Data:             "redacted1",
-							ProviderMetadata: api.NewProviderMetadata(map[string]any{"msg2": map[string]any{"value": "2"}}),
+						&api.ReasoningBlock{
+							Text: "", // Empty text for redacted reasoning
+							ProviderMetadata: api.NewProviderMetadata(map[string]any{
+								"anthropic": &Metadata{
+									RedactedData: "redacted1",
+								}, // Only block metadata (precedence - no msg2 merged)
+							}),
 						},
 					},
 				},
@@ -279,7 +302,8 @@ func TestMergeMessages(t *testing.T) {
 				&api.SystemMessage{Content: "World"},
 			},
 			expected: []api.Message{
-				&api.SystemMessage{Content: "Hello\nWorld"},
+				&api.SystemMessage{Content: "Hello"},
+				&api.SystemMessage{Content: "World"},
 			},
 		},
 		{

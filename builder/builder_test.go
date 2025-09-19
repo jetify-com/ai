@@ -87,16 +87,12 @@ func TestResponseBuilder(t *testing.T) {
 			events: []api.StreamEvent{
 				&api.ReasoningEvent{TextDelta: "Let's think about this"},
 				&api.ReasoningSignatureEvent{Signature: "sig123"},
-				&api.RedactedReasoningEvent{Data: "redacted_data"},
 			},
 			expected: &api.Response{
 				Content: []api.ContentBlock{
 					&api.ReasoningBlock{
 						Text:      "Let's think about this",
 						Signature: "sig123",
-					},
-					&api.RedactedReasoningBlock{
-						Data: "redacted_data",
 					},
 				},
 			},

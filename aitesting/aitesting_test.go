@@ -273,15 +273,23 @@ func TestResponseContains(t *testing.T) {
 			name: "matching redacted reasoning blocks",
 			expected: &api.Response{
 				Content: []api.ContentBlock{
-					&api.RedactedReasoningBlock{
-						Data: "redacted_data_123",
+					&api.ReasoningBlock{
+						Text: "", // Empty text for redacted reasoning
+						ProviderMetadata: api.NewProviderMetadata(map[string]any{
+							"anthropic": &api.ProviderMetadata{},
+						}),
 					},
 				},
 			},
 			contains: &api.Response{
 				Content: []api.ContentBlock{
-					&api.RedactedReasoningBlock{
-						Data: "redacted_data_123",
+					&api.ReasoningBlock{
+						Text: "", // Empty text for redacted reasoning
+						ProviderMetadata: api.NewProviderMetadata(map[string]any{
+							"anthropic": map[string]any{
+								"redacted_data": "redacted_data_123",
+							},
+						}),
 					},
 				},
 			},

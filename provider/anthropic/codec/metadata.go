@@ -15,6 +15,9 @@ type Metadata struct {
 
 	Thinking ThinkingConfig `json:"thinking,omitzero"`
 	Usage    Usage          `json:"usage,omitempty"`
+
+	// RedactedData contains redacted reasoning data when reasoning blocks are redacted
+	RedactedData string `json:"redacted_data,omitempty"`
 }
 
 func GetMetadata(source api.MetadataSource) *Metadata {

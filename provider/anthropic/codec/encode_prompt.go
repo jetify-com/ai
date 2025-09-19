@@ -325,6 +325,7 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 	params := make([]anthropic.BetaContentBlockParamUnion, 0, len(msg.Content))
 	for _, block := range msg.Content {
 		var param anthropic.BetaContentBlockParamUnion
+		var err error
 		switch block := block.(type) {
 		case *api.TextBlock:
 			textParam, err := EncodeTextBlock(block)
@@ -347,20 +348,9 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 			// be enabled for reasoning blocks to be sent. Do we want to add a similar
 			// option?
 			// See here: https://github.com/vercel/ai/blob/main/packages/anthropic/src/convert-to-anthropic-messages-prompt.ts#L257
-			reasoningParam, err := EncodeReasoningBlock(block)
+			param, err = EncodeReasoningBlock(block)
 			if err != nil {
 				return anthropic.BetaMessageParam{}, err
-			}
-			param = anthropic.BetaContentBlockParamUnion{
-				OfThinking: &reasoningParam,
-			}
-		case *api.RedactedReasoningBlock:
-			redactedParam, err := EncodeRedactedReasoningBlock(block)
-			if err != nil {
-				return anthropic.BetaMessageParam{}, err
-			}
-			param = anthropic.BetaContentBlockParamUnion{
-				OfRedactedThinking: &redactedParam,
 			}
 		default:
 			return anthropic.BetaMessageParam{}, fmt.Errorf("unsupported assistant content block type: %T", block)
@@ -370,24 +360,33 @@ func EncodeAssistantMessage(msg *api.AssistantMessage) (anthropic.BetaMessagePar
 	return NewAssistantMessage(params...), nil
 }
 
-func EncodeReasoningBlock(block *api.ReasoningBlock) (anthropic.BetaThinkingBlockParam, error) {
+func EncodeReasoningBlock(block *api.ReasoningBlock) (anthropic.BetaContentBlockParamUnion, error) {
 	if block == nil {
-		return anthropic.BetaThinkingBlockParam{}, fmt.Errorf("reasoning block cannot be nil")
+		return anthropic.BetaContentBlockParamUnion{}, fmt.Errorf("reasoning block cannot be nil")
 	}
-	return anthropic.BetaThinkingBlockParam{
+
+	// Check if this is a redacted reasoning block (has redacted data in provider metadata)
+	if block.ProviderMetadata != nil {
+		if metadata := GetMetadata(block); metadata != nil && metadata.RedactedData != "" {
+			// Return redacted thinking block
+			redactedParam := anthropic.BetaRedactedThinkingBlockParam{
+				Type: "redacted_thinking",
+				Data: metadata.RedactedData,
+			}
+			return anthropic.BetaContentBlockParamUnion{
+				OfRedactedThinking: &redactedParam,
+			}, nil
+		}
+	}
+
+	// Return normal thinking block
+	thinkingParam := anthropic.BetaThinkingBlockParam{
 		Type:      "thinking",
 		Thinking:  block.Text,
 		Signature: block.Signature,
-	}, nil
-}
-
-func EncodeRedactedReasoningBlock(block *api.RedactedReasoningBlock) (anthropic.BetaRedactedThinkingBlockParam, error) {
-	if block == nil {
-		return anthropic.BetaRedactedThinkingBlockParam{}, fmt.Errorf("redacted reasoning block cannot be nil")
 	}
-	return anthropic.BetaRedactedThinkingBlockParam{
-		Type: "redacted_thinking",
-		Data: block.Data,
+	return anthropic.BetaContentBlockParamUnion{
+		OfThinking: &thinkingParam,
 	}, nil
 }
 
