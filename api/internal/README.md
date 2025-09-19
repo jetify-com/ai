@@ -1,0 +1,1 @@
+These types are still under consideration so we don't publicly expose them yet.
