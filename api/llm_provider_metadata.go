@@ -97,6 +97,10 @@ func GetMetadata[T any](provider string, source MetadataSource) *T {
 		return nil
 	}
 
+	if pm == nil {
+		return nil
+	}
+
 	metadata, ok := pm.Get(provider)
 	if !ok {
 		return nil
