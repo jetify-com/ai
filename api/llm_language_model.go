@@ -90,7 +90,12 @@ type Response struct {
 	// - Should we make the entire response is serializable including RequestInfo and ResponseInfo?
 }
 
-func (r *Response) GetProviderMetadata() *ProviderMetadata { return r.ProviderMetadata }
+func (r *Response) GetProviderMetadata() *ProviderMetadata {
+	if r == nil {
+		return nil
+	}
+	return r.ProviderMetadata
+}
 
 // UnmarshalJSON implements custom JSON unmarshaling for Response
 func (r *Response) UnmarshalJSON(data []byte) error {
