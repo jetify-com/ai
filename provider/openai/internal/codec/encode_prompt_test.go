@@ -933,7 +933,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
@@ -963,7 +964,7 @@ var toolMessageTests = []testCase{
 		expectedMessages: []string{
 			`{
 				"type": "computer_call_output",
-				"call_id": "openai.computer_use_preview",
+				"call_id": "call_123",
 				"output": {
 					"type": "computer_screenshot",
 					"image_url": "data:image/png;base64,dGVzdC1pbWFnZS1kYXRh"
@@ -989,7 +990,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
@@ -1003,7 +1005,7 @@ var toolMessageTests = []testCase{
 		expectedMessages: []string{
 			`{
 				"type": "computer_call_output",
-				"call_id": "openai.computer_use_preview",
+				"call_id": "call_123",
 				"output": {
 					"type": "computer_screenshot",
 					"image_url": "data:image/png;base64,dGVzdC1pbWFnZS1kYXRh"
@@ -1017,7 +1019,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content:    []api.ContentBlock{},
 					},
 				},
@@ -1031,7 +1034,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.ImageBlock{
 								Data:      []byte("test-image-data"),
@@ -1054,7 +1058,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.TextBlock{
 								Text: "Action completed successfully",
@@ -1067,7 +1072,7 @@ var toolMessageTests = []testCase{
 		expectedMessages: []string{
 			`{
 				"type": "function_call_output",
-				"call_id": "openai.computer_use_preview",
+				"call_id": "call_123",
 				"output": "Action completed successfully"
 			}`,
 		},
@@ -1078,7 +1083,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.TextBlock{
 								Text: "Screenshot taken",
@@ -1095,7 +1101,7 @@ var toolMessageTests = []testCase{
 		expectedMessages: []string{
 			`{
 				"type": "function_call_output",
-				"call_id": "openai.computer_use_preview",
+				"call_id": "call_123",
 				"output": "Screenshot taken"
 			}`,
 		},
@@ -1106,7 +1112,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.TextBlock{
 								Text: "First line",
@@ -1122,7 +1129,7 @@ var toolMessageTests = []testCase{
 		expectedMessages: []string{
 			`{
 				"type": "function_call_output",
-				"call_id": "openai.computer_use_preview",
+				"call_id": "call_123",
 				"output": "First line\nSecond line"
 			}`,
 		},
@@ -1133,7 +1140,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content:    []api.ContentBlock{},
 						Result:     json.RawMessage(`{"status":"error","message":"Action failed"}`),
 					},
@@ -1148,7 +1156,8 @@ var toolMessageTests = []testCase{
 			&api.ToolMessage{
 				Content: []api.ToolResultBlock{
 					{
-						ToolCallID: "openai.computer_use_preview",
+						ToolCallID: "call_123",
+						ToolName:   ComputerUseToolID,
 						Content: []api.ContentBlock{
 							&api.ReasoningBlock{
 								Text:      "Processing the request...",
@@ -1283,7 +1292,8 @@ func TestEncodePrompt(t *testing.T) {
 					&api.ToolMessage{
 						Content: []api.ToolResultBlock{
 							{
-								ToolCallID: "openai.computer_use_preview",
+								ToolCallID: "call_123",
+								ToolName:   ComputerUseToolID,
 								Content: []api.ContentBlock{
 									&api.ImageBlock{
 										Data:      []byte("test-image-data"),
@@ -1297,7 +1307,7 @@ func TestEncodePrompt(t *testing.T) {
 				expectedMessages: []string{
 					`{
 						"type": "computer_call_output",
-						"call_id": "openai.computer_use_preview",
+						"call_id": "call_123",
 						"output": {
 							"type": "computer_screenshot",
 							"image_url": "data:image/png;base64,dGVzdC1pbWFnZS1kYXRh"

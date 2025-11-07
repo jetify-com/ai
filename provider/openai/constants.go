@@ -1,6 +1,13 @@
 package openai
 
+import "go.jetify.com/ai/provider/openai/internal/codec"
+
+var ProviderName = codec.ProviderName
+
+// Models
 const (
+	ChatModelComputerUsePreview               = "computer_use_preview"
+	ChatModelComputerUsePreview2025_03_11     = "computer_use_preview-2025-03-11"
 	ChatModelGPT5                             = "gpt-5"
 	ChatModelGPT5Mini                         = "gpt-5-mini"
 	ChatModelGPT5Nano                         = "gpt-5-nano"

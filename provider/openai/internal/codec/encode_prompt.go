@@ -458,7 +458,7 @@ func EncodeToolResultBlock(result *api.ToolResultBlock) (responses.ResponseInput
 	}
 
 	// Handle computer use tool output
-	if result.ToolCallID == "openai.computer_use_preview" {
+	if result.ToolName == ComputerUseToolID {
 		return encodeComputerToolResult(result)
 	}
 

@@ -302,7 +302,7 @@ func encodeToolChoice(toolChoice *api.ToolChoice) (responses.ResponseNewParamsTo
 	case "tool":
 		// Check if it's a provider-defined tool or a function tool
 		switch toolChoice.ToolName {
-		case "file_search", "web_search_preview", "computer_use_preview":
+		case FileSearchToolName, WebSearchToolName, ComputerUseToolName:
 			// It's a provider-defined tool (hosted tool in OpenAI's terminology)
 			result = responses.ResponseNewParamsToolChoiceUnion{
 				OfHostedTool: &responses.ToolChoiceTypesParam{

@@ -16,6 +16,7 @@ type ToolChoice struct {
 	Type string `json:"type"`
 
 	// ToolName specifies which tool to use when Type is "tool"
+	// TODO: rename to ToolID (and change implementation)
 	ToolName string `json:"tool_name,omitzero"`
 }
 

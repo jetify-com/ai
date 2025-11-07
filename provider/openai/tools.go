@@ -4,6 +4,13 @@ import (
 	"go.jetify.com/ai/provider/openai/internal/codec"
 )
 
+// Tool IDs
+var (
+	FileSearchToolID  = codec.FileSearchToolID
+	WebSearchToolID   = codec.WebSearchToolID
+	ComputerUseToolID = codec.ComputerUseToolID
+)
+
 // Tool structs and related types for direct access
 type (
 	// Args structs for tool configuration
@@ -11,20 +18,21 @@ type (
 	WebSearchToolArgs   = codec.WebSearchToolArgs
 	ComputerUseToolArgs = codec.ComputerUseToolArgs
 
-	// Tool call result structs
-	FileSearchToolCall  = codec.FileSearchToolCall
-	FileSearchResult    = codec.FileSearchResult
-	ComputerToolCall    = codec.ComputerToolCall
-	ComputerCoordinates = codec.ComputerCoordinates
-	ComputerSafetyCheck = codec.ComputerSafetyCheck
-
-	// User location for web search
-	WebSearchUserLocation = codec.WebSearchUserLocation
-
 	// Option types for customization
 	FileSearchToolOption  = codec.FileSearchToolOption
 	WebSearchToolOption   = codec.WebSearchToolOption
 	ComputerUseToolOption = codec.ComputerUseToolOption
+
+	// Types for tool calls
+	FileSearchToolCall = codec.FileSearchToolCall
+	FileSearchResult   = codec.FileSearchResult
+
+	// User location for web search
+	WebSearchUserLocation = codec.WebSearchUserLocation
+
+	ComputerToolCall    = codec.ComputerToolCall
+	ComputerCoordinates = codec.ComputerCoordinates
+	ComputerSafetyCheck = codec.ComputerSafetyCheck
 )
 
 // Constructor functions for creating tools

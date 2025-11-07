@@ -1,6 +1,23 @@
 package codec
 
-import "go.jetify.com/ai/api"
+import (
+	"fmt"
+
+	"go.jetify.com/ai/api"
+)
+
+var (
+	ProviderName = "openai"
+
+	FileSearchToolName = "file_search"
+	FileSearchToolID   = fmt.Sprintf("%s.%s", ProviderName, FileSearchToolName)
+
+	ComputerUseToolName = "computer_use_preview"
+	ComputerUseToolID   = fmt.Sprintf("%s.%s", ProviderName, ComputerUseToolName)
+
+	WebSearchToolName = "web_search_preview"
+	WebSearchToolID   = fmt.Sprintf("%s.%s", ProviderName, WebSearchToolName)
+)
 
 // FileSearchToolArgs is a built-in tool that searches for relevant content from uploaded files.
 // Learn more about the [file search tool](https://platform.openai.com/docs/guides/tools-file-search).
@@ -70,8 +87,8 @@ func FileSearchTool(options ...FileSearchToolOption) *api.ProviderDefinedTool {
 	}
 
 	return &api.ProviderDefinedTool{
-		ID:   "openai.file_search",
-		Name: "file_search",
+		ID:   FileSearchToolID,
+		Name: FileSearchToolName,
 		Args: args,
 	}
 }
@@ -129,8 +146,8 @@ func WebSearchTool(options ...WebSearchToolOption) *api.ProviderDefinedTool {
 	}
 
 	return &api.ProviderDefinedTool{
-		ID:   "openai.web_search_preview",
-		Name: "web_search_preview",
+		ID:   WebSearchToolID,
+		Name: WebSearchToolName,
 		Args: args,
 	}
 }
@@ -244,8 +261,8 @@ func ComputerUseTool(displayWidth, displayHeight int, environment string, option
 	}
 
 	return &api.ProviderDefinedTool{
-		ID:   "openai.computer_use_preview",
-		Name: "computer_use_preview",
+		ID:   ComputerUseToolID,
+		Name: ComputerUseToolName,
 		Args: args,
 	}
 }

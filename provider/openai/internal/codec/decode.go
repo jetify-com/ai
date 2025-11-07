@@ -148,7 +148,7 @@ func decodeFunctionCall(functionCall responses.ResponseFunctionToolCall) (*api.T
 func decodeFileSearchCall(fileSearch responses.ResponseFileSearchToolCall) (*api.ToolCallBlock, error) {
 	return &api.ToolCallBlock{
 		ToolCallID: fileSearch.ID,
-		ToolName:   "openai.file_search",
+		ToolName:   FileSearchToolID,
 		Args:       json.RawMessage(fileSearch.RawJSON()),
 	}, nil
 }
@@ -157,7 +157,7 @@ func decodeFileSearchCall(fileSearch responses.ResponseFileSearchToolCall) (*api
 func decodeWebSearchCall(webSearch responses.ResponseFunctionWebSearch) (*api.ToolCallBlock, error) {
 	return &api.ToolCallBlock{
 		ToolCallID: webSearch.ID,
-		ToolName:   "openai.web_search_preview",
+		ToolName:   WebSearchToolID,
 		Args:       json.RawMessage(webSearch.RawJSON()),
 	}, nil
 }
@@ -181,10 +181,10 @@ func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (*api.T
 
 	// Create tool call block with provider metadata
 	return &api.ToolCallBlock{
-		ToolCallID:       computerCall.ID,
-		ToolName:         "openai.computer_use_preview",
-		Args:             json.RawMessage(computerCall.RawJSON()),
-		ProviderMetadata: api.NewProviderMetadata(map[string]any{"openai": metadata}),
+		ToolCallID:       computerCall.ID, // TODO: use computerCall.CallID instead
+		ToolName:         ComputerUseToolID,
+		Args:             json.RawMessage(computerCall.RawJSON()), // TODO: pass the Action instead.
+		ProviderMetadata: api.NewProviderMetadata(map[string]any{ProviderName: metadata}),
 	}, nil
 }
 
@@ -263,7 +263,7 @@ func decodeFinishReason(incompleteReason string, hasToolCalls bool) api.FinishRe
 // decodeProviderMetadata extracts OpenAI-specific metadata
 func decodeProviderMetadata(msg *responses.Response) *api.ProviderMetadata {
 	return api.NewProviderMetadata(map[string]any{
-		"openai": &Metadata{
+		ProviderName: &Metadata{
 			ResponseID: msg.ID,
 			Usage: Usage{
 				InputTokens:           int(msg.Usage.InputTokens),
