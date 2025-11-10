@@ -187,9 +187,11 @@ func decodeComputerCall(computerCall responses.ResponseComputerToolCall) (*api.T
 
 	// Create tool call block with provider metadata
 	return &api.ToolCallBlock{
-		ToolCallID:       computerCall.ID, // TODO: use computerCall.CallID instead
+		// The CallID is what's needed to respond to the tool call, not the "ID" field.
+		// https://platform.openai.com/docs/api-reference/responses/object#responses-object-output-computer_tool_call
+		ToolCallID:       computerCall.CallID,
 		ToolName:         ComputerUseToolID,
-		Args:             json.RawMessage(computerCall.RawJSON()), // TODO: pass the Action instead.
+		Args:             json.RawMessage(computerCall.Action.RawJSON()), // The Action is the only argument to the computer call.
 		ProviderMetadata: api.NewProviderMetadata(map[string]any{ProviderName: metadata}),
 	}, nil
 }
