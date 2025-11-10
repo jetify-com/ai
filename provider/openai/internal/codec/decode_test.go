@@ -3,6 +3,7 @@ package codec
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/openai/openai-go/v2/responses"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +21,9 @@ func TestDecodeResponse(t *testing.T) {
 		{
 			name: "simple message",
 			input: `{
+				"id": "resp_123",
+				"created_at": 1741269019,
+				"model": "gpt-4",
 				"output": [
 					{
 						"type": "message",
@@ -37,6 +41,11 @@ func TestDecodeResponse(t *testing.T) {
 				}
 			}`,
 			want: &api.Response{
+				ResponseInfo: &api.ResponseInfo{
+					ID:        "resp_123",
+					ModelID:   "gpt-4",
+					Timestamp: time.Date(2025, 3, 6, 13, 50, 19, 0, time.UTC),
+				},
 				Content: []api.ContentBlock{
 					&api.TextBlock{Text: "Hello world"},
 				},

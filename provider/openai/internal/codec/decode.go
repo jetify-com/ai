@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/openai/openai-go/v2/responses"
 	"go.jetify.com/ai/api"
@@ -31,6 +32,11 @@ func DecodeResponse(msg *responses.Response) (*api.Response, error) {
 
 	// Create the response with the extracted fields
 	resp := &api.Response{
+		ResponseInfo: &api.ResponseInfo{
+			ID:        msg.ID,
+			ModelID:   msg.Model,
+			Timestamp: time.Unix(int64(msg.CreatedAt), 0).UTC(),
+		},
 		Content:          content.Content,
 		Usage:            decodeUsage(msg.Usage),
 		ProviderMetadata: decodeProviderMetadata(msg),
