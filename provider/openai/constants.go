@@ -1,13 +1,14 @@
 package openai
 
-import "go.jetify.com/ai/provider/openai/internal/codec"
+import (
+	"github.com/openai/openai-go/v2/shared"
+	"go.jetify.com/ai/provider/openai/internal/codec"
+)
 
 var ProviderName = codec.ProviderName
 
 // Models
 const (
-	ChatModelComputerUsePreview               = "computer_use_preview"
-	ChatModelComputerUsePreview2025_03_11     = "computer_use_preview-2025-03-11"
 	ChatModelGPT5                             = "gpt-5"
 	ChatModelGPT5Mini                         = "gpt-5-mini"
 	ChatModelGPT5Nano                         = "gpt-5-nano"
@@ -70,4 +71,7 @@ const (
 	ChatModelGPT3_5Turbo1106                  = "gpt-3.5-turbo-1106"
 	ChatModelGPT3_5Turbo0125                  = "gpt-3.5-turbo-0125"
 	ChatModelGPT3_5Turbo16k0613               = "gpt-3.5-turbo-16k-0613"
+
+	ResponsesModelComputerUsePreview           = shared.ResponsesModelComputerUsePreview
+	ResponsesModelComputerUsePreview2025_03_11 = shared.ResponsesModelComputerUsePreview2025_03_11
 )
