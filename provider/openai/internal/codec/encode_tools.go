@@ -93,11 +93,16 @@ func encodeFunctionTool(tool api.FunctionTool) (*responses.ToolUnionParam, []api
 		return nil, nil, fmt.Errorf("failed to convert tool parameters: %w", err)
 	}
 
+	strict := true // Default to true
+	md := GetMetadata(tool)
+	if md != nil && md.StrictSchemas != nil {
+		strict = *md.StrictSchemas
+	}
+
 	result := responses.ToolParamOfFunction(
 		name,
 		props,
-		// TODO: allow passing the strict flag to the function
-		true, // strict mode enabled
+		strict,
 	)
 
 	// Add description if provided
