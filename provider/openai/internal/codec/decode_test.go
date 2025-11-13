@@ -1192,7 +1192,7 @@ func TestDecodeReasoning(t *testing.T) {
 				"id": "reason_123",
 				"summary": []
 			}`,
-			wantErr: "reasoning item has no summary",
+			want: &api.ReasoningBlock{},
 		},
 		{
 			name: "empty text in summary",

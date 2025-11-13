@@ -110,9 +110,6 @@ func decodeReasoning(item responses.ResponseOutputItemUnion) (*api.ReasoningBloc
 	}
 
 	reasoningItem := item.AsReasoning()
-	if len(reasoningItem.Summary) == 0 {
-		return nil, fmt.Errorf("reasoning item has no summary")
-	}
 
 	// For now, we'll concatenate all summary texts with newlines if there are multiple
 	// Another option would be to return a slice of ReasoningBlocks.
@@ -125,9 +122,9 @@ func decodeReasoning(item responses.ResponseOutputItemUnion) (*api.ReasoningBloc
 		texts = append(texts, summary.Text)
 	}
 
-	if len(texts) == 0 {
-		return nil, fmt.Errorf("no valid text found in reasoning summaries")
-	}
+	// NOTE: we don't check that the text is non-empty because sometimes the model returns an empty
+	// reasoning block. That behavior is technically against the API spec, but it's been observed in practice.
+	// Consider omitting the ReasoningBlock and adding a warning instead.
 
 	return &api.ReasoningBlock{
 		Text: strings.Join(texts, "\n"),
