@@ -212,17 +212,17 @@ func encodeWebSearchTool(tool *api.ProviderDefinedTool) (responses.ToolUnionPara
 	}
 
 	// Create a web search tool param directly instead of using the helper function
-	var webSearchParam responses.WebSearchToolParam
-	webSearchParam.Type = responses.WebSearchToolTypeWebSearchPreview
+	var webSearchParam responses.WebSearchPreviewToolParam
+	webSearchParam.Type = responses.WebSearchPreviewToolTypeWebSearchPreview
 
 	// Set search context size if provided
 	if webSearchArgs.SearchContextSize != "" {
-		webSearchParam.SearchContextSize = responses.WebSearchToolSearchContextSize(webSearchArgs.SearchContextSize)
+		webSearchParam.SearchContextSize = responses.WebSearchPreviewToolSearchContextSize(webSearchArgs.SearchContextSize)
 	}
 
 	// Set user location if provided
 	if webSearchArgs.UserLocation != nil {
-		userLocation := responses.WebSearchToolUserLocationParam{}
+		userLocation := responses.WebSearchPreviewToolUserLocationParam{}
 
 		if webSearchArgs.UserLocation.City != "" {
 			userLocation.City = openai.String(webSearchArgs.UserLocation.City)
