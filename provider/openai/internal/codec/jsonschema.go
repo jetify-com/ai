@@ -16,6 +16,17 @@ func encodeSchema(schema *jsonschema.Schema) (map[string]any, error) {
 		return nil, nil
 	}
 
+	// Enforce OpenAI restrictions
+	// https://platform.openai.com/docs/guides/structured-outputs#root-objects-must-not-be-anyof-and-must-be-an-object
+	// NOTE: we could simply encode the input schema, pass it through to OpenAI and let it return an error, but there are
+	// other encoding rules we want to enforce later, and limiting the scope here allows us to limit the scope later.
+	if schema.Type != "object" {
+		return nil, fmt.Errorf("schema root must be of type object, got: %s", schema.Type)
+	}
+	if schema.AnyOf != nil {
+		return nil, fmt.Errorf("schema root cannot use AnyOf")
+	}
+
 	// Marshal to JSON and unmarshal back to interface{} to convert the types
 	data, err := json.Marshal(schema)
 	if err != nil {
@@ -30,6 +41,12 @@ func encodeSchema(schema *jsonschema.Schema) (map[string]any, error) {
 	var result map[string]any
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal properties: %w\n\n%s", err, data)
+	}
+
+	// Ensure properties field is set, even if it's empty. It's unclear whether OpenAI requires
+	// this to be set for nested schema objects too. For now we only set it at the top-level.
+	if _, ok := result["properties"]; !ok {
+		result["properties"] = map[string]any{}
 	}
 
 	// Convert {"not": {}} patterns to false throughout the schema

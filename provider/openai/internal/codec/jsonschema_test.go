@@ -143,20 +143,42 @@ func TestEncodeSchema(t *testing.T) {
 			}`,
 		},
 		{
-			name: "schema with allOf containing additionalProperties",
+			name: "schema with nested AnyOf",
 			input: &jsonschema.Schema{
-				AllOf: []*jsonschema.Schema{
-					{
-						Type:                 "object",
-						AdditionalProperties: api.FalseSchema(),
+				Type: "object",
+				Properties: map[string]*jsonschema.Schema{
+					"numeric": {
+						AnyOf: []*jsonschema.Schema{
+							{
+								Type: "string",
+							},
+							{
+								Type: "number",
+							},
+						},
 					},
 				},
 			},
 			want: `{
-				"allOf": [{
-					"type": "object",
-					"additionalProperties": false
-				}]
+				"type": "object",
+				"properties": {
+					"numeric": {
+						"anyOf": [
+							{ "type": "string" },
+							{ "type": "number" }
+						]
+					}
+				}
+			}`,
+		},
+		{
+			name: "schema without properties gets empty properties map",
+			input: &jsonschema.Schema{
+				Type: "object",
+			},
+			want: `{
+				"type": "object",
+				"properties": {}
 			}`,
 		},
 		{
@@ -209,6 +231,44 @@ func TestEncodeSchema(t *testing.T) {
 				},
 				"required": ["id"]
 			}`,
+		},
+
+		// Edge/error cases
+		{
+			name: "schema with non-object root",
+			input: &jsonschema.Schema{
+				Properties: map[string]*jsonschema.Schema{
+					"name": {
+						Type:        "string",
+						Description: "The name",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name:    "empty schema",
+			input:   &jsonschema.Schema{},
+			wantErr: true,
+		},
+		{
+			name: "schema with only additional properties",
+			input: &jsonschema.Schema{
+				AdditionalProperties: api.FalseSchema(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "schema with AnyOf at rool level",
+			input: &jsonschema.Schema{
+				AnyOf: []*jsonschema.Schema{
+					{
+						Type:                 "object",
+						AdditionalProperties: api.FalseSchema(),
+					},
+				},
+			},
+			wantErr: true,
 		},
 	}
 
@@ -450,36 +510,4 @@ func TestNormalizeSchemaMap(t *testing.T) {
 			assert.JSONEq(t, tt.want, string(gotJSON))
 		})
 	}
-}
-
-func TestEncodeSchema_EdgeCases(t *testing.T) {
-	t.Run("schema with only additionalProperties", func(t *testing.T) {
-		schema := &jsonschema.Schema{
-			AdditionalProperties: api.FalseSchema(),
-		}
-
-		got, err := encodeSchema(schema)
-		require.NoError(t, err)
-
-		gotJSON, err := json.Marshal(got)
-		require.NoError(t, err)
-
-		expectedJSON := `{
-			"additionalProperties": false
-		}`
-
-		assert.JSONEq(t, expectedJSON, string(gotJSON))
-	})
-
-	t.Run("empty schema", func(t *testing.T) {
-		schema := &jsonschema.Schema{}
-
-		got, err := encodeSchema(schema)
-		require.NoError(t, err)
-
-		gotJSON, err := json.Marshal(got)
-		require.NoError(t, err)
-
-		assert.JSONEq(t, "{}", string(gotJSON))
-	})
 }
