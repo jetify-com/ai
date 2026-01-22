@@ -66,6 +66,16 @@ type Metadata struct {
 	// Supported values are `concise` and `detailed`.
 	ReasoningSummary string `json:"reasoning_summary,omitempty"`
 
+	// Truncation specifies the truncation strategy to use for the model input.
+	// When set, this overrides any model-specific default truncation behavior.
+	//
+	// Supported values are `auto` and `disabled` (default).
+	// - `auto`: If the context of this response and previous ones exceeds the
+	//   model's context window size, the model will truncate the response to fit.
+	// - `disabled`: If the context exceeds the model's context window size,
+	//   the request will fail with a 400 error.
+	Truncation string `json:"truncation,omitempty"`
+
 	// --- Used in blocks ---
 
 	// ImageDetail indicates the level of detail that should be used when processing

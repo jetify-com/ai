@@ -118,10 +118,8 @@ func applyCallOptions(params *responses.ResponseNewParams, opts api.CallOptions,
 	// Apply provider options from metadata
 	applyProviderMetadata(params, opts)
 
-	// Apply model-specific settings
-	if modelConfig.RequiredAutoTruncation {
-		params.Truncation = "auto"
-	}
+	// Apply truncation settings: caller-provided takes precedence over model defaults
+	applyTruncationSettings(params, opts, modelConfig)
 
 	// Apply reasoning settings and handle unsupported options for reasoning models
 	reasoningWarnings := applyReasoningSettings(params, opts, modelConfig)
@@ -182,6 +180,24 @@ func applyProviderMetadata(params *responses.ResponseNewParams, opts api.CallOpt
 				params.Instructions = openai.String(metadata.Instructions)
 			}
 		}
+	}
+}
+
+// applyTruncationSettings applies truncation settings to the parameters.
+// Caller-provided truncation via metadata takes precedence over model defaults.
+func applyTruncationSettings(params *responses.ResponseNewParams, opts api.CallOptions, modelConfig modelConfig) {
+	// Check if caller provided a truncation setting via metadata
+	if opts.ProviderMetadata != nil {
+		metadata := GetMetadata(&opts)
+		if metadata != nil && metadata.Truncation != "" {
+			params.Truncation = responses.ResponseNewParamsTruncation(metadata.Truncation)
+			return
+		}
+	}
+
+	// Fall back to model-specific defaults
+	if modelConfig.RequiredAutoTruncation {
+		params.Truncation = "auto"
 	}
 }
 
