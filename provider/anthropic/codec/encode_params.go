@@ -21,7 +21,7 @@ func EncodeParams(
 	}
 
 	// Set the model ID
-	params.Model = anthropic.Model(modelID)
+	params.Model = modelID
 
 	if len(anthropicPrompt.System) > 0 {
 		params.System = anthropicPrompt.System

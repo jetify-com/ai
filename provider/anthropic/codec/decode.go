@@ -29,7 +29,7 @@ func DecodeResponse(msg *anthropic.BetaMessage) (*api.Response, error) {
 func decodeResponseInfo(msg *anthropic.BetaMessage) *api.ResponseInfo {
 	return &api.ResponseInfo{
 		ID:      msg.ID,
-		ModelID: string(msg.Model),
+		ModelID: msg.Model,
 	}
 }
 
