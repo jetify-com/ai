@@ -258,6 +258,43 @@ func TestResponseBuilder(t *testing.T) {
 			},
 		},
 		{
+			// Mirrors the OpenAI Responses stream: output_item.added and
+			// function_call_arguments.delta produce deltas, then
+			// output_item.done produces a final ToolCallEvent with the same ID.
+			name: "tool call deltas followed by final tool call",
+			events: []api.StreamEvent{
+				&api.ToolCallDeltaEvent{
+					ToolCallID: "call_1",
+					ToolName:   "get_weather",
+					ArgsDelta:  json.RawMessage(``),
+				},
+				&api.ToolCallDeltaEvent{
+					ToolCallID: "call_1",
+					ToolName:   "get_weather",
+					ArgsDelta:  json.RawMessage(`{"location":`),
+				},
+				&api.ToolCallDeltaEvent{
+					ToolCallID: "call_1",
+					ToolName:   "get_weather",
+					ArgsDelta:  json.RawMessage(`"Paris"}`),
+				},
+				&api.ToolCallEvent{
+					ToolCallID: "call_1",
+					ToolName:   "get_weather",
+					Args:       json.RawMessage(`{"location":"Paris"}`),
+				},
+			},
+			expected: &api.Response{
+				Content: []api.ContentBlock{
+					&api.ToolCallBlock{
+						ToolCallID: "call_1",
+						ToolName:   "get_weather",
+						Args:       json.RawMessage(`{"location":"Paris"}`),
+					},
+				},
+			},
+		},
+		{
 			name: "multiple function calls",
 			events: []api.StreamEvent{
 				&api.ToolCallEvent{
@@ -476,4 +513,47 @@ func TestResponseBuilder_ValueTypes(t *testing.T) {
 			aitesting.ResponseContains(t, tt.expected, resp)
 		})
 	}
+}
+
+func TestResponseBuilder_DuplicateToolCall(t *testing.T) {
+	b := NewResponseBuilder()
+	ev := &api.ToolCallEvent{
+		ToolCallID: "call_1",
+		ToolName:   "get_weather",
+		Args:       json.RawMessage(`{}`),
+	}
+	assert.NoError(t, b.AddEvent(ev))
+	assert.ErrorContains(t, b.AddEvent(ev), "duplicate tool call ID")
+}
+
+// The final ToolCallEvent is authoritative: it must update the block built
+// from deltas in place (not append a second block), and its complete args
+// must replace whatever the deltas accumulated.
+func TestResponseBuilder_FinalToolCallReplacesDeltaArgs(t *testing.T) {
+	b := NewResponseBuilder()
+	events := []api.StreamEvent{
+		&api.ToolCallDeltaEvent{
+			ToolCallID: "call_1",
+			ToolName:   "get_weather",
+			ArgsDelta:  json.RawMessage(`{"location":"Par`),
+		},
+		&api.ToolCallEvent{
+			ToolCallID: "call_1",
+			ToolName:   "get_weather",
+			Args:       json.RawMessage(`{"location":"Paris","unit":"C"}`),
+		},
+	}
+	for _, ev := range events {
+		assert.NoError(t, b.AddEvent(ev))
+	}
+
+	resp, err := b.Build()
+	assert.NoError(t, err)
+	assert.Equal(t, []api.ContentBlock{
+		&api.ToolCallBlock{
+			ToolCallID: "call_1",
+			ToolName:   "get_weather",
+			Args:       json.RawMessage(`{"location":"Paris","unit":"C"}`),
+		},
+	}, resp.Content)
 }

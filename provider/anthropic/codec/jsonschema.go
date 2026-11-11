@@ -62,6 +62,15 @@ func normalizeSchemaMap(schemaMap map[string]interface{}) {
 
 // encodeInputSchema converts the JSON schema definition to Anthropic's schema format
 func encodeInputSchema(schema *jsonschema.Schema) (anthropic.BetaToolInputSchemaParam, error) {
+	// InputSchema is optional on FunctionTool. A tool without one takes no
+	// arguments, which Anthropic expresses as an object with no properties.
+	if schema == nil {
+		return anthropic.BetaToolInputSchemaParam{
+			Type:       "object",
+			Properties: map[string]any{},
+		}, nil
+	}
+
 	// Verify the schema type is "object"
 	// TODO: When the Anthropic SDK supports other type values or union types,
 	// we should update this to pass through the original type information.

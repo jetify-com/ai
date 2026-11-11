@@ -26,6 +26,8 @@ type ResponseBuilder struct {
 	resp api.Response
 	// Map of tool call ID to index in Content array (for parallel tool calls)
 	toolCallIndices map[string]int
+	// Set of tool call IDs that have received a complete ToolCallEvent.
+	completedToolCalls map[string]bool
 	// Error encountered during event processing
 	err error
 
@@ -46,9 +48,10 @@ func NewResponseBuilder() *ResponseBuilder {
 			Warnings:     []api.CallWarning{},
 			FinishReason: api.FinishReason(""),
 		},
-		toolCallIndices: make(map[string]int),
-		currentState:    noState,
-		err:             nil,
+		toolCallIndices:    make(map[string]int),
+		completedToolCalls: make(map[string]bool),
+		currentState:       noState,
+		err:                nil,
 	}
 }
 
@@ -155,11 +158,28 @@ func (b *ResponseBuilder) addReasoningSignature(e *api.ReasoningSignatureEvent) 
 // addToolCall adds a tool call event to the response.
 func (b *ResponseBuilder) addToolCall(e *api.ToolCallEvent) error {
 	// Check for duplicate tool call ID
-	if _, exists := b.toolCallIndices[e.ToolCallID]; exists {
+	if b.completedToolCalls[e.ToolCallID] {
 		return fmt.Errorf("duplicate tool call ID: %s", e.ToolCallID)
 	}
 
 	b.currentState = toolCallState
+	b.completedToolCalls[e.ToolCallID] = true
+
+	// Providers such as OpenAI stream a tool call as a series of
+	// ToolCallDeltaEvents followed by a final ToolCallEvent with the same ID
+	// and the complete arguments. In that case, finalize the existing block
+	// instead of treating the final event as a duplicate.
+	if idx, exists := b.toolCallIndices[e.ToolCallID]; exists {
+		if toolCall, ok := b.resp.Content[idx].(*api.ToolCallBlock); ok {
+			if e.ToolName != "" {
+				toolCall.ToolName = e.ToolName
+			}
+			if len(e.Args) > 0 {
+				toolCall.Args = slices.Clone(e.Args)
+			}
+		}
+		return nil
+	}
 
 	// Create new tool call block
 	toolCall := &api.ToolCallBlock{

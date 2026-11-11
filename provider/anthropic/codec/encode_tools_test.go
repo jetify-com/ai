@@ -19,6 +19,22 @@ func TestEncodeFunctionTool(t *testing.T) {
 		want    string // Expected JSON output
 	}{
 		{
+			name: "function tool without input schema",
+			input: api.FunctionTool{
+				Name:        "now",
+				Description: "Returns the current time",
+			},
+			want: `{
+				"type": "tool",
+				"name": "now",
+				"description": "Returns the current time",
+				"input_schema": {
+					"type": "object",
+					"properties": {}
+				}
+			}`,
+		},
+		{
 			name: "simple function tool",
 			input: api.FunctionTool{
 				Name:        "test_function",
