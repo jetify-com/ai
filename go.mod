@@ -14,6 +14,10 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go-v2 v1.47.8 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.33.17 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.20.17 // indirect
+	github.com/aws/smithy-go v1.28.9 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.6.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -35,8 +39,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	go.yaml.in/yaml/v4 v4.0.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/dnaeon/go-vcr.v4 v4.0.7 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
